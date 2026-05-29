@@ -1,271 +1,106 @@
-# LaTeX Writing Guide
+# Writing Guide - IEEE Access Modular Template
 
-This guide provides instructions and examples for writing this thesis using LaTeX, including how to include code snippets, images, citations, and custom commands.
+Welcome to your new modular IEEE Access template! This structure is designed to be organized, easy to maintain, and similar to your previous thesis setup.
 
-## 0. General Writing
+## 📁 Project Structure
 
-### 0.1 Needed Plugins in VSCode
+The project is divided into several folders to keep things clean:
 
-- You need the `LaTeX Workshop` extension for VSCode.
-- Nice-to-have: `Formula Editor` for a quick WYSIWYG math editor.
-
-### 0.2 Settings in LaTeX Workshop
-
-In the LaTeX Workshop settings, set:
-
-- `Formatting>LaTeX` to `latexindent` for auto-formatting.
-- `LaTeX>Auto Clean : Run` to `onBuilt` or `onSucceeded` to auto-clean auxiliary files.
-
-### 0.3 Compiling
-
-Change the out-dir in `settings.json` to:
-
-```json
-"latex-workshop.latex.outDir": "./build",
-```
-
-The Clean-Method to `glob`,
-And the clean patterns to:
-
-```json
-"latex-workshop.latex.clean.patterns": [
-    ...,
-    "*.aux",
-    "*.synctex.gz",
-],
-```
-
-So auxiliary in `build/` are cleaned automatically.
-
-After that, per default you build when saving the file (Ctrl+S).
-You can also manually build with `Ctrl+Alt+B`.
-Or change it to `onFileChange` to build on every change.
-
-### 0.4 How to write chapters
-
-You write your chapters in the `Chapters/` folder as `.tex` files and include them in `main.tex` using:
-
-```latex
-\include{Chapters/chapter1}
-```
-
-## 1. Code snippets
-
-We use the **`listings`** package (no Python/Pygments needed).
-
-### 1.1 Inline code
-
-Use this for short snippets you write directly in `.tex`:
-
-```latex
-\begin{lstlisting}[language=Python, caption={Simple Python function}]
-def square(x):
-    return x * x
-\end{lstlisting}
-```
-
-- `language=Python` → choose language (`Java`, `C++`, etc.).
-- `caption={...}` → adds a title under the code block.
-- Add `label={lst:mysnippet}` if you want to reference it with `\ref{lst:mysnippet}`.
-
-### 1.2 Import external file
-
-For longer code, save it in `Code/` and import:
-
-```latex
-\lstinputlisting[language=Python, caption={Example from external file}]{Code/example.py}
-```
+- **`main.tex`**: The main entry point. You usually only touch this to add or reorder chapters.
+- **`Settings/`**:
+    - `preamble.tex`: Load packages and global configurations here.
+    - `metadata.tex`: Define your paper title, authors, affiliations, and DOI information.
+- **`Front/`**:
+    - `abstract.tex`: Contains the abstract and index terms (keywords).
+- **`Chapters/`**:
+    - Individual `.tex` files for each section of your paper.
+- **`Appendices/`**:
+    - `appendices.tex`: Put your appendix content here.
+- **`Back/`**:
+    - `references.tex`: Manual bibliography using `thebibliography` (if not using BibTeX).
+    - `biographies.tex`: Author biographies and photos.
+- **`references.bib`**: BibTeX file for managing citations (recommended).
 
 ---
 
-## 2. Images
+## 🚀 How to use
 
-Images go into the `Figures/` folder. Use:
+### 1. Adding or Reordering Chapters
+
+To add a new chapter, create a new `.tex` file in the `Chapters/` folder. Then, include it in `main.tex` using the `\input{}` command:
 
 ```latex
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=0.7\textwidth]{Figures/mydiagram.png}
-  \caption{System architecture overview.}
-  \label{fig:system-arch}
+% In main.tex
+\input{Chapters/01_introduction}
+\input{Chapters/06_my_new_chapter} % Add your new chapter here
+```
+
+To reorder, simply swap the lines in `main.tex`.
+
+### 2. Including Graphics
+
+Use the `\Figure` command (provided by the `ieeeaccess` class) or the standard `\begin{figure}`.
+
+**Example using `\Figure`:**
+
+```latex
+\Figure[t!](topskip=0pt, botskip=0pt, midskip=0pt){fig1.png}
+{Caption of your figure.\label{fig:my_label}}
+```
+
+**Example using standard LaTeX:**
+
+```latex
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\linewidth]{logo.png}
+    \caption{Description of the logo.}
+    \label{fig:logo}
 \end{figure}
 ```
 
-- `width=0.7\textwidth` → scales the image.
-- `\label{fig:...}` → allows referencing with `Figure~\ref{fig:system-arch}`.
-- Formats supported: `.png`, `.jpg`, `.pdf`.
+*Note: All images should be placed in the root directory or you can specify a path.*
 
----
+### 3. Citations
 
-## 3. Citations and References
+You have two options for citations:
 
-We use **`biblatex` with biber**.
+#### Option A: BibTeX (Recommended)
 
-1. Add sources in `example.bib`:
-
-    ```bibtex
-    @book{knuth1984,
-    author = {Donald E. Knuth},
-    title = {The TeXbook},
-    year = {1984},
-    publisher = {Addison-Wesley}
-    }
-    ```
-
-2. Cite in text:
+1. Add your sources to `references.bib`.
+2. In `main.tex`, replace `\input{Back/references}` with:
 
     ```latex
-    As shown by Knuth \cite{knuth1984}, typesetting is an art.
+    \bibliographystyle{IEEEtran}
+    \bibliography{references}
     ```
 
-3. Print the bibliography at the end is already done via:
+3. Use `\cite{key}` in your text.
 
-    ```latex
-    \printbibliography
-    ```
+#### Option B: Manual (Template Default)
+
+Edit `Back/references.tex` and add `\bibitem{key}` entries.
+
+### 4. Metadata (Title & Authors)
+
+Open `Settings/metadata.tex` to change the title, authors, and contact information. Use `\uppercase` for author names as per IEEE standards.
+
+### 5. Compiling
+
+You can compile the project using `latexmk`:
+
+```bash
+latexmk -pdf main.tex
+```
+
+Or in VSCode, just save `main.tex` and it should auto-compile if you have the LaTeX Workshop extension installed.
 
 ---
 
-## 4. Info Boxes (Custom Environments)
+## 💡 Tips
 
-You can create **info boxes** to highlight tips, warnings, or examples.
-Add this to `preamble.tex`:
+- **Labels:** Use descriptive labels like `\label{sec:intro}` or `\label{fig:results}` to make cross-referencing easy with `\ref{}` or `\eqref{}`.
+- **Math:** Use `\begin{equation}` for numbered equations.
+- **Tables:** Use `\begin{table}` and `\begin{tabular}`. There is an example in `Chapters/04_graphics.tex`.
 
-```latex
-\usepackage{tcolorbox}
-\tcbset{colback=blue!5!white, colframe=blue!75!black, boxrule=0.8pt, arc=4pt}
-
-\newtcolorbox{infobox}[1][]{title=Note,#1}
-```
-
-Now you can write:
-
-```latex
-\begin{infobox}[title=Important]
-Always compile with **biber** (not bibtex) for references!
-\end{infobox}
-```
-
-👉 This produces a nice blue info box.
-
----
-
-## 5. Custom Commands
-
-To avoid repeating long LaTeX code, you can define shortcuts in `preamble.tex`.
-
-Examples:
-
-```latex
-% Commonly used terms
-\newcommand{\AI}{Artificial Intelligence}
-\newcommand{\ZHAW}{Zurich University of Applied Sciences}
-
-% Shorthand for figure refs
-\newcommand{\figref}[1]{Figure~\ref{#1}}
-```
-
-Usage in text:
-
-```latex
-At \ZHAW, research in \AI{} is growing rapidly.
-As shown in \figref{fig:system-arch}, the system scales well.
-```
-
----
-
-## 6. Tables
-
-Use the `booktabs` package (already loaded). Example:
-
-```latex
-\begin{table}[ht]
-  \centering
-  \begin{tabular}{l c r}
-    \toprule
-    Method & Accuracy & Runtime \\
-    \midrule
-    Baseline & 75\% & 10s \\
-    Improved & 89\% & 7s \\
-    \bottomrule
-  \end{tabular}
-  \caption{Comparison of methods.}
-  \label{tab:methods}
-\end{table}
-```
-
-Reference it with `Table~\ref{tab:methods}`.
-
----
-
-## 7. Cross-references
-
-Use labels + refs consistently:
-
-- `\label{fig:xyz}` for figures → `Figure~\ref{fig:xyz}`
-- `\label{lst:xyz}` for code → `Listing~\ref{lst:xyz}`
-- `\label{tab:xyz}` for tables → `Table~\ref{tab:xyz}`
-
----
-
-## 8. Math
-
-### 8.1 Inline math
-
-For formulas **inside text**:
-
-```latex
-The function $f(x) = x^2$ grows quadratically.
-```
-
--> Use **`$ ... $`** (or `\(...\)` if you prefer).
-
----
-
-### 8.2 Display math (no number)
-
-For formulas **on their own line**:
-
-```latex
-\[
-E = mc^2
-\]
-```
-
--> Use **`\[ ... \]`** for unnumbered equations.
-
----
-
-### 9.3 Numbered equations
-
-For important equations you want to reference:
-
-```latex
-\begin{equation}
-E = mc^2
-\label{eq:einstein}
-\end{equation}
-
-Einstein's formula is shown in Equation~\eqref{eq:einstein}.
-```
-
--> Use **`equation`** with `\label` + `\eqref{...}`.
-This makes your references consistent and clickable.
-
----
-
-### 9.4 Aligned equations
-
-For multi-line derivations:
-
-```latex
-\begin{align}
-a &= b + c \\
-  &= d + e
-\end{align}
-```
-
--> Use **`align`**
-
-- `&` marks alignment points.
-- Each line is auto-numbered (use `align*` for no numbers).
+Happy writing! 📝

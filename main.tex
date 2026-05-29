@@ -1,224 +1,46 @@
-%----------------------------------------------------------------------------------------
-% DOCUMENT SPECIFICATION
-%----------------------------------------------------------------------------------------
-\documentclass[
-    11pt,                      % Default font size
-    oneside,                  % One-side binding. Default: Two-side binding / alternating margins
-    english,                   % Language. Use ngerman for German (Neue Rechtschreibung)
-    onehalfspacing,             % Spacing option: singlespacing, onehalfspacing or doublespacing
-    %nolistspacing,            % Set spacing in lists to single
-    %draft,                    % Enable draft mode: no pictures, no links, overfull hboxes indicated
-    liststotoc,               % Include list of figures/tables/etc in the table of contents
-    %toctotoc,                 % Include the main table of contents to the table of contents
-    parskip,                  % Add vertical space between paragraphs
-    %nohyperref,               % Disable links in the entire document
-    % helveticafont,             % Uncomment to use Helvetica font
-    headsepline,               % Show a horizontal line under the header
-    %chapterinoneline,         % Place the chapter title and chapter number on one line
-    consistentlayout,          % Have the same layout for special chapters: declaration, abstract and acknowledgements
-]{MastersDoctoralThesis}
-
-% Uncomment the following lines to only include a subset of chapters.
-% This is useful for long documents, as typesetting takes a bit of time
-%\includeonly{
-%    Front/titlepage,
-%    Front/imprint,
-%    Front/abstract,
-%    %Front/declaration,
-%    %Front/acknowledgements,
-%    %Front/symbols,
-%    Chapters/Chapter1,
-%    %Chapters/Chapter2
-%    }
-
+\documentclass{ieeeaccess}
 
 %----------------------------------------------------------------------------------------
 % PREAMBLE: PACKAGES AND CONFIGURATIONS
 %----------------------------------------------------------------------------------------
-\input{preamble}
-
-
-%----------------------------------------------------------------------------------------
-% THESIS INFORMATION: MODIFY THIS SECTION!
-%----------------------------------------------------------------------------------------
-
-\thesistitle{Quantum Machine Learning for Analyzing Galaxies}             % Thesis title,              command: \ttitle
-\thesistype{Bachelor Thesis}             % Type of thesis (e.g. Master Thesis) \ttype
-\thesisdate{\today}                     % Date of submission                  \tdate
-\keywords{quantum machine learning, galaxy analysis, quantum computing}
-                                        % Keywords for the thesis,            \keywordnames
-\author{Moritz Feuchter\\Shpetim Veseli}                  % Your name,                          \authorname
-\degree{Bachelor of Science ZHAW}          % Degree name,                        \degreename
-\studyprogram{Computer Science} 
-                                        % Study program                       \studyprog
-\studyprogramlink{https://www.zhaw.ch/de/engineering/studium/bachelorstudium/informatik}
-                                        % Link to study program               \studyproglink
-
-\supervisorA{Prof Dr. Kurt Stockinger}       % Name of supervisor 1,          \supnameA
-\supervisorAmail{kurt.stockinger@zhaw.ch}         % Email address of supervisor 1,      \supmailA
-\supervisorAinfo{                       % Formatted info about supervisor 1:  \supinfoA
-    \supnameA\\
-    Zurich University of Applied Sciences\\
-    Email: \href{mailto:\supmailA}{\supmailA}\\
-}
-
-% Keep empty if there is no supervisor 2: \supervisorB{}
-\supervisorB{Dr. Pavel Sulimov}              % Name of supervisor 2,               \supnameB
-\supervisorBmail{pavel.sulimov@zhaw.ch}       % Email address of supervisor 2,      \supmailB
-\supervisorBinfo{                       % Formatted info about supervisor 2:  \supinfoB
-    \supnameB\\
-    Zurich University of Applied Sciences\\
-    Email: \href{mailto:\supmailB}{\supmailB}\\
-}
-
-\university{Zurich University of Applied Sciences}
-                                        % University name                     \univname
-\universitygerman{Zürcher Hochschule für Angewandte Wissenschaften}
-                                        % University, in German               \univnameger
-\unversityabbr{ZHAW}                    % University abbreviation             \univabbr
-
-\department{School of Engineering} 
-                                        % Department,                         \deptname
-% \institute{} 
-                                        % Institute,                          \instname
-% \group{Center of Computational Health} 
-                                        % Research group                      \groupname
-
-% Links
-\universitylink      {https://www.zhaw.ch/en/university/}                   % \univlink
-\universitylinkgerman{https://www.zhaw.ch/de/university/}                   % \univlinkger
-\departmentlink      {https://www.zhaw.ch/en/engineering}                         % \deptlink
-% \institutelink       {} % \instlink
-% \grouplink           {} % \grplink
-
-
-
-\AtBeginDocument{
-\hypersetup{pdftitle=\ttitle} % Set the PDF's title to your title
-\hypersetup{pdfauthor=\authorname} % Set the PDF's author to your name
-\hypersetup{pdfkeywords=\keywordnames} % Set the PDF's keywords to your keywords
-}
+\input{Settings/preamble}
 
 \begin{document}
-\frontmatter                  % Roman page numbering for the pre-content pages
-\pagestyle{plain}             % Default to the plain heading style until the thesis style 
-                              % is called for the body content
-
 
 %----------------------------------------------------------------------------------------
-% TITLE PAGE AND IMPRINT
+% METADATA: TITLE, AUTHORS, ETC.
 %----------------------------------------------------------------------------------------
-\include{Front/titlepage}
-\let\cleardoublepage\clearpage
-\include{Front/imprint}
-
+\input{Settings/metadata}
 
 %----------------------------------------------------------------------------------------
-% DECLARATION
+% FRONT MATTER: ABSTRACT AND KEYWORDS
 %----------------------------------------------------------------------------------------
-% Comment out this section if the declaration of originality from ZHAW is used.
-% \include{Front/declaration}
-% \cleardoublepage
+\input{Front/abstract}
 
+\titlepgskip=-15pt
 
-%----------------------------------------------------------------------------------------
-% ABSTRACT
-%----------------------------------------------------------------------------------------
-\include{Front/abstract}
-
+\maketitle
 
 %----------------------------------------------------------------------------------------
-% ACKNOWLEDGEMENTS
+% CHAPTERS
 %----------------------------------------------------------------------------------------
-\include{Front/acknowledgements}
-
-
-%----------------------------------------------------------------------------------------
-% LIST OF CONTENTS/FIGURES/TABLES PAGES
-%----------------------------------------------------------------------------------------
-% Comment out if any of the following is not needed:
-\tableofcontents  % Add main table of contents
-
+\input{Chapters/01_introduction}
+\input{Chapters/02_units}
+\input{Chapters/03_common_mistakes}
+\input{Chapters/04_graphics}
+\input{Chapters/05_conclusion}
 
 %----------------------------------------------------------------------------------------
-% ABBREVIATIONS / SYMBOLS
+% APPENDICES
 %----------------------------------------------------------------------------------------
-\include{Front/symbols}
-
-
-%----------------------------------------------------------------------------------------
-% DEDICATION
-%----------------------------------------------------------------------------------------
-% \dedicatory{For/Dedicated to/To my\ldots} 
-
+\input{Appendices/appendices}
 
 %----------------------------------------------------------------------------------------
-% THESIS CONTENT - CHAPTERS
+% BACK MATTER: REFERENCES AND BIOGRAPHIES
 %----------------------------------------------------------------------------------------
-\mainmatter % Begin numeric (1,2,3...) page numbering
-\pagestyle{thesis} % Return the page headers back to the "thesis" style
+\input{Back/references}
+\input{Back/biographies}
 
+\EOD
 
-% Include the chapters of the thesis as separate files from the Chapters folder
-% Uncomment the lines as you write the chapters
-
-\include{Chapters/Introduction}
-\include{Chapters/Chapter_Technical_Background}
-
-\include{Chapters/Chapter_Methodology}
-
-\include{Chapters/Chapter_Results}
-
-\include{Chapters/Chapter_Discussion}
-
-\include{Chapters/Chapter_Outlook} 
-
-%------ Lists of Figures, Tables, and Listings ------
-\cleardoublepage
-\listoffigures
-
-\cleardoublepage
-\listoftables
-
-\cleardoublepage
-\phantomsection
-\addcontentsline{toc}{chapter}{List of Listings}
-\lstlistoflistings
-
-\cleardoublepage
-\phantomsection
-\addcontentsline{toc}{chapter}{Declaration on the Use of Generative AI}
-\chapter*{Declaration on the Use of Generative AI}
-Generative AI systems and AI-based tools were used during the preparation of this thesis in a supporting role.
-
-GitHub Copilot was used to assist with program code development, including code suggestions and implementation support.
-
-ChatGPT was used to support literature and source discovery, to improve and correct the wording of the text, for proofreading, for explanations of technical concepts, and for translation assistance.
-
-All content generated with the support of these tools was reviewed, validated, and adapted by the authors. The authors remain fully responsible for the correctness, originality, and integrity of the presented work.
-%---------------------------------------------------
-
-
-
-
-%----------------------------------------------------------------------------------------
-% BIBLIOGRAPHY
-%----------------------------------------------------------------------------------------
-\printbibliography[heading=bibintoc]
-
-%----------------------------------------------------------------------------------------
-
-%----------------------------------------------------------------------------------------
-% THESIS CONTENT - APPENDICES
-%----------------------------------------------------------------------------------------
-\appendix % Cue to tell LaTeX that the following "chapters" are Appendices
-
-% Include the appendices of the thesis as separate files from the Appendices folder
-% Uncomment the lines as you write the Appendices
-\include{Appendices/AppendixA}
-% from https://www.zhaw.ch/en/lsfm/study/studiweb/master-ls/masters-thesis/
-\include{Appendices/AppendixB}
-%\include{Appendices/AppendixC}
-% \include{Appendices/DeclarationOfOriginalityZHAW} 
-
-\end{document}  
+\end{document}
