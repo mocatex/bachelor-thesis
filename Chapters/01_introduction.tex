@@ -1,108 +1,124 @@
 \section{Introduction}
 \label{sec:introduction}
-\PARstart{T}{his} document is a template for \LaTeX. If you are
-reading a paper or PDF version of this document, please download the
-electronic file, trans\_jour.tex, from the IEEE Web site at \underline
-{http://ieeeauthorcenter.ieee.org/create-your-ieee-article/}\break\underline{use-authoring-tools-and-ieee-article-templates/ieee-article-}\break\underline{templates/} so you can use it to prepare your manuscript. If
-you would prefer to use LaTeX, download IEEE's LaTeX style and sample files
-from the same Web page. You can also explore using the Overleaf editor at
-\underline
-{https://www.overleaf.com/blog/278-how-to-use-overleaf-}\break\underline{with-ieee-collabratec-your-quick-guide-to-getting-started}\break\underline{\#.xsVp6tpPkrKM9}
+\PARstart{T}{he} Sloan Digital Sky Survey (SDSS) is a multi-decade astronomical
+survey that has measured more than two million optical spectra of stars, galaxies
+and quasars~\cite{york2000sdss}. Each spectrum is a one-dimensional
+intensity-versus-wavelength signal that encodes the chemical composition,
+temperature, redshift and astrophysical class of its source. Such data feeds
+research in stellar population studies, galaxy evolution, quasar demographics and
+large-scale structure cosmology. Turning raw spectra into usable scientific labels
+at this scale is difficult, since manual labelling cannot keep pace with the rate
+at which spectra are collected, hence the need for automated classifications.
 
-If your paper is intended for a conference, please contact your conference
-editor concerning acceptable word processor formats for your particular
-conference.
+Modern classical deep learning already handles the coarse problem comfortably.
+Deciding whether a spectrum belongs to a star, a galaxy or a quasar is close to
+solved by current neural spectral classifiers~\cite{zhong2024gasnet}, and in our
+own preliminary experiments even modest classical networks reach roughly 99\%
+accuracy on this three-way classification. The interesting difficulty lies one
+level deeper. When the task is refined from \emph{what kind of object} to
+\emph{which exact subtype}, performance degrades sharply at the boundaries between
+physically similar sub-classes. Late-type M dwarfs against L brown dwarfs, or
+star-forming against starburst galaxies, are separated by subtle and overlapping
+spectral features. These hard confusion pairs are exactly the regime in which
+extra model capacity or a different inductive bias might still pay off, and they
+motivate the central question of this thesis.
 
-IEEE will do the final formatting of your paper. If your paper is intended
-for a conference, please observe the conference page limits.
+Quantum machine learning proposes that parameterised quantum circuits can
+represent functions whose classical approximation would require substantially more
+parameters. A Variational Quantum Circuit (VQC) is a quantum circuit whose gates
+carry trainable rotation angles~\cite{perezsalinas2020reuploading}. These angles
+are optimised by classical gradient descent, much like the weights of a neural
+network, while the circuit itself exploits the exponentially large Hilbert space
+($2^n$ dimensions for $n$ qubits) and the entangling structure of multi-qubit
+gates. On near-term hardware the realistic ambition is not asymptotic quantum
+advantage but the more modest claim that a small VQC, combined with classical pre-
+and post-processing, can match a larger classical model on a specific task.
+Testing even this claim fairly is delicate, because an apparent quantum advantage
+can easily turn out to be an artefact of an under-trained classical baseline rather
+than a property of the quantum circuit. In this work all quantum models run on a
+noiseless classical statevector simulator~\cite{bergholm2018pennylane} with eight
+qubits or fewer, matching what is realistic on present-day hardware. We make no
+claim about asymptotic advantage and run no experiments on physical quantum
+devices.
 
-\subsection{Abbreviations and Acronyms}
-Define abbreviations and acronyms the first time they are used in the text,
-even after they have already been defined in the abstract. Abbreviations
-such as IEEE, SI, ac, and dc do not have to be defined. Abbreviations that
-incorporate periods should not have spaces: write ``C.N.R.S.,'' not ``C. N.
-R. S.'' Do not use abbreviations in the title unless they are unavoidable
-(for example, ``IEEE'' in the title of this article).
+This thesis addresses one deliberately controlled question. Under strict
+parameter-matching and identical training conditions, does a VQC offer measurable
+benefits over a classical model of equal capacity on hard SDSS classification
+tasks? Rather than comparing against an arbitrary classical network, every quantum
+model is benchmarked against a classical mirror with the same trainable-parameter
+budget and an otherwise identical surrounding pipeline, meaning the same data,
+preprocessing, feature extractor, classifier head, optimiser and random seeds.
+This discipline lets any observed difference be attributed to the contested
+component itself rather than to incidental differences in scale or tuning.
+Concretely we ask whether a small VQC outperforms a parameter-matched classical
+model on a hard binary confusion pair and, if a gap appears in a na{\"i}ve setup,
+what causes it; whether a VQC attached as a small hybrid head on a strong frozen
+feature extractor can match a substantially larger classical head; and how the
+geometry of the VQC and the choice of input encoding affect both accuracy and
+per-class recall balance.
 
-\subsection{Other Recommendations}
-Use one space after periods and colons. Hyphenate complex modifiers:
-``zero-field-cooled magnetization.'' Avoid dangling participles, such as,
-``Using \eqref{eq}, the potential was calculated.'' [It is not clear who or what
-used \eqref{eq}.] Write instead, ``The potential was calculated by using \eqref{eq},'' or
-``Using \eqref{eq}, we calculated the potential.''
+Our investigation rests on a common SDSS pipeline that consolidates noisy,
+long-tailed raw subclass labels into a curated 62-class problem of roughly 200,000
+spectra, on a strict fair-comparison discipline, and on what we treat as an equally
+important honesty discipline. When an apparent quantum advantage first surfaced on
+our hardest binary task, it was not reported as a result but diagnosed, traced to a
+pathological optimisation issue in the classical baseline, corrected and
+re-measured. Once classical baselines are properly parameter-matched and these
+artefacts are removed, the VQC and the classical models turn out to be
+statistically tied on top-line metrics, and the genuinely quantum-specific effects
+we report are deliberately the modest ones that survive this scrutiny.
 
-Use a zero before decimal points: ``0.25,'' not ``.25.'' Use
-``cm$^{3}$,'' not ``cc.'' Indicate sample dimensions as ``0.1 cm
-$\times $ 0.2 cm,'' not ``0.1 $\times $ 0.2 cm$^{2}$.'' The
-abbreviation for ``seconds'' is ``s,'' not ``sec.'' Use
-``Wb/m$^{2}$'' or ``webers per square meter,'' not
-``webers/m$^{2}$.'' When expressing a range of values, write ``7 to
-9'' or ``7--9,'' not ``7$\sim $9.''
+The thesis makes three contributions. First, and most substantially, we build a
+large classical CNN-Transformer baseline of about 14 million parameters, which we
+call the Beast, train it on the full 62-class problem where it reaches around 84\%
+top-1 accuracy, and use it as the basis for a systematic analysis of the weak
+classes where fine-grained spectral classification actually breaks down. This
+analysis pinpoints the hard confusion pairs and exposes the minority-class recall
+imbalance that a single accuracy figure hides, and the frozen Beast then doubles as
+a 128-dimensional feature extractor for the quantum experiments. Second, we present
+a controlled comparison of small VQCs against parameter-matched classical models on
+these hard classes. A 556-parameter hybrid VQC head matches a roughly
+ten-times-larger classical head at equal accuracy while a same-size purely
+classical control fails to reproduce the result, isolating the contribution to the
+quantum circuit, and within the VQC family wide-shallow circuits cut the
+minority-class recall gap from roughly 23 to 8 percentage points against the
+conventional narrow-and-deep heuristic associated with barren
+plateaus~\cite{mcclean2018barren}. Along the way we document how dead-ReLU gradient
+starvation in a narrow classical bottleneck can manufacture an illusory quantum
+advantage, and we question whether counting trainable parameters is even a fair
+axis of comparison, since one VQC layer entangles all qubits over an exponentially
+large state space and 500 quantum parameters need not be the moral equivalent of
+500 classical ones. Third, we turn from parameter efficiency to robustness and ask
+how the two paradigms cope when the data itself degrades. We implement a
+quanvolutional neural network, in which a small quantum circuit is slid across the
+spectrum as a learnable convolutional filter, encoding each local patch through
+data re-uploading and entangling gates and reading it out in several measurement
+bases to form its output feature channels~\cite{henderson2020quanvolutional}. This
+quantum filter is pitted against a classical convolutional filter under
+progressively increasing input noise in two complementary settings, one in which
+the quantum and classical filters are held at a comparable parameter budget and one
+in which the quantum filter faces a deliberately strong classical convolutional
+network with no attempt to match parameter counts at all. The second setting is the
+more demanding stress test, since it sets the parameter-counting lens aside
+entirely and asks only whether the quantum model can keep up with a genuinely
+capable classical competitor as noise grows. Across the noise sweep the quantum
+filter degrades slightly more gracefully than both classical baselines, a small but
+consistent advantage that we report with confidence intervals rather than as single
+point estimates, so that the size of the effect can be weighed against its
+uncertainty.
 
-A parenthetical statement at the end of a sentence is punctuated outside of
-the closing parenthesis (like this). (A parenthetical sentence is punctuated
-within the parentheses.) In American English, periods and commas are within
-quotation marks, like ``this period.'' Other punctuation is ``outside''!
-Avoid contractions; for example, write ``do not'' instead of ``don't.'' The
-serial comma is preferred: ``A, B, and C'' instead of ``A, B and C.''
+This thesis focuses on controlled empirical comparison rather than on new quantum
+algorithms, and the full reproducibility package of data pipeline, architectures,
+training scripts and logged runs is made publicly
+available.\footnote{\url{https://github.com/ShpetimV/QML-AnalyzingGalaxies}} We do
+not demonstrate asymptotic quantum advantage, we do not evaluate on physical
+quantum hardware or model device noise, and our findings are specific to SDSS
+spectra, limitations that are stated plainly and revisited in the discussion.
 
-If you wish, you may write in the first person singular or plural and use
-the active voice (``I observed that $\ldots$'' or ``We observed that $\ldots$''
-instead of ``It was observed that $\ldots$''). Remember to check spelling. If
-your native language is not English, please get a native English-speaking
-colleague to carefully proofread your paper.
-
-Try not to use too many typefaces in the same article. You're writing
-scholarly papers, not ransom notes. Also please remember that MathJax
-can't handle really weird typefaces.
-
-\subsection{Equations}
-Number equations consecutively with equation numbers in parentheses flush
-with the right margin, as in \eqref{eq}. To make your equations more
-compact, you may use the solidus (~/~), the exp function, or appropriate
-exponents. Use parentheses to avoid ambiguities in denominators. Punctuate
-equations when they are part of a sentence, as in
-\begin{equation}E=mc^2.\label{eq}\end{equation}
-
-Be sure that the symbols in your equation have been defined before the
-equation appears or immediately following. Italicize symbols ($T$ might refer
-to temperature, but T is the unit tesla). Refer to ``\eqref{eq},'' not ``Eq. \eqref{eq}''
-or ``equation \eqref{eq},'' except at the beginning of a sentence: ``Equation \eqref{eq}
-is $\ldots$ .''
-
-\subsection{\LaTeX-Specific Advice}
-
-Please use ``soft'' (e.g., \verb|\eqref{Eq}|) cross references instead
-of ``hard'' references (e.g., \verb|(1)|). That will make it possible
-to combine sections, add equations, or change the order of figures or
-citations without having to go through the file line by line.
-
-Please don't use the \verb|{eqnarray}| equation environment. Use
-\verb|{align}| or \verb|{IEEEeqnarray}| instead. The \verb|{eqnarray}|
-environment leaves unsightly spaces around relation symbols.
-
-Please note that the \verb|{subequations}| environment in {\LaTeX}
-will increment the main equation counter even when there are no
-equation numbers displayed. If you forget that, you might write an
-article in which the equation numbers skip from (17) to (20), causing
-the copy editors to wonder if you've discovered a new method of
-counting.
-
-    {\BibTeX} does not work by magic. It doesn't get the bibliographic
-data from thin air but from .bib files. If you use {\BibTeX} to produce a
-bibliography you must send the .bib files.
-
-    {\LaTeX} can't read your mind. If you assign the same label to a
-subsubsection and a table, you might find that Table I has been cross
-referenced as Table IV-B3.
-
-{\LaTeX} does not have precognitive abilities. If you put a
-\verb|\label| command before the command that updates the counter it's
-supposed to be using, the label will pick up the last counter to be
-cross referenced instead. In particular, a \verb|\label| command
-should not go before the caption of a figure or a table.
-
-Do not use \verb|\nonumber| inside the \verb|{array}| environment. It
-will not stop equation numbers inside \verb|{array}| (there won't be
-any anyway) and it might stop a wanted equation number in the
-surrounding equation.
+The remainder of this thesis is organised as follows. The next section reviews the
+background on SDSS spectra, classical deep learning and variational quantum
+circuits. We then describe the data pipeline, the model architectures and the
+fair-comparison and training protocol, before presenting the results of the
+classical baseline and the experiments that follow. The findings, their limitations
+and their implications are then discussed, before the thesis concludes with an
+outlook on future work.
