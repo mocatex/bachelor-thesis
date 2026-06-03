@@ -1,124 +1,62 @@
 \section{Introduction}
 \label{sec:introduction}
-\PARstart{T}{he} Sloan Digital Sky Survey (SDSS) is a multi-decade astronomical
-survey that has measured more than two million optical spectra of stars, galaxies
-and quasars~\cite{york2000sdss}. Each spectrum is a one-dimensional
-intensity-versus-wavelength signal that encodes the chemical composition,
-temperature, redshift and astrophysical class of its source. Such data feeds
-research in stellar population studies, galaxy evolution, quasar demographics and
-large-scale structure cosmology. Turning raw spectra into usable scientific labels
-at this scale is difficult, since manual labelling cannot keep pace with the rate
-at which spectra are collected, hence the need for automated classifications.
+\PARstart{T}{he} Sloan Digital Sky Survey (SDSS) has measured more than two
+million optical spectra of stars, galaxies and quasars~\cite{york2000sdss}, each
+containing thousands of flux measurements across a range of wavelengths, effectively a
+one-dimensional signal encoding the composition, temperature, redshift and class
+of its source. Our starting point was to establish strong classical baselines for
+classifying these spectra. The familiar three-way task of separating stars,
+galaxies and quasars turned out to be essentially solved, with even modest
+classical networks and modern deep models~\cite{zhong2024gasnet} reaching roughly
+99\% accuracy. Other works have pushed the problem harder by including up to 13 classes ~\cite{zhong2024gasnet}.
+We therefore pushed the problem even harder, towards fine-grained
+subclasses, where accuracy falls away at the boundaries between physically similar
+types such as late-type M dwarfs and L brown dwarfs. These hard cases raise the
+question that drives this thesis, namely whether quantum machine learning can add
+anything useful where strong classical models begin to struggle.
 
-Modern classical deep learning already handles the coarse problem comfortably.
-Deciding whether a spectrum belongs to a star, a galaxy or a quasar is close to
-solved by current neural spectral classifiers~\cite{zhong2024gasnet}, and in our
-own preliminary experiments even modest classical networks reach roughly 99\%
-accuracy on this three-way classification. The interesting difficulty lies one
-level deeper. When the task is refined from \emph{what kind of object} to
-\emph{which exact subtype}, performance degrades sharply at the boundaries between
-physically similar sub-classes. Late-type M dwarfs against L brown dwarfs, or
-star-forming against starburst galaxies, are separated by subtle and overlapping
-spectral features. These hard confusion pairs are exactly the regime in which
-extra model capacity or a different inductive bias might still pay off, and they
-motivate the central question of this thesis.
+A Variational Quantum Circuit (VQC) is a circuit whose gate rotation angles are
+trained by gradient descent~\cite{perezsalinas2020reuploading}, exploiting an
+exponentially large state space and multi-qubit entanglement. We approach it as an
+empirical and deliberately cautious investigation rather than an assumption of
+quantum superiority. In our experiments a purely quantum model never trained well
+on raw spectra, a difficulty consistent with known trainability obstacles in
+variational circuits~\cite{mcclean2018barren}, so every quantum model we study is
+hybrid, a classical feature extractor followed by a small VQC. All circuits run on
+a noiseless statevector simulator~\cite{bergholm2018pennylane} with eight qubits or
+fewer, and we make no claim about real quantum hardware. The guiding question is
+whether such hybrids offer any measurable benefit over comparably built classical
+models on the hardest SDSS tasks, and because these comparisons are sensitive to
+small implementation choices we treat every result carefully.
 
-Quantum machine learning proposes that parameterised quantum circuits can
-represent functions whose classical approximation would require substantially more
-parameters. A Variational Quantum Circuit (VQC) is a quantum circuit whose gates
-carry trainable rotation angles~\cite{perezsalinas2020reuploading}. These angles
-are optimised by classical gradient descent, much like the weights of a neural
-network, while the circuit itself exploits the exponentially large Hilbert space
-($2^n$ dimensions for $n$ qubits) and the entangling structure of multi-qubit
-gates. On near-term hardware the realistic ambition is not asymptotic quantum
-advantage but the more modest claim that a small VQC, combined with classical pre-
-and post-processing, can match a larger classical model on a specific task.
-Testing even this claim fairly is delicate, because an apparent quantum advantage
-can easily turn out to be an artefact of an under-trained classical baseline rather
-than a property of the quantum circuit. In this work all quantum models run on a
-noiseless classical statevector simulator~\cite{bergholm2018pennylane} with eight
-qubits or fewer, matching what is realistic on present-day hardware. We make no
-claim about asymptotic advantage and run no experiments on physical quantum
-devices.
+The thesis makes three contributions. First, we train a large classical
+CNN-Transformer baseline of about 14 million parameters, the Beast, on a curated
+62-class problem where it reaches around 84\% accuracy, and use it to analyse the
+weak classes where fine-grained classification breaks down, exposing the
+minority-class recall imbalance that a single accuracy figure hides. Second, we
+compare quantum and classical heads at matched parameter budgets on these hard
+tasks, and find equal performance rather than advantage. On the hardest confusion pair a VQC
+and a similarly structured convolutional network reach the same accuracy. On a
+four-class task a 556-parameter hybrid matches both a parameter-matched classical
+head and a nine-times-larger classical head at about 96\% accuracy. An apparent
+quantum edge over the small classical baseline proved to be a dead-ReLU artefact in
+a narrow four-unit layer, which a Tanh control of the same size fully removes,
+leaving the quantum and classical heads equal on every measured axis. The largest
+accuracy swing in the experiment came from this activation choice rather than from
+the quantum circuit, which shows that parameter count alone is the wrong lens and
+that a quantum result must always be checked against a properly tuned classical
+control. The remaining parameter saving belongs to the frozen feature extractor and
+not to quantum computing. Third, we study noise robustness by
+comparing a quanvolutional hybrid~\cite{henderson2020quanvolutional}, a quantum
+circuit slid across the spectrum as a learnable filter, against strong classical
+networks under increasing input noise, where it degrades slightly more gracefully,
+a small but consistent edge that we report with confidence intervals.
 
-This thesis addresses one deliberately controlled question. Under strict
-parameter-matching and identical training conditions, does a VQC offer measurable
-benefits over a classical model of equal capacity on hard SDSS classification
-tasks? Rather than comparing against an arbitrary classical network, every quantum
-model is benchmarked against a classical mirror with the same trainable-parameter
-budget and an otherwise identical surrounding pipeline, meaning the same data,
-preprocessing, feature extractor, classifier head, optimiser and random seeds.
-This discipline lets any observed difference be attributed to the contested
-component itself rather than to incidental differences in scale or tuning.
-Concretely we ask whether a small VQC outperforms a parameter-matched classical
-model on a hard binary confusion pair and, if a gap appears in a na{\"i}ve setup,
-what causes it; whether a VQC attached as a small hybrid head on a strong frozen
-feature extractor can match a substantially larger classical head; and how the
-geometry of the VQC and the choice of input encoding affect both accuracy and
-per-class recall balance.
-
-Our investigation rests on a common SDSS pipeline that consolidates noisy,
-long-tailed raw subclass labels into a curated 62-class problem of roughly 200,000
-spectra, on a strict fair-comparison discipline, and on what we treat as an equally
-important honesty discipline. When an apparent quantum advantage first surfaced on
-our hardest binary task, it was not reported as a result but diagnosed, traced to a
-pathological optimisation issue in the classical baseline, corrected and
-re-measured. Once classical baselines are properly parameter-matched and these
-artefacts are removed, the VQC and the classical models turn out to be
-statistically tied on top-line metrics, and the genuinely quantum-specific effects
-we report are deliberately the modest ones that survive this scrutiny.
-
-The thesis makes three contributions. First, and most substantially, we build a
-large classical CNN-Transformer baseline of about 14 million parameters, which we
-call the Beast, train it on the full 62-class problem where it reaches around 84\%
-top-1 accuracy, and use it as the basis for a systematic analysis of the weak
-classes where fine-grained spectral classification actually breaks down. This
-analysis pinpoints the hard confusion pairs and exposes the minority-class recall
-imbalance that a single accuracy figure hides, and the frozen Beast then doubles as
-a 128-dimensional feature extractor for the quantum experiments. Second, we present
-a controlled comparison of small VQCs against parameter-matched classical models on
-these hard classes. A 556-parameter hybrid VQC head matches a roughly
-ten-times-larger classical head at equal accuracy while a same-size purely
-classical control fails to reproduce the result, isolating the contribution to the
-quantum circuit, and within the VQC family wide-shallow circuits cut the
-minority-class recall gap from roughly 23 to 8 percentage points against the
-conventional narrow-and-deep heuristic associated with barren
-plateaus~\cite{mcclean2018barren}. Along the way we document how dead-ReLU gradient
-starvation in a narrow classical bottleneck can manufacture an illusory quantum
-advantage, and we question whether counting trainable parameters is even a fair
-axis of comparison, since one VQC layer entangles all qubits over an exponentially
-large state space and 500 quantum parameters need not be the moral equivalent of
-500 classical ones. Third, we turn from parameter efficiency to robustness and ask
-how the two paradigms cope when the data itself degrades. We implement a
-quanvolutional neural network, in which a small quantum circuit is slid across the
-spectrum as a learnable convolutional filter, encoding each local patch through
-data re-uploading and entangling gates and reading it out in several measurement
-bases to form its output feature channels~\cite{henderson2020quanvolutional}. This
-quantum filter is pitted against a classical convolutional filter under
-progressively increasing input noise in two complementary settings, one in which
-the quantum and classical filters are held at a comparable parameter budget and one
-in which the quantum filter faces a deliberately strong classical convolutional
-network with no attempt to match parameter counts at all. The second setting is the
-more demanding stress test, since it sets the parameter-counting lens aside
-entirely and asks only whether the quantum model can keep up with a genuinely
-capable classical competitor as noise grows. Across the noise sweep the quantum
-filter degrades slightly more gracefully than both classical baselines, a small but
-consistent advantage that we report with confidence intervals rather than as single
-point estimates, so that the size of the effect can be weighed against its
-uncertainty.
-
-This thesis focuses on controlled empirical comparison rather than on new quantum
-algorithms, and the full reproducibility package of data pipeline, architectures,
-training scripts and logged runs is made publicly
-available.\footnote{\url{https://github.com/ShpetimV/QML-AnalyzingGalaxies}} We do
-not demonstrate asymptotic quantum advantage, we do not evaluate on physical
-quantum hardware or model device noise, and our findings are specific to SDSS
-spectra, limitations that are stated plainly and revisited in the discussion.
-
-The remainder of this thesis is organised as follows. The next section reviews the
-background on SDSS spectra, classical deep learning and variational quantum
-circuits. We then describe the data pipeline, the model architectures and the
-fair-comparison and training protocol, before presenting the results of the
-classical baseline and the experiments that follow. The findings, their limitations
-and their implications are then discussed, before the thesis concludes with an
-outlook on future work.
+This work is an empirical study rather than a development of new quantum
+algorithms. It evaluates only on SDSS spectra and noiseless simulation and makes no
+claim of a general quantum advantage or general parameter efficiency. The full
+implementation is released as a reproducibility
+package.\footnote{\url{https://github.com/ShpetimV/QML-AnalyzingGalaxies}} The
+remainder of the thesis reviews the necessary background, describes the data and
+methodology, presents the baseline and experimental results and closes with a
+discussion and outlook.

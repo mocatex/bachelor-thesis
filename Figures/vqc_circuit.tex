@@ -1,0 +1,15 @@
+% Standalone source for the VQC circuit figure (Model B).
+% Edit this file, then recompile it to regenerate vqc_circuit.pdf:
+%     pdflatex vqc_circuit.tex
+% The main thesis includes the resulting PDF via \includegraphics.
+\documentclass[border=8pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{quantikz2}
+\begin{document}
+\begin{quantikz}[column sep=0.3cm, row sep=0.45cm]
+\lstick{$\ket{0}$} & \gate{R_Y(x_1)}\gategroup[4,steps=6,style={dashed,rounded corners,inner xsep=4pt},background]{one layer, repeated $L=5$ times} & \gate{R_Y(\theta^{(\ell)}_1)} & \ctrl{1} &          &          & \targ{}   & \meter{} \\
+\lstick{$\ket{0}$} & \gate{R_Y(x_2)} & \gate{R_Y(\theta^{(\ell)}_2)} & \targ{}   & \ctrl{1} &          &           & \meter{} \\
+\lstick{$\ket{0}$} & \gate{R_Y(x_3)} & \gate{R_Y(\theta^{(\ell)}_3)} &           & \targ{}  & \ctrl{1} &           & \meter{} \\
+\lstick{$\ket{0}$} & \gate{R_Y(x_4)} & \gate{R_Y(\theta^{(\ell)}_4)} &           &          & \targ{}  & \ctrl{-3} & \meter{}
+\end{quantikz}
+\end{document}
