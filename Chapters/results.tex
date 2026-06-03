@@ -6,6 +6,130 @@ training procedure and the construction of the frozen feature extractor are
 described in detail in the methodology, so here we recall only what is needed to
 read the figures and tables.
 
+\subsection{Experiment 1: Binary Classification of the Hardest Pair}
+\label{sec:exp1}
+
+Experiment 1 compares the binary quantum and classical models of
+Section~\ref{sec:exp1_methods} on \texttt{STAR\_BROWN\_DWARF\_L} against
+\texttt{STAR\_M8}, the single hardest confusion pair in the full-class problem. The
+quantitative comparison is the seed-averaged sweep of Table~\ref{tab:exp1_sweep},
+while the confusion matrices and training curves shown here are representative single
+runs rather than seed averages, so their exact numbers differ slightly from the
+table.
+
+\begin{table*}[t]
+\centering
+\caption{Binary sweep results, reported as mean $\pm$ standard deviation over three
+seeds. Gap is the \texttt{STAR\_M8} recall minus the \texttt{STAR\_BROWN\_DWARF\_L}
+recall, so a smaller value is more balanced. Recall, gap and ROC-AUC are given as
+means. All configurations have about 24500 trainable parameters, dominated by the
+shared CNN extractor.}
+\label{tab:exp1_sweep}
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{llcccccc}
+\toprule
+Model & Config & Accuracy & Macro-F1 & BROWN rec & M8 rec & Gap & ROC-AUC \\
+\midrule
+Quantum   & 2q $\times$ 12L & $0.863\pm0.005$          & $0.830\pm0.005$          & 0.70 & 0.93 & 0.232 & 0.910 \\
+Quantum   & 3q $\times$ 8L  & $0.865\pm0.012$          & $0.835\pm0.009$          & 0.72 & 0.93 & 0.205 & 0.913 \\
+Quantum   & 4q $\times$ 6L  & $\mathbf{0.869\pm0.008}$ & $0.840\pm0.005$          & 0.73 & 0.93 & 0.200 & 0.927 \\
+Quantum   & 6q $\times$ 4L  & $0.860\pm0.012$          & $0.833\pm0.013$          & 0.76 & 0.90 & 0.140 & 0.924 \\
+Quantum   & 8q $\times$ 3L  & $0.860\pm0.013$          & $0.837\pm0.014$          & \textbf{0.80} & 0.89 & \textbf{0.083} & 0.927 \\
+Classical & 4 features      & $0.868\pm0.016$          & $\mathbf{0.843\pm0.016}$ & 0.77 & 0.91 & 0.136 & \textbf{0.933} \\
+Classical & 8 features      & $0.862\pm0.004$          & $0.836\pm0.006$          & 0.77 & 0.90 & 0.127 & 0.922 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\subsubsection{Top-line Parity}
+
+The headline is parity. The best quantum configuration, 4 qubits with 6 layers, and
+the best classical configuration, four features, sit within one standard deviation
+of each other on both accuracy and macro-F1, at 0.869 against 0.868 accuracy and
+0.840 against 0.843 macro-F1. No configuration meaningfully outperforms another on
+top-line metrics, and the classical four-feature mirror in fact takes the highest
+ROC-AUC at 0.933. There is therefore no quantum accuracy advantage on this task,
+which also retires the large gap seen in an early uncontrolled run before the
+classical baseline was built with a robust activation.
+
+\subsubsection{Circuit Geometry and Class Balance}
+
+The more interesting pattern lies within the quantum family. As the circuit moves
+from narrow and deep, 2 qubits with 12 layers, to wide and shallow, 8 qubits with 3
+layers, recall on the minority class \texttt{STAR\_BROWN\_DWARF\_L} climbs steadily
+from 0.70 to 0.80 while recall on \texttt{STAR\_M8} falls from 0.93 to 0.89. The
+recall gap between the two classes shrinks from 23.2 to 8.3 percentage points, and
+the wide-shallow circuit also has the smallest seed-to-seed variation on the
+minority recall, so it is reliably the most balanced classifier at only a small cost
+to overall accuracy. This runs against the usual expectation, since wider circuits
+are normally associated with barren-plateau trainability problems, yet here the
+wide-shallow shape both trains well and balances the classes best. We regard this
+balance behaviour as the most defensible quantum-specific finding of the experiment.
+The representative confusion matrices in Figure~\ref{fig:exp1_cm} show the same
+picture, with the residual leakage concentrated on the minority class.
+
+\begin{figure*}[t]
+\centering
+\begin{subfigure}[t]{0.49\textwidth}
+  \includegraphics[width=\linewidth]{Figures/quantum_exp1_cm_test.png}
+  \caption{Quantum model (representative run).}
+  \label{fig:exp1_cm_q}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{0.49\textwidth}
+  \includegraphics[width=\linewidth]{Figures/classical_exp1_cm_test.png}
+  \caption{Classical mirror (representative run).}
+  \label{fig:exp1_cm_c}
+\end{subfigure}
+\caption{Representative single-run test confusion matrices for the binary task. Both
+models confuse the two spectrally adjacent classes, with the residual leakage
+concentrated on the minority class \texttt{STAR\_BROWN\_DWARF\_L}. Because these are
+single runs rather than seed averages, the values differ slightly from
+Table~\ref{tab:exp1_sweep}.}
+\label{fig:exp1_cm}
+\end{figure*}
+
+\subsubsection{Training Dynamics}
+
+Figure~\ref{fig:exp1_training} shows representative single-run training histories for
+the quantum and the classical model. In both, the training loss and training
+accuracy descend smoothly and almost monotonically, while the validation curves are
+markedly spiky, with validation accuracy swinging between roughly 0.30 and 0.85 from
+one epoch to the next. It is tempting to read these spikes as a barren plateau, the
+vanishing-gradient pathology of wide random circuits, but the evidence points
+elsewhere. A barren plateau would flatten the training curve, since the model would
+receive almost no gradient and would not learn, whereas here the training loss falls
+smoothly and the model reaches about 0.87 test accuracy, so informative gradients are
+clearly present. The instability is confined to the validation metric, and it
+appears just as strongly in the purely classical mirror, so it cannot be a quantum
+trainability effect. The more likely cause is the combination of a very narrow
+feature bottleneck, two heavily overlapping classes and batch-normalisation
+statistics, where small per-epoch weight changes move the decision boundary enough
+to flip many borderline spectra at once. The smooth training curves and the solid
+final test metrics confirm that the models train successfully, and that the spikes
+are noise in the model-selection metric rather than a failure to learn.
+
+\begin{figure*}[t]
+\centering
+\begin{subfigure}[t]{0.49\textwidth}
+  \includegraphics[width=\linewidth]{Figures/quantum_exp1_training_history.png}
+  \caption{Quantum model.}
+  \label{fig:exp1_train_q}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{0.49\textwidth}
+  \includegraphics[width=\linewidth]{Figures/classical_exp1_training_history.png}
+  \caption{Classical mirror.}
+  \label{fig:exp1_train_c}
+\end{subfigure}
+\caption{Representative training histories for the binary task. In both models the
+training curves (blue) descend smoothly while the validation curves (yellow) are
+spiky. The instability appears in the classical mirror as strongly as in the quantum
+model, which rules out a quantum barren plateau and points instead to
+model-selection noise from the narrow bottleneck and the overlapping classes.}
+\label{fig:exp1_training}
+\end{figure*}
+
+\FloatBarrier
 \subsection{Experiment 3: Quantum and Classical Heads on Frozen Features}
 \label{sec:exp3}
 

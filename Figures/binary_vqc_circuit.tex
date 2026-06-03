@@ -1,0 +1,16 @@
+% Standalone source for the binary-experiment VQC circuit (AngleEncodingClassifier).
+% Edit this file, then recompile to regenerate binary_vqc_circuit.pdf:
+%     pdflatex binary_vqc_circuit.tex
+% Shown for the n_qubits = 4 case; the sweep varies (n_qubits, n_layers) at a
+% constant 72 trainable angles. The trainable gate here is the full Rot(alpha,beta,gamma).
+\documentclass[border=8pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{quantikz2}
+\begin{document}
+\begin{quantikz}[column sep=0.3cm, row sep=0.45cm]
+\lstick{$\ket{0}$} & \gate{R_Y(x_1)}\gategroup[4,steps=6,style={dashed,rounded corners,inner xsep=4pt},background]{one layer, repeated $L$ times} & \gate{\mathrm{Rot}(\theta^{(\ell)}_1)} & \ctrl{1} &          &          & \targ{}   & \meter{} \\
+\lstick{$\ket{0}$} & \gate{R_Y(x_2)} & \gate{\mathrm{Rot}(\theta^{(\ell)}_2)} & \targ{}   & \ctrl{1} &          &           & \meter{} \\
+\lstick{$\ket{0}$} & \gate{R_Y(x_3)} & \gate{\mathrm{Rot}(\theta^{(\ell)}_3)} &           & \targ{}  & \ctrl{1} &           & \meter{} \\
+\lstick{$\ket{0}$} & \gate{R_Y(x_4)} & \gate{\mathrm{Rot}(\theta^{(\ell)}_4)} &           &          & \targ{}  & \ctrl{-3} & \meter{}
+\end{quantikz}
+\end{document}
