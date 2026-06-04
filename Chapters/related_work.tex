@@ -1,0 +1,106 @@
+\section{Background and Related Work}
+\label{sec:related}
+
+This thesis sits at the intersection of two research strands, the automated
+classification of astronomical spectra and the use of variational quantum circuits
+for machine learning. This section reviews the work that the thesis builds on and
+positions our contribution against it.
+
+\subsection{Deep Learning for Spectral Classification}
+\label{sec:rel_spectra}
+
+The Sloan Digital Sky Survey has produced more than two million optical spectra and
+established large-scale spectroscopy as a routine source of
+data~\cite{york2000sdss}. The classification and redshift measurement of these
+spectra were originally handled by template-fitting pipelines, in which an observed
+spectrum is matched against a library of stellar, galaxy and quasar templates by a
+least-squares fit. The SDSS-III pipeline of Bolton et al.~\cite{bolton2012boss} is a
+mature example and remains a standard reference for the survey. Template fitting is
+accurate on clean spectra but scales poorly to the volume of modern surveys and
+degrades on noisy or atypical objects.
+
+Deep learning has since become the dominant approach. Sharma et
+al.~\cite{sharma2020cnn} showed that convolutional neural networks classify stellar
+spectra directly from flux and that deeper networks exploit finer spectral detail
+than shallow models. More recently the Galaxy Spectra Neural Network of Zhong et
+al.~\cite{zhong2024gasnet}, GaSNet-II, performs joint classification and redshift
+prediction across stars, galaxies and quasars and reaches roughly 99\% accuracy on
+the coarse three-way problem while scaling to a customisable number of subclasses.
+GaSNet-II is the natural reference point for the classical side of this work, and we
+benchmark our own classical baselines against the level of performance it reports.
+What this body of work establishes is that the coarse classification problem is
+essentially solved by classical deep learning, which is precisely why we move to the
+harder fine-grained subclasses where classical models still struggle.
+
+\subsection{Variational Quantum Circuits}
+\label{sec:rel_vqc}
+
+A variational quantum circuit is a parameterised quantum circuit whose gate angles
+are optimised by classical gradient descent, a paradigm introduced for near-term
+hardware as quantum circuit learning by Mitarai et al.~\cite{mitarai2018qcl} and
+surveyed more broadly in the reviews of quantum machine learning by Biamonte et
+al.~\cite{biamonte2017qml} and of variational quantum algorithms by Cerezo et
+al.~\cite{cerezo2021vqa}. The appeal is that a small circuit can represent functions
+that live in an exponentially large Hilbert space, which raises the question of how
+expressive such models really are and how their inputs should be encoded.
+
+Two results inform the design choices made in this thesis. P{\'e}rez-Salinas et
+al.~\cite{perezsalinas2020reuploading} introduced data re-uploading, in which the
+classical input is re-injected at every layer of the circuit, and showed that even a
+single qubit can act as a universal classifier when its data is uploaded repeatedly.
+Schuld et al.~\cite{schuld2021encoding} made the underlying mechanism precise by
+showing that a variational quantum model is effectively a Fourier series in its
+input, with the accessible frequencies fixed by the data-encoding gates, so the
+encoding strategy directly bounds the functions the model can represent. Against
+these expressivity results stands a trainability obstacle. McClean et
+al.~\cite{mcclean2018barren} showed that deep, wide, randomly initialised circuits
+suffer barren plateaus, where gradients vanish exponentially in the number of qubits
+and training stalls. This trade-off between width, depth and trainability is exactly
+what our architecture sweep probes.
+
+\subsection{Quantum Kernels and Quantum Support Vector Machines}
+\label{sec:rel_qsvm}
+
+A separate line of work treats the quantum circuit not as a trainable classifier but
+as a fixed feature map. Schuld and Killoran~\cite{schuld2019feature} and, in the same
+year, Havl{\'\i}{\v{c}}ek et al.~\cite{havlicek2019} showed that a quantum circuit can
+embed classical data into a high-dimensional feature Hilbert space whose inner
+products define a kernel, which a classical support vector machine then uses for
+classification. This reframes the search for a quantum advantage as a question about
+the kernel rather than about a trained network. Liu et al.~\cite{liu2021speedup} gave
+a rigorous example of such an advantage by constructing a classification task, based
+on the discrete logarithm problem, on which a quantum kernel provably outperforms any
+classical learner. These guarantees are important but contingent on carefully
+constructed problem structure, and no comparable advantage is known for generic
+real-world data such as the spectra studied here. We therefore do not pursue the
+kernel route, but we return to it in the discussion as the most principled
+alternative to the hybrid models we study.
+
+\subsection{Quantum Convolution}
+\label{sec:rel_quanv}
+
+Convolutional structure has been carried into the quantum setting in two distinct
+ways. Cong et al.~\cite{cong2019qcnn} proposed the quantum convolutional neural
+network, a circuit with a convolution-and-pooling structure that acts on quantum
+states and trains with a number of parameters that grows only logarithmically with
+the system size. Henderson et al.~\cite{henderson2020quanvolutional} instead
+proposed the quanvolutional layer, in which a small fixed or trainable quantum
+circuit is slid across a classical input like a convolutional kernel, transforming
+local patches into feature maps that a classical network then processes. The
+quanvolutional approach is the one most relevant to this thesis, since it applies a
+small circuit repeatedly to a large classical signal rather than once at a bottleneck,
+and our noise-robustness experiment builds directly on it.
+
+\subsection{Positioning of this Thesis}
+\label{sec:rel_position}
+
+The work above leaves a specific gap. Deep learning is the established tool for
+spectral classification, and variational quantum circuits are an actively studied
+alternative, but the two have rarely been compared on a realistic scientific signal
+under a fair protocol. Most applied quantum machine learning places a powerful
+classical network in front of a small circuit and credits the result to the quantum
+component without an equal-capacity classical control. This thesis closes that gap by
+benchmarking hybrid variational circuits against parameter-matched classical models
+on hard SDSS subclass tasks, with the same data, the same surrounding pipeline and a
+deliberate honesty discipline, and by studying both the binary and the quanvolutional
+settings discussed above.

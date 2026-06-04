@@ -89,13 +89,13 @@ of parameters.
 \centering
 \includegraphics[width=\columnwidth]{Figures/binary_vqc_circuit.pdf}
 \caption{Variational quantum circuit of the binary hybrid model, shown for the
-four-qubit case. Each qubit starts in $|0\rangle$. Within every layer the features
-$x_q$ are re-uploaded through $R_Y(x_q)$ rotations, followed by a trainable
-single-qubit rotation $\mathrm{Rot}(\theta^{(\ell)}_q)$ with three angles per qubit
-per layer, and a ring of CNOT gates. The dashed block is repeated $L$ times, and
-each qubit is measured in the Pauli-$Z$ basis. The sweep varies
-$(n_\text{qubits}, n_\text{layers})$ over $(2,12),(3,8),(4,6),(6,4),(8,3)$, all at a
-constant $n_\text{qubits}\cdot n_\text{layers}\cdot 3 = 72$ trainable angles.}
+four-qubit case. Within every layer the features $x_q$ are re-uploaded through
+$R_Y(x_q)$ rotations, followed by a trainable single-qubit rotation
+$\mathrm{Rot}(\theta^{(\ell)}_q)$ with three angles per qubit per layer, and a ring
+of CNOT gates. The dashed block is repeated $L$ times, and each qubit is measured in
+the Pauli-$Z$ basis. The sweep varies $(n_\text{qubits}, n_\text{layers})$ over
+$(2,12),(3,8),(4,6),(6,4),(8,3)$, all at a constant
+$n_\text{qubits}\cdot n_\text{layers}\cdot 3 = 72$ trainable angles.}
 \label{fig:binary_vqc}
 \end{figure}
 
@@ -104,8 +104,8 @@ constant $n_\text{qubits}\cdot n_\text{layers}\cdot 3 = 72$ trainable angles.}
 \includegraphics[width=0.78\columnwidth]{Figures/classical_layer.pdf}
 \caption{Classical middle stage of the mirror model, shown for the four-feature
 case. It replaces the variational quantum circuit with a \texttt{Linear} expansion
-to width eight, a $\tanh$ and a \texttt{Linear} back to the feature width, for 76
-trainable parameters against the 72 of the circuit.}
+to width eight, a $\tanh$ and a \texttt{Linear} back to the feature width, for $76$
+trainable parameters against the $72$ of the circuit.}
 \label{fig:classical_layer}
 \end{figure}
 
@@ -127,7 +127,6 @@ a controlled comparison rather than a tuned performance record.
 
 
 
-\FloatBarrier
 \subsection{Experiment 3: Classifier Heads on a Frozen Extractor}
 \label{sec:exp3_methods}
 
