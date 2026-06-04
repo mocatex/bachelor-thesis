@@ -197,7 +197,57 @@ a fixed 30 epochs and repeated over three seeds, and we report the mean and stan
 deviation across seeds. The protocol was kept deliberately plain, since the aim was
 a controlled comparison rather than a tuned performance record.
 
+\subsection{Experiment 2: Few-Shot Classification with Quantum Kernels}
+\label{sec:exp2_methods}
 
+\subsubsection{Design Principles}
+\label{sec:exp2_philosophy}
+
+The second experiment pivots from highly parameterized neural networks to the few-shot learning regime, investigating whether quantum support vector machines (QSVMs) exhibit a trainable advantage when data is exceedingly scarce. Deep classical networks are notoriously prone to overfitting on small datasets. Quantum kernels, mapping data into an exponentially large Hilbert space, theoretically offer enhanced linear separability. However, evaluating a quantum advantage requires a stringent protocol.
+
+To ensure a defensible comparison, this experiment operates under three constraints. First, we enforce strict balanced subsetting to prevent silent majority-class collapse at small sample sizes. Second, we evaluate over multiple resampled seeds per subset size, reporting the mean accuracy with 95\% confidence intervals rather than relying on a single favourable data draw. Third, the classical baseline, an RBF kernel SVM, is hyperparameter-tuned with the same rigour as the quantum models; a quantum model outperforming an untuned classical model does not constitute a true quantum advantage. Finally, we establish a pre-registered criterion for advantage: a quantum model is deemed superior at a specific sample size $n$ only if the lower bound of its 95\% confidence interval strictly exceeds the upper bound of the best classical model's confidence interval.
+
+\subsubsection{Data Processing and Bounded Encoding}
+\label{sec:exp2_encoding}
+
+For this experiment, 4 hard-to-separate classes were identified from the baseline's confusion matrix, via a four-crossing analysis that isolated the most symmetric and entangled pairs. Initial trials used easy-to-separate classes, but the resulting near-perfect accuracies at small $n$ made it impossible to detect any advantage.
+
+Unlike the frozen convolutional extractor in Experiment 3, the QSVM pipeline avoids high-capacity trainable feature extraction to prevent classical parameters from masking the quantum kernel's contribution. Instead, the raw 4096-bin flux spectra are deterministically downsampled using 1D adaptive average pooling to $N_{\text{features}}$ bins, mapping directly to the $N_{\text{features}}$ qubits of the quantum circuit. We systematically swept $N_{\text{features}}$ to determine the optimal dimensionality for both classical and quantum state preparation.
+
+A known failure mode in quantum kernels acting on raw continuous data is $2\pi$ wrap-around \cite{Bosco2025Periodic}, where distinct scalar values collapse onto the same rotation angle, and exponential kernel concentration \cite{thanasilp2024Exponential}, where highly expressive feature maps converge to a near-identity Gram matrix. To mitigate this, the pooled features $x_i$ are explicitly standard-scaled and subsequently mapped into a strictly bounded angular domain using a squashing function:
+$$ \tilde{x}_i = \frac{\pi}{2} \tanh(c \cdot x_i) $$
+where $c$ is a continuous bandwidth scaling parameter. This ensures all encoded rotations remain well within a single period $[-\pi/2, \pi/2]$, minimizing wrap-around and artificially induced concentration.
+
+The bounded features $\tilde{x}_i$ are injected into the quantum state via the feature map $U(x)$ illustrated in Figure~\ref{fig:qsvm_circuit}. The mapping consists of $R_Y$ and $R_Z$ rotations encoding each feature onto its respective qubit (the double-axis configuration), followed by a ring of CNOT gates that entangles nearest neighbours with periodic boundary conditions. To limit excessive expressivity that drives kernel concentration, the circuit relies on a shallow depth (defaulting to a single repetition).
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\columnwidth]{Figures/qsvm_circuit.pdf} % Assuming compiled PDF name
+    \caption{Quantum feature map $U(x)$ utilized for the QSVM kernels, shown for four qubits. The scaled and bounded input features $\tilde{x}_i$ are encoded via $R_Y$ and $R_Z$ rotations on each qubit, followed by a hardware-efficient ring of CNOT gates. This unitary can be repeated to increase expressivity, though shallow depths are preferred to mitigate kernel concentration.}
+    \label{fig:qsvm_circuit}
+\end{figure}
+
+\subsubsection{Fidelity and Projected Quantum Kernels}
+\label{sec:exp2_kernels}
+
+The experiment evaluates two distinct quantum kernel formulations against the classical RBF baseline.
+
+\textbf{Fidelity Kernel:} The standard overlap quantum kernel defines the similarity between two data points $x$ and $x'$ as the squared fidelity of their corresponding quantum states:
+$$ k_F(x, x') = |\langle 0 | U^\dagger(x') U(x) | 0 \rangle|^2 $$
+While geometrically intuitive, computing the full Gram matrix for $N$ samples requires $\mathcal{O}(N^2)$ circuit executions, posing significant scaling challenges on hardware.
+
+\textbf{Projected Quantum Kernel (PQK):} Following Huang et al. \cite{huang2021power}, we also evaluate the PQK, which projects the quantum state back into a classical representation by measuring local observables, reducing the circuit complexity to $\mathcal{O}(N)$. Specifically, the quantum state is measured in the Pauli $X$, $Y$, and $Z$ bases for each qubit, yielding a $3N_{\text{features}}$-dimensional vector of expectation values:
+$$ p(x) = \bigcup_{q=1}^{N_{\text{features}}} \big\{ \langle X_q \rangle, \langle Y_q \rangle, \langle Z_q \rangle \big\} $$
+A classical RBF kernel is then computed over these quantum-projected vectors. The RBF bandwidth ($\gamma$) for the PQK is resolved using the median heuristic on the pairwise squared distances of the projected training features. This appraoch is not explicitly prescribed in the original PQK formulation, but it is a common practice in classical kernel methods.
+
+\subsubsection{Training Protocol and Pre-screening}
+\label{sec:exp2_protocol}
+
+The datasets are constructed from the targeted four-class subset of the SDSS DR19 dataset. The training set is subsampled to balanced sizes of $n \in \{2, 5, 10, 20, 50, 100, 200\}$ samples per class. The classical control is a Support Vector Classifier (SVC) equipped with an RBF kernel. To guarantee a fair comparison, the classical SVC undergoes a robust grid search over the regularization parameter $C \in \{0.1, 1, 10, 100\}$ and the bandwidth parameter $\gamma \in \{\text{scale}, 0.01, 0.1, 1.0\}$ at every evaluation step using stratified cross-validation. For the quantum evaluations, $C$ was also treated as an empirically optimized hyperparameter, evaluated after identifying the optimal $N_{\text{features}}$.
+
+Before initiating the compute-intensive scaling sweeps, we utilize a pre-training diagnostic metric: the geometric difference $g(K_C || K_Q)$ \cite{huang2021power}. Computed on the Gram matrices of a small data subset, this metric quantifies the divergence between the classical and quantum kernel geometries:
+$$ g = \left\| \sqrt{K_Q} (K_C + \lambda I)^{-1} \sqrt{K_Q} \right\|_2 $$
+where $\lambda$ is a regularization term evaluated across $\{10^{-6}, 10^{-8}, 10^{-10}\}$. If $g \approx 1$, the classical kernel seamlessly reproduces the quantum geometry, mathematically precluding a quantum advantage. We record $g$ prior to model fitting to empirically justify the search for advantage within the chosen encoding strategy.
 
 
 
