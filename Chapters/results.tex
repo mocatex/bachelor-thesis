@@ -129,6 +129,23 @@ model-selection noise from the narrow bottleneck and the overlapping classes.}
 \label{fig:exp1_training}
 \end{figure*}
 
+\subsubsection{Summary of Findings}
+
+Experiment 1 finds no quantum accuracy advantage on the hardest binary pair. Across
+the parameter-matched sweep the best quantum and the best classical configurations
+are statistically tied on accuracy and macro-F1, and the classical mirror even takes
+the highest ROC-AUC, so the early uncontrolled gap does not survive a properly built
+baseline. The one quantum-specific pattern worth reporting is architectural rather
+than about accuracy, since within the quantum family the wide-shallow circuit is
+reliably the most balanced classifier and halves the minority-class recall gap
+relative to the narrow-deep circuit, against the barren-plateau expectation for wider
+circuits. The spiky validation curves are not evidence of a barren plateau, because
+training proceeds smoothly and the instability is just as strong in the classical
+mirror. Finally, the quantum circuit carries only 72 of about 24500 trainable
+parameters, with the shared CNN extractor doing the heavy lifting, which is why the
+comparison had to be matched at the contested middle stage and why a large quantum
+advantage was never plausible in this regime.
+
 \FloatBarrier
 \subsection{Experiment 3: Quantum and Classical Heads on Frozen Features}
 \label{sec:exp3}
@@ -148,7 +165,7 @@ parameter-matched classical controls with a ReLU or a $\tanh$ middle stage
 parameter count of Model~B, so the comparison isolates the quantum circuit rather
 than the surrounding structure.
 
-\subsubsection{Overall classification performance}
+\subsubsection{Overall Classification Performance}
 
 Table~\ref{tab:exp3_headline} summarises the headline results and
 Figure~\ref{fig:exp3_cm} shows the corresponding test confusion matrices. The dense
@@ -214,7 +231,7 @@ ReLU control (C) misroutes 75\% of brown dwarfs into
 \label{fig:exp3_cm}
 \end{figure*}
 
-\subsubsection{The parameter-matched control and the dead-ReLU artefact}
+\subsubsection{The Parameter-Matched Control and the Dead-ReLU Artefact}
 
 The decisive comparison is between the three 556-parameter models. The quantum head
 (B) reaches 0.93 recall on \texttt{STAR\_BROWN\_DWARF\_L}, but the ReLU control (C)
@@ -255,7 +272,7 @@ the gap between 79\% and 96\% accuracy.}
 \label{fig:exp3_training}
 \end{figure*}
 
-\subsubsection{Encoding ablation}
+\subsubsection{Encoding Ablation}
 
 A separate set of variants probes whether the limitation lies in the number of
 qubits or in how the features are loaded into them. Table~\ref{tab:exp3_encoding}
@@ -287,7 +304,7 @@ Learned Linear(128,4) (Model B)    & 556       & $\sim$96\% \\
 \end{tabular}
 \end{table}
 
-\subsubsection{Training dynamics and computational cost}
+\subsubsection{Training Dynamics and Computational Cost}
 
 Beyond final accuracy we also examined convergence, stability and cost, since
 parameter count alone is not a sufficient basis for comparison. The classical heads
@@ -303,7 +320,7 @@ simulation of the circuit that costs seconds per epoch on CPU, against milliseco
 for the classical heads, and on real quantum hardware it would additionally face
 shot noise and decoherence.
 
-\subsubsection{Summary of findings}
+\subsubsection{Summary of Findings}
 
 At matched parameter count the quantum head and the classical head reach the same
 accuracy and the same per-class behaviour, so the result is quantum-classical parity
