@@ -10,6 +10,35 @@ contested component. Where the experiments differ is in the feature stage.
 We have experimented with a vast range of architectures and training protocols, and the ones described here are the ones that worked best.
 They are not the only ones we tried, and they are not necessarily the best possible, but they are the ones that we settled on after a long process of trial and error. The full implementation is released as a reproducibility package.\footnote{\url{https://github.com/ShpetimV/QML-AnalyzingGalaxies}}
 
+\subsection{Data Processing Pipeline}
+\label{sec:data_pipeline}
+
+To ensure fair and rigorous comparisons across all experiments, every model interacts with the SDSS DR19 dataset through a unified, heavily controlled data pipeline. This pipeline manages memory-efficient ingestion, artifact mitigation, robust augmentation, and the strict isolation of spectral features.
+
+\subsubsection{Data Ingestion and Memory Management}
+The raw dataset spans millions of astronomical observations, posing a substantial memory bottleneck. To circumvent this, the pipeline employs zero-copy datasets and a streamed ingestion process. Using the \texttt{pyarrow} backend, the parquet files are parsed in continuous batches and mapped directly into pre-allocated NumPy arrays. This approach prevents the catastrophic RAM spikes associated with loading the full dataset simultaneously. When an experiment demands a specific subset of the data (such as the binary classification in Experiment 1), the pipeline dynamically filters the dataset to the requested classes and remaps their integer labels, enabling a seamless transition between the full 62-class problem and targeted sub-problems.
+
+\subsubsection{Preprocessing and Artifact Mitigation}
+Raw flux spectra frequently exhibit spectrograph edge artifacts-sharp, high-amplitude spikes occurring at the physical boundary limits of the observing instruments. If left untreated, the networks fixate on these non-physical anomalies. To remove this noise, the first and last 100 wavelength bins of every spectrum are systematically cropped prior to any processing.
+
+Following the crop, each individual spectrum is strictly standard-scaled (zero mean, unit variance) to normalize flux intensities. Finally, because the sequence length must remain uniform for batched tensor operations, the spectra are either truncated or zero-padded to a fixed sequence length.
+
+Optionally, the dataset provides a vector of auxiliary scalar features, most notably the measured redshift. However, exploratory trials revealed that these scalars acted as a data-leaking crutch; the networks exploited the redshift values to trivially separate classes, achieving artificially high accuracies without actually learning structural representations from the flux spectra. To enforce genuine spectral learning, these auxiliary vectors are explicitly withheld from the pipeline, forcing all models to derive their predictions exclusively from the raw 1D flux.
+
+\subsubsection{Scientific Augmentation}
+To prevent overfitting and simulate physical variance, an on-the-fly data augmentation pipeline is applied exclusively during the training phase. The augmentations are applied stochastically and include:
+\begin{itemize}
+    \item \textit{Class-Aware Redshift Shifting:} To simulate variations in radial velocity and cosmic expansion, the spectra are circularly shifted along the wavelength axis. The maximum allowed shift is class-dependent, reflecting the distinct physical constraints of stellar objects versus distant galaxies.
+    \item \textit{Gaussian Noise:} Random standard normal noise, scaled by a configuration threshold and the standard deviation of the specific spectrum, is injected to simulate instrument read noise.
+    \item \textit{Flux Scaling:} The overall amplitude of the spectrum is multiplied by a randomized continuous scale factor, simulating variations in object distance and apparent magnitude.
+    \item \textit{Contiguous Masking:} Taking inspiration from spectral dropout techniques, one to three random contiguous chunks (ranging from 15 to 50 bins) are entirely zeroed out. This forces the feature extractors to rely on global patterns rather than memorizing isolated, high-intensity emission lines.
+    \item \textit{Gaussian Smoothing:} A 1D convolutional Gaussian blur with a randomized kernel size (derived from a stochastically generated sigma) is applied to simulate atmospheric seeing variations and lower-resolution instrument states.
+    \item \textit{Mixup:} With 50\% probability, an input is linearly interpolated with another random sample (\(\lambda \sim \text{Beta}(0.4,0.4)\)). The loss becomes the same weighted combination of the two original labels' cross‑entropy terms, effectively training on soft, mixed targets instead of hard class labels.
+\end{itemize}
+
+\subsubsection{Addressing Class Imbalance}
+As later mentioned the SDSS DR19 dataset is highly imbalanced, we offered two solutions to this problem. First a weighted random sampler
+
 \subsection{Baseline: Big Classical CNN}
 \label{sec:baseline_cnn}
 
@@ -25,7 +54,7 @@ To prevent the dead-neuron collapse observed in early trials with ReLU activatio
 \subsubsection{Architecture Pipeline}
 \label{sec:baseline_arch}
 
-The model accepts a 1D flux spectrum of 4096 bins as input. This number was chosen, since its power-of-two structure allows for efficient downsampling and also for a straightforward mapping to quantum circuits in later experiments. If the effective flux is longer or shorter, it is either truncated or zero-padded to fit this fixed length. Optionally, a small vector of auxiliary scalar features (such as redshift) can be injected, yet we observed this to be a dataleaking crutch that the network exploits to achieve high accuracy without learning from the spectra. So an empty vector was passed instead.
+The model accepts a 1D flux spectrum of 4096 bins as input. This number was chosen, since its power-of-two structure allows for efficient downsampling and also for a straightforward mapping to quantum circuits in later experiments. If the effective flux is longer or shorter, it is either truncated or zero-padded to fit this fixed length.
 The processing pipeline is illustrated in Figure~\ref{fig:baseline_cnn}.
 
 \textbf{Multi-Scale Stem:} The input is first passed through parallel 1D convolutions with kernel sizes of 5, 15, and 31. This multi-branch approach allows the network to simultaneously "see" narrow spectral anomalies and wider bands. The outputs are concatenated along the channel dimension, normalized, activated, and pooled to form the initial feature map.
@@ -48,7 +77,8 @@ The processing pipeline is illustrated in Figure~\ref{fig:baseline_cnn}.
 
 The model was trained from scratch on the full SDSS DR19 dataset. We optimized the training further by using a OneCycle learning rate \cite{smith2017onecyclelr} schedule with a maximum learning rate of $10^{-3}$, weight decay of $10^{-4}$. This uses a warm-up phase to ramp up the learning rate, followed by a gradual cooldown, which helps the model converge faster and escape sharp minima. Because of that early stopping would have been contraproducive, so the model was trained for a fixed 300 epochs.
 
-Also, the SDSS DR19 dataset is highly imbalanced. The range in our curated subset is between 276 (STAR\_M0) 25'000 for the more common classes. To mitigate this imbalance, where the model would get a good avgerage accuracy by simply learning the majority classes but fail on the minority ones, we used a Focal Loss \cite{lin2018focalloss}. This loss function down-weights the contribution of classes with a high number of samples and focuses the learning on the harder, underrepresented classes.
+Also, the SDSS DR19 dataset is highly imbalanced. The range in our curated subset is between 276 (STAR\_M0) 25'000 for the more common classes. To mitigate this imbalance, where the model would get a good avgerage accuracy by simply learning the majority classes but fail on the minority ones, we initially experimented with weighted random sampling, however this led to unstable training and worse overall performance. Instead, we
+used a Focal Loss \cite{lin2018focalloss}. This loss function down-weights the contribution of classes with a high number of samples and focuses the learning on the harder, underrepresented classes. This approach led to more stable training and improved performance on the minority classes.
 
 Beyond serving as the frozen backbone for Experiment 3, the baseline plays a crucial diagnostic role. During evaluation, a custom metric tracker generates a row-normalized confusion matrix to compute per-class recall. More importantly, it performs an automated algorithmic analysis to extract "Mirrors" (symmetric confusion pairs where the CNN frequently mistakes class A for class B and vice versa) and "Black Holes" (sink classes with high false-positive absorption). This systemic failure analysis provides the empirical justification for the classes selected in Experiment 1; by isolating the exact pairs that the highly parameterized classical Beast struggles to separate, we define the hardest possible target for the subsequent quantum head.
 
