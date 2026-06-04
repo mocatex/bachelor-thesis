@@ -21,21 +21,21 @@ exponentially large state space and multi-qubit entanglement. We approach it as 
 empirical and deliberately cautious investigation rather than an assumption of
 quantum superiority. In our experiments a purely quantum model never trained well
 on raw spectra, a difficulty consistent with known trainability obstacles in
-variational circuits~\cite{mcclean2018barren}, so every quantum model we study is
-hybrid, a classical feature extractor followed by a small VQC. All circuits run on
+variational circuits~\cite{mcclean2018barren}, therefore we use a classical feature extractor to reduce the input dimension,
+followed by a small VQC. All circuits run on
 a noiseless statevector simulator~\cite{bergholm2018pennylane} with eight qubits or
 fewer, and we make no claim about real quantum hardware. The guiding question is
 whether such hybrids offer any measurable benefit over comparably built classical
-models on the hardest SDSS tasks, and because these comparisons are sensitive to
+models on the hardest SDSS tasks and because these comparisons are sensitive to
 small implementation choices we treat every result carefully.
 
 The thesis makes three contributions. First, we train a large classical
 CNN-Transformer baseline of about 14 million parameters, the Beast, on a curated
-62-class problem where it reaches around 84\% accuracy, and use it to analyse the
+62-class problem where it reaches around 84\% accuracy and use it to analyse the
 weak classes where fine-grained classification breaks down, exposing the
 minority-class recall imbalance that a single accuracy figure hides. Second, we
 compare quantum and classical heads at matched parameter budgets on these hard
-tasks, and find equal performance rather than advantage. On the hardest confusion pair a VQC
+tasks and find equal performance rather than advantage. On the hardest confusion pair a VQC
 and a similarly structured convolutional network reach the same accuracy. On a
 four-class task a 556-parameter hybrid matches both a parameter-matched classical
 head and a nine-times-larger classical head at about 96\% accuracy. An apparent

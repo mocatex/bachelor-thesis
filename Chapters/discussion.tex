@@ -1,0 +1,108 @@
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{Spectral Attention of the Hybrid Model}
+\label{sec:interpretability}
+
+To check whether the hybrid model learns physically meaningful features rather than
+arbitrary correlations, we apply two gradient-based interpretability methods to the
+binary hybrid classifier. Grad-CAM on the last convolutional layer of the extractor
+highlights the broad spectral regions the model relies on, and input saliency, the
+gradient of the predicted class with respect to the raw flux, highlights the
+individual wavelength bins. Both methods necessarily probe the classical CNN extractor
+rather than the quantum circuit, since the circuit receives only the four compressed
+features and has no notion of wavelength position. The analysis therefore shows where
+in the spectrum the discriminative information is extracted, which is upstream of the
+quantum stage. We run it on a broadline pair, \texttt{GALAXY\_AGN\_BROADLINE} against
+\texttt{QSO\_STARBURST\_BROADLINE}, and average the heatmaps per class over the test
+set, as shown in Figure~\ref{fig:gradcam}.
+
+The Grad-CAM maps are localised and class-dependent. For the AGN class the attention
+concentrates on a band that coincides with a strong broad emission peak in the mean
+spectrum, while for the starburst quasar it shifts to the blue end of the continuum.
+Broad emission lines and continuum slope are exactly the features that physically
+distinguish these classes, so the extractor is attending to astrophysically sensible
+structure rather than to noise. The input saliency by contrast is diffuse and remains
+high across most of the spectrum, which reflects the known tendency of raw gradient
+saliency to be noisy and poorly localised, so we read it only as a weak confirmation.
+Some Grad-CAM intensity also sits at the extreme edges of the wavelength range, which
+is most likely a boundary artefact of the convolution rather than a physical feature.
+Taken together the analysis supports the view that the discriminative spectral features
+are learned in the classical front end, and it makes concrete that the quantum stage
+cannot be given a spectral interpretation, because it sees only the compressed
+representation.
+
+\begin{figure*}[tbp]
+\centering
+\includegraphics[width=0.92\textwidth]{Figures/gradcam_saliency_angle_4q.png}
+\caption{Per-class spectral attention of the binary hybrid model on
+\texttt{GALAXY\_AGN\_BROADLINE} against \texttt{QSO\_STARBURST\_BROADLINE}, averaged
+over the test set. For each class the upper panel shows Grad-CAM on the extractor's
+last convolutional layer and the lower panel shows input-gradient saliency, both
+overlaid on the mean spectrum. Grad-CAM localises to a broad emission band for the AGN
+class and to the blue continuum for the quasar, whereas the raw saliency is diffuse.
+Both methods probe the classical extractor, since the quantum circuit receives only
+four scalar features.}
+\label{fig:gradcam}
+\end{figure*}
+
+\subsection{Why Attending to Emission Lines Is Optimal}
+\label{sec:fisher}
+
+That the model concentrates on emission lines and the continuum slope is not only
+physically intuitive but is what an optimal classifier should do. To make this precise
+we model a preprocessed spectrum as a vector $x \in \mathbb{R}^{L}$ over its $L$
+wavelength bins and assume that the two classes have Gaussian class-conditional
+distributions with class means $\mu_0, \mu_1 \in \mathbb{R}^{L}$ and a shared
+covariance $\Sigma$,
+\begin{equation}
+x \mid y = c \;\sim\; \mathcal{N}(\mu_c, \Sigma), \qquad c \in \{0, 1\}.
+\label{eq:gauss}
+\end{equation}
+Under this model the Bayes-optimal decision rule is linear and is given by Fisher's
+linear discriminant, which assigns $x$ to class~1 when $w^{\ast\top} x + b > 0$ with
+\begin{equation}
+w^{\ast} = \Sigma^{-1}(\mu_1 - \mu_0).
+\label{eq:fisher}
+\end{equation}
+The vector $w^{\ast}$ is also the weight that any well-trained differentiable
+classifier approximates, since for a model $f(x)$ that estimates the log-odds
+$\log\!\big(p(y=1\mid x)/p(y=0\mid x)\big)$ the input saliency is exactly
+$\nabla_x f(x) = w^{\ast}$ in this linear regime. The saliency the network learns is
+therefore the discriminant direction itself.
+
+To read off the importance of a single wavelength bin we neglect cross-bin
+correlations and approximate the covariance as diagonal,
+$\Sigma \approx \operatorname{diag}(\sigma_1^2, \dots, \sigma_L^2)$. The per-bin weight
+then reduces to
+\begin{equation}
+w^{\ast}_i = \frac{\mu_{1,i} - \mu_{0,i}}{\sigma_i^2},
+\label{eq:weight}
+\end{equation}
+and the contribution of bin $i$ to the squared Mahalanobis separation between the
+classes is the per-bin Fisher ratio, the squared signal-to-noise of that bin,
+\begin{equation}
+J_i = \frac{(\mu_{1,i} - \mu_{0,i})^2}{\sigma_i^2},
+\qquad
+(\mu_1 - \mu_0)^{\top}\Sigma^{-1}(\mu_1 - \mu_0) = \sum_{i=1}^{L} J_i .
+\label{eq:fisherratio}
+\end{equation}
+The sum in \eqref{eq:fisherratio} is the total class separability, and each $J_i$ is
+the additive share contributed by bin $i$. It is maximised precisely at the wavelength
+bins where the two class-mean spectra differ most relative to their variance. For the
+broadline pair studied here those bins are the broad emission lines, where one class
+carries a strong line that the other lacks, and the continuum slope, which separates
+the blue quasar from the redder galaxy. The Bayes-optimal classifier therefore places
+almost all of its weight on exactly the regions that Grad-CAM and the saliency analysis
+highlight in Figure~\ref{fig:gradcam}. The agreement between the learned attention and
+the optimal discriminant $w^{\ast}$ is the sense in which looking at these spectral
+regions is not an arbitrary choice but the mathematically correct way to separate the
+two classes.
+
+This argument also reinforces the structural reading of our hybrid models. The optimal
+discriminant of \eqref{eq:fisher} is a function of the raw spectrum, and the classical
+extractor is the only component that can represent it, since the quantum circuit never
+sees the wavelength axis. Whatever discriminative power a model of this family obtains
+comes from learning $w^{\ast}$, or its nonlinear generalisation, in the classical front
+end, which is consistent with the parity between quantum and classical heads found in
+both experiments.

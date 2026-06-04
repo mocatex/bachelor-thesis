@@ -46,7 +46,7 @@ expressive such models really are and how their inputs should be encoded.
 
 Two results inform the design choices made in this thesis. P{\'e}rez-Salinas et
 al.~\cite{perezsalinas2020reuploading} introduced data re-uploading, in which the
-classical input is re-injected at every layer of the circuit, and showed that even a
+classical input is re-injected at every layer of the circuit and showed that even a
 single qubit can act as a universal classifier when its data is uploaded repeatedly.
 Schuld et al.~\cite{schuld2021encoding} made the underlying mechanism precise by
 showing that a variational quantum model is effectively a Fourier series in its
@@ -62,7 +62,7 @@ what our architecture sweep probes.
 \label{sec:rel_qsvm}
 
 A separate line of work treats the quantum circuit not as a trainable classifier but
-as a fixed feature map. Schuld and Killoran~\cite{schuld2019feature} and, in the same
+as a fixed feature map. Schuld and Killoran~\cite{schuld2019feature} and in the same
 year, Havl{\'\i}{\v{c}}ek et al.~\cite{havlicek2019} showed that a quantum circuit can
 embed classical data into a high-dimensional feature Hilbert space whose inner
 products define a kernel, which a classical support vector machine then uses for
@@ -70,11 +70,13 @@ classification. This reframes the search for a quantum advantage as a question a
 the kernel rather than about a trained network. Liu et al.~\cite{liu2021speedup} gave
 a rigorous example of such an advantage by constructing a classification task, based
 on the discrete logarithm problem, on which a quantum kernel provably outperforms any
-classical learner. These guarantees are important but contingent on carefully
-constructed problem structure, and no comparable advantage is known for generic
+classical learner. These guarantees are important but dependent on carefully
+constructed problem structure and no comparable advantage is known for generic
 real-world data such as the spectra studied here. We therefore do not pursue the
 kernel route, but we return to it in the discussion as the most principled
 alternative to the hybrid models we study.
+
+% TODO: Moritz maybe add something about the QSVM since you have actually implemented it ?
 
 \subsection{Quantum Convolution}
 \label{sec:rel_quanv}
@@ -88,19 +90,21 @@ proposed the quanvolutional layer, in which a small fixed or trainable quantum
 circuit is slid across a classical input like a convolutional kernel, transforming
 local patches into feature maps that a classical network then processes. The
 quanvolutional approach is the one most relevant to this thesis, since it applies a
-small circuit repeatedly to a large classical signal rather than once at a bottleneck,
+small circuit repeatedly to a large classical signal rather than once at a bottleneck 
 and our noise-robustness experiment builds directly on it.
+
+% TODO: Moritz here also maybe add something since you did something with this.
 
 \subsection{Positioning of this Thesis}
 \label{sec:rel_position}
 
 The work above leaves a specific gap. Deep learning is the established tool for
-spectral classification, and variational quantum circuits are an actively studied
+spectral classification and variational quantum circuits are an actively studied
 alternative, but the two have rarely been compared on a realistic scientific signal
 under a fair protocol. Most applied quantum machine learning places a powerful
 classical network in front of a small circuit and credits the result to the quantum
 component without an equal-capacity classical control. This thesis closes that gap by
 benchmarking hybrid variational circuits against parameter-matched classical models
 on hard SDSS subclass tasks, with the same data, the same surrounding pipeline and a
-deliberate honesty discipline, and by studying both the binary and the quanvolutional
+deliberate honesty discipline and by studying both the binary and the quanvolutional
 settings discussed above.
