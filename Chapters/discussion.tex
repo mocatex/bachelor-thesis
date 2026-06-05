@@ -122,3 +122,16 @@ In contrast, the QSVM feature map is strictly bounded by the dimensionality of i
 
 Furthermore, this empirical failure was accurately predicted by the geometric difference metric, $g(C||Q) \approx 1.89$, calculated during Phase 1. As established by Huang et al. (2021) \cite{huang2021power}, a low $g(C||Q)$ signifies that the classical and quantum kernels are geometrically aligned, meaning the latent features extracted by the 14-million parameter classical network were already sufficiently structured. Mapping these already highly processed features into a quantum state space introduced redundant parameterization rather than uncovering novel, exploitable linear separability.
 
+\subsection{Interpreting the Absence of a Quantum Advantage}
+\label{sec:discussion_exp4}
+
+Experiment~4 found no robustness advantage for the Quanvolutional filter over a classical baseline under strict parameter parity. Three observations constrain this null result.
+
+First, training the variational circuit provided no benefit. Under the heavy head, a frozen random circuit performed as well as the trained version; only after removing the deep head did training show any effect. This suggests that a deep classical aggregator renders the quantum layer an effectively fixed nonlinear embedding—the specific circuit parameters matter little for final accuracy.
+
+Second, the light-head ablation reveals where the filters differ. Removing the deep head degraded both models, but the quantum filter degraded more, showed higher variance across seeds, and was significantly worse under adversarial training ($p=0.014$). The quantum feature map is thus less linearly separable and less stable in a shallow regime than the classical filter.
+
+Third, the Jacobian analysis does not support an intrinsic-smoothness interpretation. The ordering of smoothness reversed between heavy and light heads, and the probe acts on trained weights, it characterises the learned solution, not a fixed property of the circuit.
+
+In summary, for 1D spectral classification under a fair parameter budget, this hybrid design yields no robustness advantage over a matched classical filter. The high accuracy of the heavy-head network is attributable to its classical components.
+
