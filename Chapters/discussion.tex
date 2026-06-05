@@ -1,6 +1,56 @@
 \section{Discussion}
 \label{sec:discussion}
 
+\subsection{No Quantum Advantage Under a Fair Comparison}
+\label{sec:disc_advantage}
+
+We set out to see how astronomical spectra could be classified with quantum machine
+learning and to judge that honestly against the classical methods that already exist.
+The starting point was sobering for any quantum ambition, since classical deep learning
+already solves the coarse star-galaxy-quasar problem at around 99\% accuracy and
+handles many subclasses well. We therefore moved relatively quickly to the harder fine-grained tasks,
+beginning with the single hardest binary pair and then a four-class subset, and in each
+case we built a quantum model and a classical counterpart of matched size and identical
+surrounding pipeline.
+
+The clearest lesson from both experiments is a simple one. When the classical baseline
+is given the same care as the quantum model, it reaches the same accuracy. On the
+binary pair the best quantum circuit and the best classical mirror are statistically
+tied and on the four-class task the quantum head and a properly built classical head
+of the same parameter count both reach about 96\%. We found no setting in either
+experiment where a quantum model genuinely outperformed an equally well designed
+classical one. The apparent exceptions all dissolved on inspection. The large early gap
+on the binary task came from an under-built classical baseline and the collapse of the
+small classical head on the four-class task was a dead-ReLU optimisation artefact that a
+single change of activation removed. Once these were fixed the advantage disappeared.
+If there is one practical takeaway, it is that the effort spent on the classical control
+matters far more than the presence of a quantum circuit and that an apparent quantum
+win should be treated as a hypothesis to be ruled out rather than a result.
+
+\subsection{Parameter Efficiency and Class Balance}
+\label{sec:disc_paramatch}
+
+Going into the four-class task we hoped that a quantum head might at least prove more
+parameter-efficient, reaching the same accuracy with fewer trainable weights even if it
+offered no accuracy advantage. This did not hold up either. A small quantum head did
+match a head with nine times as many parameters, but so did a classical head of the same
+small size, which means the saving belongs to the strong frozen feature extractor that
+feeds both rather than to the quantum circuit. The features it produces are already
+separable enough that a tiny head of any kind suffices, so the parameter efficiency we
+might have hoped to credit to the quantum circuit is really a property of the classical
+front end.
+
+What the quantum models did show, modestly, is a difference in class balance. Within the
+family of circuits the wide and shallow shapes produced more balanced per-class recall
+than the narrow and deep ones, halving the gap between the two classes on the binary
+task. This is a real and slightly surprising effect, since wider circuits are usually
+associated with harder training, but it is a difference in how the errors are
+distributed rather than in overall accuracy, so we report it as an architectural
+observation and not as a quantum advantage. The encoding analysis points the same way,
+since the projection that chooses which few numbers reach the circuit matters far more
+than the number of qubits, with a learned projection reaching 96\% while an unsupervised
+one capped near 76\% on the very same circuit.
+
 \subsection{Spectral Attention of the Hybrid Model}
 \label{sec:interpretability}
 
@@ -20,17 +70,11 @@ set, as shown in Figure~\ref{fig:gradcam}.
 The Grad-CAM maps are localised and class-dependent. For the AGN class the attention
 concentrates on a band that coincides with a strong broad emission peak in the mean
 spectrum, while for the starburst quasar it shifts to the blue end of the continuum.
-Broad emission lines and continuum slope are exactly the features that physically
-distinguish these classes, so the extractor is attending to astrophysically sensible
-structure rather than to noise. The input saliency by contrast is diffuse and remains
-high across most of the spectrum, which reflects the known tendency of raw gradient
-saliency to be noisy and poorly localised, so we read it only as a weak confirmation.
-Some Grad-CAM intensity also sits at the extreme edges of the wavelength range, which
-is most likely a boundary artefact of the convolution rather than a physical feature.
-Taken together the analysis supports the view that the discriminative spectral features
-are learned in the classical front end, and it makes concrete that the quantum stage
-cannot be given a spectral interpretation, because it sees only the compressed
-representation.
+The input saliency by contrast is diffuse and stays high across most of the spectrum,
+which reflects the known tendency of raw gradient saliency to be noisy and poorly
+localised, so we read it only as a weak confirmation. Some Grad-CAM intensity also
+sits at the extreme edges of the wavelength range, which is most likely a boundary
+artefact of the convolution rather than a real feature.
 
 \begin{figure*}[tbp]
 \centering
@@ -46,63 +90,49 @@ four scalar features.}
 \label{fig:gradcam}
 \end{figure*}
 
-\subsection{Why Attending to Emission Lines Is Optimal}
-\label{sec:fisher}
+What makes this result reassuring is that the regions the model relies on are the same
+ones an astronomer would use. These two classes are separated physically by their
+broad emission lines and by the slope of their continuum. Broadline objects are
+defined by exactly these wide emission features, and a blue quasar continuum looks
+clearly different from the redder galaxy continuum. The long-standing template-fitting
+pipelines that classify SDSS spectra key on the same structure, matching an observed
+spectrum against templates whose emission lines and continuum shape encode the
+class~\cite{bolton2012boss}. The fact that the model concentrates on these features,
+and not on flat or noise-dominated regions, is therefore good evidence that it has
+learned the genuinely discriminative parts of the spectrum rather than a spurious
+shortcut.
 
-That the model concentrates on emission lines and the continuum slope is not only
-physically intuitive but is what an optimal classifier should do. To make this precise
-we model a preprocessed spectrum as a vector $x \in \mathbb{R}^{L}$ over its $L$
-wavelength bins and assume that the two classes have Gaussian class-conditional
-distributions with class means $\mu_0, \mu_1 \in \mathbb{R}^{L}$ and a shared
-covariance $\Sigma$,
-\begin{equation}
-x \mid y = c \;\sim\; \mathcal{N}(\mu_c, \Sigma), \qquad c \in \{0, 1\}.
-\label{eq:gauss}
-\end{equation}
-Under this model the Bayes-optimal decision rule is linear and is given by Fisher's
-linear discriminant, which assigns $x$ to class~1 when $w^{\ast\top} x + b > 0$ with
-\begin{equation}
-w^{\ast} = \Sigma^{-1}(\mu_1 - \mu_0).
-\label{eq:fisher}
-\end{equation}
-The vector $w^{\ast}$ is also the weight that any well-trained differentiable
-classifier approximates, since for a model $f(x)$ that estimates the log-odds
-$\log\!\big(p(y=1\mid x)/p(y=0\mid x)\big)$ the input saliency is exactly
-$\nabla_x f(x) = w^{\ast}$ in this linear regime. The saliency the network learns is
-therefore the discriminant direction itself.
+This also reinforces the structural reading of our hybrid models, but it needs to be
+stated carefully. The hard part of the task is feature extraction, deciding which
+parts of the spectrum matter, and only the classical front end can do this, since the
+quantum circuit never receives the wavelength axis and sees just a handful of
+already-compressed numbers. The head that follows, quantum or classical, still has a
+job to do, namely mapping those features to a decision, and it has to be built
+competently. The collapse of the dead-ReLU control in the four-class
+experiment makes this clear, since a poorly built head fails even on good features. What that same experiment also
+shows is that the head can be small and that its quantum-versus-classical nature makes
+no difference once the features are good, since a 556-parameter head matched a
+nine-times-larger one as soon as it used a robust activation. The picture is therefore
+not that the head is irrelevant, but that the discriminative work of finding the right
+spectral features happens in the classical extractor, while the head only has to use
+them, which is consistent with the parity between the quantum and classical heads found
+in both experiments.
 
-To read off the importance of a single wavelength bin we neglect cross-bin
-correlations and approximate the covariance as diagonal,
-$\Sigma \approx \operatorname{diag}(\sigma_1^2, \dots, \sigma_L^2)$. The per-bin weight
-then reduces to
-\begin{equation}
-w^{\ast}_i = \frac{\mu_{1,i} - \mu_{0,i}}{\sigma_i^2},
-\label{eq:weight}
-\end{equation}
-and the contribution of bin $i$ to the squared Mahalanobis separation between the
-classes is the per-bin Fisher ratio, the squared signal-to-noise of that bin,
-\begin{equation}
-J_i = \frac{(\mu_{1,i} - \mu_{0,i})^2}{\sigma_i^2},
-\qquad
-(\mu_1 - \mu_0)^{\top}\Sigma^{-1}(\mu_1 - \mu_0) = \sum_{i=1}^{L} J_i .
-\label{eq:fisherratio}
-\end{equation}
-The sum in \eqref{eq:fisherratio} is the total class separability, and each $J_i$ is
-the additive share contributed by bin $i$. It is maximised precisely at the wavelength
-bins where the two class-mean spectra differ most relative to their variance. For the
-broadline pair studied here those bins are the broad emission lines, where one class
-carries a strong line that the other lacks, and the continuum slope, which separates
-the blue quasar from the redder galaxy. The Bayes-optimal classifier therefore places
-almost all of its weight on exactly the regions that Grad-CAM and the saliency analysis
-highlight in Figure~\ref{fig:gradcam}. The agreement between the learned attention and
-the optimal discriminant $w^{\ast}$ is the sense in which looking at these spectral
-regions is not an arbitrary choice but the mathematically correct way to separate the
-two classes.
+\subsection{Limitations}
+\label{sec:limitations}
 
-This argument also reinforces the structural reading of our hybrid models. The optimal
-discriminant of \eqref{eq:fisher} is a function of the raw spectrum, and the classical
-extractor is the only component that can represent it, since the quantum circuit never
-sees the wavelength axis. Whatever discriminative power a model of this family obtains
-comes from learning $w^{\ast}$, or its nonlinear generalisation, in the classical front
-end, which is consistent with the parity between quantum and classical heads found in
-both experiments.
+Several limitations bound these conclusions. All quantum models were run on a noiseless
+classical statevector simulator rather than on real hardware. This is the most
+favourable possible setting for the quantum side, since real devices add noise, shot
+statistics and decoherence that can only reduce performance, so the absence of an
+advantage here is if anything a stronger result than it would be on hardware. The
+circuits were also restricted to eight qubits or fewer, which is realistic for
+near-term devices but limits how much of each spectrum the quantum stage can ever see.
+The study covers a single scientific domain, the SDSS spectra, and a small number of
+hard class pairs rather than the full survey. Finally, the quantum circuit is a tiny
+fraction of each model, a few dozen parameters against tens of thousands in the
+classical stages, so the experiments test one specific hybrid regime rather than
+quantum machine learning in general and the seed counts in the sweep are modest, so
+the small differences between configurations should be read as indicative rather than
+conclusive.
+
