@@ -4,11 +4,21 @@
 
 This section describes the model architectures and the training protocol for the
 experiments in this thesis, together with the reasoning behind the design choices.
-The experiments share a common discipline. Since it proved too difficult to train a purely quantum model on raw spectra, every quantum model in this thesis is hybrid, a classical feature extractor followed by a small variational quantum circuit. Each is benchmarked against a classical counterpart built to the same shape and trained
-under an identical protocol, so that an observed difference can be attributed to the
-contested component. Where the experiments differ is in the feature stage.
-We have experimented with a vast range of architectures and training protocols, and the ones described here are the ones that worked best.
-They are not the only ones we tried, and they are not necessarily the best possible, but they are the ones that we settled on after a long process of trial and error. The full implementation is released as a reproducibility package.\footnote{\url{https://github.com/ShpetimV/QML-AnalyzingGalaxies}}
+The experiments share a common discipline. Early trials showed that training a purely
+quantum model directly on raw spectra is infeasible given the current hardware and
+simulator constraints. Nevertheless, we do evaluate one fully quantum model, a true
+Quantum Convolutional Neural Network (QCNN) that embeds the entire spectrum into a
+quantum state. All other quantum models are somewhat hybrid, with both a classical and a quantum component. To ensure that the quantum contribution is isolated and measurable, every model—hybrid
+or fully quantum—is benchmarked against a classical counterpart built to the same
+shape and trained under an identical protocol, so that any observed difference can
+be attributed to the contested component. Where the experiments differ is in the
+feature stage, the embedding strategy, and the type of quantum processing.
+
+We have experimented with a range of architectures and training protocols, and
+the ones described here are the ones that worked best. They are not the only ones we
+tried, and they are not necessarily the best possible, but they are the ones that
+we settled on after a long process of trial and error. The full implementation is
+released as a reproducibility package.\footnote{\url{https://github.com/ShpetimV/QML-AnalyzingGalaxies}}
 
 \subsection{Data Processing Pipeline}
 \label{sec:data_pipeline}
