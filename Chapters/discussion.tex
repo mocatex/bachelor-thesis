@@ -135,3 +135,20 @@ Third, the Jacobian analysis does not support an intrinsic-smoothness interpreta
 
 In summary, for 1D spectral classification under a fair parameter budget, this hybrid design yields no robustness advantage over a matched classical filter. The high accuracy of the heavy-head network is attributable to its classical components.
 
+% ==========================================
+% DISCUSSION SECTION (Experiment 5 additions)
+% ==========================================
+\subsection{True QCNNs on Classical Data: Inductive Bias under a Budget}
+\label{sec:discussion_exp5}
+
+Experiment~5 serves as a negative control. The QCNN architecture \cite{cong2019qcnn} was designed to exploit structures native to quantum states, guaranteeing the absence of barren plateaus \cite{pesah2021absence}. Embedding classical astronomical flux removes this foundational premise. Consequently, we observe no absolute quantum advantage over an unconstrained classical network.
+
+However, the experiment reinforces the necessity of parameter-matched baselines. While the unconstrained Huge CNN outperforms the QCNN across most quadrants, the QCNN strictly dominates the parameter-matched Tiny CNN, particularly in the few-shot regime where the classical filter degenerates to chance. This localizes the practical utility of quantum inductive bias strictly to the data-starved, heavily constrained parameter regime.
+
+This few-shot resilience aligns with the theoretical bounds of Caro et al. \cite{caro2022generalization}, who proved that generalization error in variational models scales with gate count. The 101-gate quantum core maintains functional accuracy at 20 samples per class, whereas the equivalent classical filter overfits and collapses. The QCNN possesses a strong inductive bias, but it manifests as sample efficiency under a strict capacity budget, not as scalable representational power.
+
+The ablation study isolates the pure QCNN's fragility directly to its state preparation. Because both variants share the same convolution and pooling blocks, the hybrid model's uniform superiority proves that direct amplitude encoding is inherently vulnerable. Distributing the raw 4096-bin spectrum across a global $L_2$-normalized state allows high-frequency noise to corrupt the entire vector multiplicatively \cite{schuld2021encoding}. Classically-assisted angle encoding circumvents this by compressing the signal into bounded, localized rotations.
+
+Finally, the Jacobian analysis confirms textbook capacity dynamics \cite{szegedy2013intriguing, sokolic2017robust}. Under clean, high-data training, the over-parameterized Huge CNN forms a rough, sensitive map, while the constrained quantum map is demonstrably smoother and more robust. However, this smoothness is regime-dependent. Adversarial training flattens all Jacobians, and in few-shot regimes, the Tiny CNN's near-zero norm indicates mathematical collapse (underfitting) rather than genuine robustness.
+
+Ultimately, this experiment concludes the QML sequence with a consistent structural finding: across feature extraction, kernel methods, and fully coherent convolutions, variational quantum models achieve classical parity under matched conditions. Their distinct characteristics emerge in sample efficiency, regularization, and encoding sensitivity, rather than raw top-line dominance over unconstrained classical architectures.
