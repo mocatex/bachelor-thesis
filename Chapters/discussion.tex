@@ -50,6 +50,11 @@ observation and not as a quantum advantage. The encoding analysis points the sam
 since the projection that chooses which few numbers reach the circuit matters far more
 than the number of qubits, with a learned projection reaching 96\% while an unsupervised
 one capped near 76\% on the very same circuit.
+\subsection{Classical Limitations and Quantum Machine Learning Motivation}
+The empirical results from the 62-class Baseline CNN expose the inherent topological limitations of classical feature extractors when navigating highly correlated, continuous physical manifolds. While the network successfully separated broad macro-categories (as evidenced by the robust $92.51\%$ accuracy in the coarse 13-class GaSNet-II task), its discriminatory power degraded rapidly when tasked with fine-grained subclass separation.
+
+The persistent presence of symmetric confusion pairs (e.g., \texttt{STAR\_A5} $\leftrightarrow$ \texttt{STAR\_F0} and \texttt{QSO\_STARBURST} $\leftrightarrow$ \texttt{QSO\_STARBURST\_BROADLINE}) indicates localized regions in the latent space where classical decision boundaries fail to linearly separate the data. Furthermore, the low precision of classes like \texttt{GALAXY\_BROADLINE} implies that the model utilizes specific labels as a ``sink'' for uncertain spectral signatures, lacking the geometric capacity to resolve the ambiguity. These specific classical failure modes provide the fundamental motivation for our subsequent Quantum Machine Learning (QML) experiments.
+
 
 \subsection{Spectral Attention of the Hybrid Model}
 \label{sec:interpretability}
@@ -77,17 +82,17 @@ sits at the extreme edges of the wavelength range, which is most likely a bounda
 artefact of the convolution rather than a real feature.
 
 \begin{figure*}[tbp]
-\centering
-\includegraphics[width=0.92\textwidth]{Figures/gradcam_saliency_angle_4q.png}
-\caption{Per-class spectral attention of the binary hybrid model on
-\texttt{GALAXY\_AGN\_BROADLINE} against \texttt{QSO\_STARBURST\_BROADLINE}, averaged
-over the test set. For each class the upper panel shows Grad-CAM on the extractor's
-last convolutional layer and the lower panel shows input-gradient saliency, both
-overlaid on the mean spectrum. Grad-CAM localises to a broad emission band for the AGN
-class and to the blue continuum for the quasar, whereas the raw saliency is diffuse.
-Both methods probe the classical extractor, since the quantum circuit receives only
-four scalar features.}
-\label{fig:gradcam}
+    \centering
+    \includegraphics[width=0.92\textwidth]{Figures/gradcam_saliency_angle_4q.png}
+    \caption{Per-class spectral attention of the binary hybrid model on
+        \texttt{GALAXY\_AGN\_BROADLINE} against \texttt{QSO\_STARBURST\_BROADLINE}, averaged
+        over the test set. For each class the upper panel shows Grad-CAM on the extractor's
+        last convolutional layer and the lower panel shows input-gradient saliency, both
+        overlaid on the mean spectrum. Grad-CAM localises to a broad emission band for the AGN
+        class and to the blue continuum for the quasar, whereas the raw saliency is diffuse.
+        Both methods probe the classical extractor, since the quantum circuit receives only
+        four scalar features.}
+    \label{fig:gradcam}
 \end{figure*}
 
 What makes this result reassuring is that the regions the model relies on are the same
@@ -136,3 +141,100 @@ quantum machine learning in general and the seed counts in the sweep are modest,
 the small differences between configurations should be read as indicative rather than
 conclusive.
 
+That the model concentrates on emission lines and the continuum slope is not only
+physically intuitive but is what an optimal classifier should do. To make this precise
+we model a preprocessed spectrum as a vector $x \in \mathbb{R}^{L}$ over its $L$
+wavelength bins and assume that the two classes have Gaussian class-conditional
+distributions with class means $\mu_0, \mu_1 \in \mathbb{R}^{L}$ and a shared
+covariance $\Sigma$,
+\begin{equation}
+    x \mid y = c \;\sim\; \mathcal{N}(\mu_c, \Sigma), \qquad c \in \{0, 1\}.
+    \label{eq:gauss}
+\end{equation}
+Under this model the Bayes-optimal decision rule is linear and is given by Fisher's
+linear discriminant, which assigns $x$ to class~1 when $w^{\ast\top} x + b > 0$ with
+\begin{equation}
+    w^{\ast} = \Sigma^{-1}(\mu_1 - \mu_0).
+    \label{eq:fisher}
+\end{equation}
+The vector $w^{\ast}$ is also the weight that any well-trained differentiable
+classifier approximates, since for a model $f(x)$ that estimates the log-odds
+$\log\!\big(p(y=1\mid x)/p(y=0\mid x)\big)$ the input saliency is exactly
+$\nabla_x f(x) = w^{\ast}$ in this linear regime. The saliency the network learns is
+therefore the discriminant direction itself.
+
+To read off the importance of a single wavelength bin we neglect cross-bin
+correlations and approximate the covariance as diagonal,
+$\Sigma \approx \operatorname{diag}(\sigma_1^2, \dots, \sigma_L^2)$. The per-bin weight
+then reduces to
+\begin{equation}
+    w^{\ast}_i = \frac{\mu_{1,i} - \mu_{0,i}}{\sigma_i^2},
+    \label{eq:weight}
+\end{equation}
+and the contribution of bin $i$ to the squared Mahalanobis separation between the
+classes is the per-bin Fisher ratio, the squared signal-to-noise of that bin,
+\begin{equation}
+    J_i = \frac{(\mu_{1,i} - \mu_{0,i})^2}{\sigma_i^2},
+    \qquad
+    (\mu_1 - \mu_0)^{\top}\Sigma^{-1}(\mu_1 - \mu_0) = \sum_{i=1}^{L} J_i .
+    \label{eq:fisherratio}
+\end{equation}
+The sum in \eqref{eq:fisherratio} is the total class separability, and each $J_i$ is
+the additive share contributed by bin $i$. It is maximised precisely at the wavelength
+bins where the two class-mean spectra differ most relative to their variance. For the
+broadline pair studied here those bins are the broad emission lines, where one class
+carries a strong line that the other lacks, and the continuum slope, which separates
+the blue quasar from the redder galaxy. The Bayes-optimal classifier therefore places
+almost all of its weight on exactly the regions that Grad-CAM and the saliency analysis
+highlight in Figure~\ref{fig:gradcam}. The agreement between the learned attention and
+the optimal discriminant $w^{\ast}$ is the sense in which looking at these spectral
+regions is not an arbitrary choice but the mathematically correct way to separate the
+two classes.
+
+This argument also reinforces the structural reading of our hybrid models. The optimal
+discriminant of \eqref{eq:fisher} is a function of the raw spectrum, and the classical
+extractor is the only component that can represent it, since the quantum circuit never
+sees the wavelength axis. Whatever discriminative power a model of this family obtains
+comes from learning $w^{\ast}$, or its nonlinear generalisation, in the classical front
+end, which is consistent with the parity between quantum and classical heads found in
+both experiments.
+
+\subsection{Absence of Quantum Advantage in Few-Shot SVM Classification}
+The results of \hyperref[sec:exp3_results]{Experiment 3} conclusively demonstrate a lack of empirical quantum advantage when deploying a QSVM on the CNN-extracted latent features. Across all few-shot regimes, the classical RBF kernel systematically matched or outperformed the quantum fidelity and projected kernels.
+
+This outcome can be analyzed through the theoretical constraints of the respective kernel spaces. The classical RBF kernel implicitly maps input vectors into an infinite-dimensional functional space. This continuous, unconstrained mapping is highly effective at establishing linear decision boundaries within complex, highly correlated data manifolds, such as the spectrographic features extracted by our Baseline CNN.
+
+In contrast, the QSVM feature map is strictly bounded by the dimensionality of its corresponding Hilbert space. For the optimal feature set of $f=12$, the quantum circuit explores a $2^{12}$-dimensional space. While theoretically vast, the expressivity of this space is governed by discrete parameterized rotations and Pauli expansions. For this specific astronomical dataset, the rigid, periodic nature of the quantum feature map lacked the geometric flexibility inherent to the infinite-dimensional RBF kernel. The quantum mapping forced the data into a high-dimensional topology that did not naturally shatter the symmetric confusion pairs (e.g., starburst and star-forming subclasses) any better than classical density estimation.
+
+Furthermore, this empirical failure was accurately predicted by the geometric difference metric, $g(C||Q) \approx 1.89$, calculated during Phase 1. As established by Huang et al. (2021) \cite{huang2021power}, a low $g(C||Q)$ signifies that the classical and quantum kernels are geometrically aligned, meaning the latent features extracted by the 14-million parameter classical network were already sufficiently structured. Mapping these already highly processed features into a quantum state space introduced redundant parameterization rather than uncovering novel, exploitable linear separability.
+
+\subsection{Interpreting the Absence of a Quantum Advantage}
+\label{sec:discussion_exp4}
+
+Experiment~4 found no robustness advantage for the Quanvolutional filter over a classical baseline under strict parameter parity. Three observations constrain this null result.
+
+First, training the variational circuit provided no benefit. Under the heavy head, a frozen random circuit performed as well as the trained version; only after removing the deep head did training show any effect. This suggests that a deep classical aggregator renders the quantum layer an effectively fixed nonlinear embedding—the specific circuit parameters matter little for final accuracy.
+
+Second, the light-head ablation reveals where the filters differ. Removing the deep head degraded both models, but the quantum filter degraded more, showed higher variance across seeds, and was significantly worse under adversarial training ($p=0.014$). The quantum feature map is thus less linearly separable and less stable in a shallow regime than the classical filter.
+
+Third, the Jacobian analysis does not support an intrinsic-smoothness interpretation. The ordering of smoothness reversed between heavy and light heads, and the probe acts on trained weights, it characterises the learned solution, not a fixed property of the circuit.
+
+In summary, for 1D spectral classification under a fair parameter budget, this hybrid design yields no robustness advantage over a matched classical filter. The high accuracy of the heavy-head network is attributable to its classical components.
+
+% ==========================================
+% DISCUSSION SECTION (Experiment 5 additions)
+% ==========================================
+\subsection{True QCNNs on Classical Data: Inductive Bias under a Budget}
+\label{sec:discussion_exp5}
+
+Experiment~5 serves as a negative control. The QCNN architecture \cite{cong2019qcnn} was designed to exploit structures native to quantum states, guaranteeing the absence of barren plateaus \cite{pesah2021absence}. Embedding classical astronomical flux removes this foundational premise. Consequently, we observe no absolute quantum advantage over an unconstrained classical network.
+
+However, the experiment reinforces the necessity of parameter-matched baselines. While the unconstrained Huge CNN outperforms the QCNN across most quadrants, the QCNN strictly dominates the parameter-matched Tiny CNN, particularly in the few-shot regime where the classical filter degenerates to chance. This localizes the practical utility of quantum inductive bias strictly to the data-starved, heavily constrained parameter regime.
+
+This few-shot resilience aligns with the theoretical bounds of Caro et al. \cite{caro2022generalization}, who proved that generalization error in variational models scales with gate count. The 101-gate quantum core maintains functional accuracy at 20 samples per class, whereas the equivalent classical filter overfits and collapses. The QCNN possesses a strong inductive bias, but it manifests as sample efficiency under a strict capacity budget, not as scalable representational power.
+
+The ablation study isolates the pure QCNN's fragility directly to its state preparation. Because both variants share the same convolution and pooling blocks, the hybrid model's uniform superiority proves that direct amplitude encoding is inherently vulnerable. Distributing the raw 4096-bin spectrum across a global $L_2$-normalized state allows high-frequency noise to corrupt the entire vector multiplicatively \cite{schuld2021encoding}. Classically-assisted angle encoding circumvents this by compressing the signal into bounded, localized rotations.
+
+Finally, the Jacobian analysis confirms textbook capacity dynamics \cite{szegedy2013intriguing, sokolic2017robust}. Under clean, high-data training, the over-parameterized Huge CNN forms a rough, sensitive map, while the constrained quantum map is demonstrably smoother and more robust. However, this smoothness is regime-dependent. Adversarial training flattens all Jacobians, and in few-shot regimes, the Tiny CNN's near-zero norm indicates mathematical collapse (underfitting) rather than genuine robustness.
+
+Ultimately, this experiment concludes the QML sequence with a consistent structural finding: across feature extraction, kernel methods, and fully coherent convolutions, variational quantum models achieve classical parity under matched conditions. Their distinct characteristics emerge in sample efficiency, regularization, and encoding sensitivity, rather than raw top-line dominance over unconstrained classical architectures.

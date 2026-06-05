@@ -1,0 +1,16 @@
+% Standalone source for the Quanv1dLayer circuit figure.
+% Edit this file, then recompile it to regenerate quanv_circuit.pdf:
+%     pdflatex quanv_1D_layer.tex
+% The main thesis includes the resulting PDF via \includegraphics.
+\documentclass[border=8pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{quantikz2}
+\begin{document}
+\begin{quantikz}[column sep=0.35cm, row sep=0.45cm]
+    \lstick{$\ket{0}$} & \gate{R_P(\tilde{x}_1)}\gategroup[4,steps=4,style={dashed,rounded corners,inner xsep=4pt},background]{Layer $\ell$ (repeated $L=3$ times)} & \gate[wires=2]{ZZ} & \gate{\mathrm{Rot}(\theta^{(\ell)}_1)} & \ctrl{1} & \gate{\mathrm{Rot}(\phi^{\text{lens}}_1)}\gategroup[4,steps=1,style={dotted,rounded corners,inner xsep=4pt},background]{Quantum Lens} & \meter{Z, X, ZZ} \\
+    \lstick{$\ket{0}$} & \gate{R_P(\tilde{x}_2)} & & \gate{\mathrm{Rot}(\theta^{(\ell)}_2)} & \targ{} & \gate{\mathrm{Rot}(\phi^{\text{lens}}_2)} & \meter{Z, X, ZZ} \\
+    \lstick{$\ket{0}$} & \gate{R_P(\tilde{x}_3)} & \gate[wires=2]{ZZ} & \gate{\mathrm{Rot}(\theta^{(\ell)}_3)} & \ctrl{1} & \gate{\mathrm{Rot}(\phi^{\text{lens}}_3)} & \meter{Z, X, ZZ} \\
+    \lstick{$\ket{0}$} & \gate{R_P(\tilde{x}_4)} & & \gate{\mathrm{Rot}(\theta^{(\ell)}_4)} & \targ{} & \gate{\mathrm{Rot}(\phi^{\text{lens}}_4)} & \meter{Z, X, ZZ}
+\end{quantikz}
+\end{document}
+% Note: R_P denotes a dynamically selected Pauli rotation (R_Y, R_Z, or R_X) depending on layer depth mod 3. The ring connections for ZZ and CNOT are simplified for visual clarity.

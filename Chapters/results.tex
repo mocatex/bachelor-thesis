@@ -6,6 +6,49 @@ training procedure and the construction of the frozen feature extractor are
 described in detail in the methodology, so here we recall only what is needed to
 read the figures and tables.
 
+% ###############################################################################
+% CLASSICAL BASELINE PERFORMANCE
+% ###############################################################################
+
+\subsection{Classical CNN Baseline Performance (62 Classes)}
+The Baseline CNN was trained for 300 epochs on the 62-class SDSS DR19 dataset. The network achieved a final test accuracy of $84.50\%$, with a final test loss of 0.2479. The training history indicates continuous convergence, with the training accuracy peaking at $91.69\%$ and validation accuracy stabilizing around $84.40\%$ by the final epoch (Figure~\ref{fig:cnn_baseline_history}).
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.95\columnwidth]{Figures/classical_training_history.png}
+    \caption{Training and validation accuracy and loss for the 62-class Baseline CNN over 300 epochs.}
+    \label{fig:cnn_baseline_history}
+\end{figure}
+
+Due to its high dimensionality, the complete $62 \times 62$ normalized confusion matrix is provided in Appendix A. A targeted class-wise analysis reveals significant performance disparities. The lowest recall rates were observed in fine-grained subclasses, specifically \texttt{STAR\_A5} ($35.2\%$), \texttt{QSO\_STARFORMING} ($38.8\%$), \texttt{QSO\_STARBURST} ($40.8\%$), and \texttt{STAR\_SUBDWARF\_F} ($45.7\%$). Furthermore, precision metrics highlight specific categories acting as attractors for false positives, most notably \texttt{GALAXY\_BROADLINE} ($35.2\%$ precision, absorbing 306 false positives) and \texttt{STAR\_SUBDWARF\_F} ($42.3\%$ precision, absorbing 123 false positives).
+
+The classification matrix reveals strictly symmetric topological overlaps (``mirrors'') between specific pairs in the feature space. The most severe symmetrical confusions occurred between \texttt{STAR\_A5} and \texttt{STAR\_F0} ($33.7\%$ total overlap), \texttt{QSO\_STARBURST} and \texttt{QSO\_STARBURST\_BROADLINE} ($28.7\%$ total overlap), and \texttt{QSO\_STARBURST\_BROADLINE} and \texttt{QSO\_STARFORMING} ($25.2\%$ total overlap).
+
+\subsection{Validation against Literature Benchmark: GaSNet-II Replica (13 Classes)}
+To validate the structural integrity and feature extraction capability of our 14-million parameter architecture against an established literature baseline, we conducted a replication experiment based on the 13-class classification framework proposed by Zhong et al. (2024) in the GaSNet-II study \cite{Zhong2024GaSNetII}. This benchmark leverages a distinct subset of SDSS spectra restricted to 13 high-population, coarse-grained subclasses.
+
+Operating on the GaSNet-II dataset, our network was trained for 75 epochs. The model achieved a final test accuracy of $92.51\%$ and a test loss of 0.2311, effectively matching the benchmark performance criteria. The training metrics demonstrated rapid early convergence, reaching a validation accuracy of $90.41\%$ by epoch 20 (Figure~\ref{fig:gasnet_history}).
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.95\columnwidth]{Figures/gasnet_training_history.png}
+    \caption{Training and validation accuracy and loss for the 13-class GaSNet-II replication over 75 epochs.}
+    \label{fig:gasnet_history}
+\end{figure}
+
+The normalized confusion matrix for the 13-class validation task is presented in Figure~\ref{fig:gasnet_cm}. Diagonal values demonstrate robust class separation, with true positive rates strictly exceeding $85\%$ across all categories. Peak classification performances were recorded for \texttt{STAR\_G2} ($97.4\%$), \texttt{STAR\_K5} ($97.2\%$), and \texttt{STAR\_A0} ($96.8\%$). The highest inter-class misclassification rate occurred between adjacent stellar temperatures, with $9.4\%$ of \texttt{STAR\_F9} spectra erroneously classified as \texttt{STAR\_G2}.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.95\columnwidth]{Figures/gasnet_confusion_matrix.png}
+    \caption{Normalized confusion matrix for the 13-class GaSNet-II replication experiment.}
+    \label{fig:gasnet_cm}
+\end{figure}
+
+
+% ##############################################################################
+% EXPERIMENT 1: BINARY CLASSIFICATION OF THE HARDEST PAIR
+% ##############################################################################
 \subsection{Experiment 1: Binary Classification of the Hardest Pair}
 \label{sec:exp1}
 
@@ -18,28 +61,28 @@ runs rather than seed averages, so their exact numbers differ slightly from the
 table.
 
 \begin{table*}[t]
-\centering
-\caption{Binary sweep results, reported as mean $\pm$ standard deviation over three
-seeds. Gap is the \texttt{STAR\_M8} recall minus the \texttt{STAR\_BROWN\_DWARF\_L}
-recall, so a smaller value is more balanced. Recall, gap and ROC-AUC are given as
-means. All configurations have about 24500 trainable parameters, dominated by the
-shared CNN extractor.}
-\label{tab:exp1_sweep}
-\footnotesize
-\setlength{\tabcolsep}{5pt}
-\begin{tabular}{llcccccc}
-\toprule
-Model & Config & Accuracy & Macro-F1 & BROWN rec & M8 rec & Gap & ROC-AUC \\
-\midrule
-Quantum   & 2q $\times$ 12L & $0.863\pm0.005$          & $0.830\pm0.005$          & 0.70 & 0.93 & 0.232 & 0.910 \\
-Quantum   & 3q $\times$ 8L  & $0.865\pm0.012$          & $0.835\pm0.009$          & 0.72 & 0.93 & 0.205 & 0.913 \\
-Quantum   & 4q $\times$ 6L  & $\mathbf{0.869\pm0.008}$ & $0.840\pm0.005$          & 0.73 & 0.93 & 0.200 & 0.927 \\
-Quantum   & 6q $\times$ 4L  & $0.860\pm0.012$          & $0.833\pm0.013$          & 0.76 & 0.90 & 0.140 & 0.924 \\
-Quantum   & 8q $\times$ 3L  & $0.860\pm0.013$          & $0.837\pm0.014$          & \textbf{0.80} & 0.89 & \textbf{0.083} & 0.927 \\
-Classical & 4 features      & $0.868\pm0.016$          & $\mathbf{0.843\pm0.016}$ & 0.77 & 0.91 & 0.136 & \textbf{0.933} \\
-Classical & 8 features      & $0.862\pm0.004$          & $0.836\pm0.006$          & 0.77 & 0.90 & 0.127 & 0.922 \\
-\bottomrule
-\end{tabular}
+    \centering
+    \caption{Binary sweep results, reported as mean $\pm$ standard deviation over three
+        seeds. Gap is the \texttt{STAR\_M8} recall minus the \texttt{STAR\_BROWN\_DWARF\_L}
+        recall, so a smaller value is more balanced. Recall, gap and ROC-AUC are given as
+        means. All configurations have about 24500 trainable parameters, dominated by the
+        shared CNN extractor.}
+    \label{tab:exp1_sweep}
+    \footnotesize
+    \setlength{\tabcolsep}{5pt}
+    \begin{tabular}{llcccccc}
+        \toprule
+        Model     & Config          & Accuracy                 & Macro-F1                 & BROWN rec     & M8 rec & Gap            & ROC-AUC        \\
+        \midrule
+        Quantum   & 2q $\times$ 12L & $0.863\pm0.005$          & $0.830\pm0.005$          & 0.70          & 0.93   & 0.232          & 0.910          \\
+        Quantum   & 3q $\times$ 8L  & $0.865\pm0.012$          & $0.835\pm0.009$          & 0.72          & 0.93   & 0.205          & 0.913          \\
+        Quantum   & 4q $\times$ 6L  & $\mathbf{0.869\pm0.008}$ & $0.840\pm0.005$          & 0.73          & 0.93   & 0.200          & 0.927          \\
+        Quantum   & 6q $\times$ 4L  & $0.860\pm0.012$          & $0.833\pm0.013$          & 0.76          & 0.90   & 0.140          & 0.924          \\
+        Quantum   & 8q $\times$ 3L  & $0.860\pm0.013$          & $0.837\pm0.014$          & \textbf{0.80} & 0.89   & \textbf{0.083} & 0.927          \\
+        Classical & 4 features      & $0.868\pm0.016$          & $\mathbf{0.843\pm0.016}$ & 0.77          & 0.91   & 0.136          & \textbf{0.933} \\
+        Classical & 8 features      & $0.862\pm0.004$          & $0.836\pm0.006$          & 0.77          & 0.90   & 0.127          & 0.922          \\
+        \bottomrule
+    \end{tabular}
 \end{table*}
 
 \subsubsection{Top-line Parity}
@@ -70,23 +113,23 @@ The representative confusion matrices in Figure~\ref{fig:exp1_cm} show the same
 picture, with the residual leakage concentrated on the minority class.
 
 \begin{figure*}[t]
-\centering
-\begin{subfigure}[t]{0.49\textwidth}
-  \includegraphics[width=\linewidth]{Figures/quantum_exp1_cm_test.png}
-  \caption{Quantum model (representative run).}
-  \label{fig:exp1_cm_q}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.49\textwidth}
-  \includegraphics[width=\linewidth]{Figures/classical_exp1_cm_test.png}
-  \caption{Classical mirror (representative run).}
-  \label{fig:exp1_cm_c}
-\end{subfigure}
-\caption{Representative single-run test confusion matrices for the binary task. Both
-models confuse the two spectrally adjacent classes, with the residual leakage
-concentrated on the minority class \texttt{STAR\_BROWN\_DWARF\_L}. Because these are
-single runs rather than seed averages, the values differ slightly from
-Table~\ref{tab:exp1_sweep}.}
-\label{fig:exp1_cm}
+    \centering
+    \begin{subfigure}[t]{0.49\textwidth}
+        \includegraphics[width=\linewidth]{Figures/quantum_exp1_cm_test.png}
+        \caption{Quantum model (representative run).}
+        \label{fig:exp1_cm_q}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.49\textwidth}
+        \includegraphics[width=\linewidth]{Figures/classical_exp1_cm_test.png}
+        \caption{Classical mirror (representative run).}
+        \label{fig:exp1_cm_c}
+    \end{subfigure}
+    \caption{Representative single-run test confusion matrices for the binary task. Both
+        models confuse the two spectrally adjacent classes, with the residual leakage
+        concentrated on the minority class \texttt{STAR\_BROWN\_DWARF\_L}. Because these are
+        single runs rather than seed averages, the values differ slightly from
+        Table~\ref{tab:exp1_sweep}.}
+    \label{fig:exp1_cm}
 \end{figure*}
 
 \subsubsection{Training Dynamics}
@@ -110,23 +153,23 @@ final test metrics confirm that the models train successfully, and that the spik
 are noise in the model-selection metric rather than a failure to learn.
 
 \begin{figure*}[t]
-\centering
-\begin{subfigure}[t]{0.49\textwidth}
-  \includegraphics[width=\linewidth]{Figures/quantum_exp1_training_history.png}
-  \caption{Quantum model.}
-  \label{fig:exp1_train_q}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.49\textwidth}
-  \includegraphics[width=\linewidth]{Figures/classical_exp1_training_history.png}
-  \caption{Classical mirror.}
-  \label{fig:exp1_train_c}
-\end{subfigure}
-\caption{Representative training histories for the binary task. In both models the
-training curves (blue) descend smoothly while the validation curves (yellow) are
-spiky. The instability appears in the classical mirror as strongly as in the quantum
-model, which rules out a quantum barren plateau and points instead to
-model-selection noise from the narrow bottleneck and the overlapping classes.}
-\label{fig:exp1_training}
+    \centering
+    \begin{subfigure}[t]{0.49\textwidth}
+        \includegraphics[width=\linewidth]{Figures/quantum_exp1_training_history.png}
+        \caption{Quantum model.}
+        \label{fig:exp1_train_q}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.49\textwidth}
+        \includegraphics[width=\linewidth]{Figures/classical_exp1_training_history.png}
+        \caption{Classical mirror.}
+        \label{fig:exp1_train_c}
+    \end{subfigure}
+    \caption{Representative training histories for the binary task. In both models the
+        training curves (blue) descend smoothly while the validation curves (yellow) are
+        spiky. The instability appears in the classical mirror as strongly as in the quantum
+        model, which rules out a quantum barren plateau and points instead to
+        model-selection noise from the narrow bottleneck and the overlapping classes.}
+    \label{fig:exp1_training}
 \end{figure*}
 
 \subsubsection{Summary of Findings}
@@ -146,9 +189,12 @@ parameters, with the shared CNN extractor doing the heavy lifting, which is why 
 comparison had to be matched at the contested middle stage and why a large quantum
 advantage was never plausible in this regime.
 
-\FloatBarrier
-\subsection{Experiment 3: Quantum and Classical Heads on Frozen Features}
-\label{sec:exp3}
+
+% ##############################################################################
+% EXPERIMENT 2: QUANTUM AND CLASSICAL HEADS ON FROZEN FEATURES
+% ##############################################################################
+\subsection{Experiment 2: Quantum and Classical Heads on Frozen Features}
+\label{sec:exp2}
 
 Coming from the prior experiments, where we found no advantage for quantum models
 over classical solutions, we push the problem harder and ask whether a quantum head
@@ -156,7 +202,7 @@ can be more parameter-efficient than a classical one on a hard four-class spectr
 task. The four classes are \texttt{STAR\_BROWN\_DWARF\_L}, \texttt{STAR\_M8},
 \texttt{GALAXY\_STARBURST} and \texttt{GALAXY\_STARFORMING}, balanced to 1000 samples
 per class and split $70/15/15$ into train, validation and test. As detailed in
-Section~\ref{sec:exp3_methods}, every head sits on the same frozen feature extractor
+Section~\ref{sec:exp2_methods}, every head sits on the same frozen feature extractor
 and receives the same 128-dimensional feature vector, so any difference comes from
 the head alone. The four heads are the dense classical baseline (Model~A, 5058
 parameters), the hybrid quantum head (Model~B, 556 parameters) and two
@@ -167,8 +213,8 @@ than the surrounding structure.
 
 \subsubsection{Overall Classification Performance}
 
-Table~\ref{tab:exp3_headline} summarises the headline results and
-Figure~\ref{fig:exp3_cm} shows the corresponding test confusion matrices. The dense
+Table~\ref{tab:exp2_headline} summarises the headline results and
+Figure~\ref{fig:exp2_cm} shows the corresponding test confusion matrices. The dense
 classical head (A), the quantum head (B) and the Tanh control (D) all reach roughly
 96\% overall accuracy with very similar per-class behaviour, while the ReLU control
 (C) collapses to about 79\%. The three successful models classify the hardest
@@ -180,55 +226,55 @@ that a tiny head is sufficient once the features are supplied by a strong frozen
 extractor.
 
 \begin{table}[t]
-\centering
-\caption{Experiment 3 headline results on the four-class test set. Accuracies are
-read from the confusion matrices and should be treated as $\pm 1$ percentage point.
-BD recall is the recall on the brown-dwarf class \texttt{STAR\_BROWN\_DWARF\_L}.}
-\label{tab:exp3_headline}
-\setlength{\tabcolsep}{4pt}
-\footnotesize
-\begin{tabular}{llccc}
-\toprule
- & Head & Params & Acc. & BD recall \\
-\midrule
-A & Dense classical    & 5058 & $\sim$96\% & 0.95 \\
-B & Quantum (Lin.+VQC) & 556  & $\sim$96\% & 0.93 \\
-C & Classical, ReLU    & 556  & $\sim$79\% & 0.18 \\
-D & Classical, Tanh    & 556  & $\sim$96\% & 0.94 \\
-\bottomrule
-\end{tabular}
+    \centering
+    \caption{Experiment 2 headline results on the four-class test set. Accuracies are
+        read from the confusion matrices and should be treated as $\pm 1$ percentage point.
+        BD recall is the recall on the brown-dwarf class \texttt{STAR\_BROWN\_DWARF\_L}.}
+    \label{tab:exp2_headline}
+    \setlength{\tabcolsep}{4pt}
+    \footnotesize
+    \begin{tabular}{llccc}
+        \toprule
+          & Head               & Params & Acc.       & BD recall \\
+        \midrule
+        A & Dense classical    & 5058   & $\sim$96\% & 0.95      \\
+        B & Quantum (Lin.+VQC) & 556    & $\sim$96\% & 0.93      \\
+        C & Classical, ReLU    & 556    & $\sim$79\% & 0.18      \\
+        D & Classical, Tanh    & 556    & $\sim$96\% & 0.94      \\
+        \bottomrule
+    \end{tabular}
 \end{table}
 
 \begin{figure*}[t]
-\centering
-\begin{subfigure}{0.45\textwidth}
-  \includegraphics[width=\linewidth]{Figures/5000param_classical_cm_test.png}
-  \caption{Dense classical, 5058 params (A).}
-  \label{fig:exp3_cm_dense}
-\end{subfigure}\hfill
-\begin{subfigure}{0.45\textwidth}
-  \includegraphics[width=\linewidth]{Figures/quantum_500param_cm_test.png}
-  \caption{Quantum, 556 params (B).}
-  \label{fig:exp3_cm_quantum}
-\end{subfigure}
+    \centering
+    \begin{subfigure}{0.45\textwidth}
+        \includegraphics[width=\linewidth]{Figures/5000param_classical_cm_test.png}
+        \caption{Dense classical, 5058 params (A).}
+        \label{fig:exp2_cm_dense}
+    \end{subfigure}\hfill
+    \begin{subfigure}{0.45\textwidth}
+        \includegraphics[width=\linewidth]{Figures/quantum_500param_cm_test.png}
+        \caption{Quantum, 556 params (B).}
+        \label{fig:exp2_cm_quantum}
+    \end{subfigure}
 
-\vspace{0.5em}
+    \vspace{0.5em}
 
-\begin{subfigure}{0.45\textwidth}
-  \includegraphics[width=\linewidth]{Figures/500param_classical_deadrelu_cm_test.png}
-  \caption{Classical ReLU control, 556 params (C).}
-  \label{fig:exp3_cm_relu}
-\end{subfigure}\hfill
-\begin{subfigure}{0.45\textwidth}
-  \includegraphics[width=\linewidth]{Figures/500param_classical_tanh_cm_test.png}
-  \caption{Classical Tanh control, 556 params (D).}
-  \label{fig:exp3_cm_tanh}
-\end{subfigure}
-\caption{Test-set confusion matrices for the four heads. The dense head (A), the
-quantum head (B) and the Tanh control (D) are almost indistinguishable, whereas the
-ReLU control (C) misroutes 75\% of brown dwarfs into
-\texttt{GALAXY\_STARFORMING}.}
-\label{fig:exp3_cm}
+    \begin{subfigure}{0.45\textwidth}
+        \includegraphics[width=\linewidth]{Figures/500param_classical_deadrelu_cm_test.png}
+        \caption{Classical ReLU control, 556 params (C).}
+        \label{fig:exp2_cm_relu}
+    \end{subfigure}\hfill
+    \begin{subfigure}{0.45\textwidth}
+        \includegraphics[width=\linewidth]{Figures/500param_classical_tanh_cm_test.png}
+        \caption{Classical Tanh control, 556 params (D).}
+        \label{fig:exp2_cm_tanh}
+    \end{subfigure}
+    \caption{Test-set confusion matrices for the four heads. The dense head (A), the
+        quantum head (B) and the Tanh control (D) are almost indistinguishable, whereas the
+        ReLU control (C) misroutes 75\% of brown dwarfs into
+        \texttt{GALAXY\_STARFORMING}.}
+    \label{fig:exp2_cm}
 \end{figure*}
 
 \subsubsection{The Parameter-Matched Control and the Dead-ReLU Artefact}
@@ -236,7 +282,7 @@ ReLU control (C) misroutes 75\% of brown dwarfs into
 The decisive comparison is between the three 556-parameter models. The quantum head
 (B) reaches 0.93 recall on \texttt{STAR\_BROWN\_DWARF\_L}, but the ReLU control (C)
 reaches only 0.18 and routes about 75\% of brown dwarfs into
-\texttt{GALAXY\_STARFORMING}, as seen in Figure~\ref{fig:exp3_cm_relu}, which caps
+\texttt{GALAXY\_STARFORMING}, as seen in Figure~\ref{fig:exp2_cm_relu}, which caps
 its overall accuracy near 79\%. Taken on its own this looks like a clear quantum
 advantage on the hardest class. The Tanh control (D), which is identical to C except
 that the inner ReLU is replaced by Tanh, fully recovers to 0.94 recall and about
@@ -247,35 +293,35 @@ The mechanism is a dead-ReLU effect. With only four neurons in the middle layer,
 ReLU unit that is pushed into its negative region outputs zero and receives zero
 gradient, so it never recovers, and losing even one or two of four units destroys
 the decision boundary for the minority class. The training curves in
-Figure~\ref{fig:exp3_training} make this visible. The ReLU control sits on a flat
+Figure~\ref{fig:exp2_training} make this visible. The ReLU control sits on a flat
 plateau near 50\% accuracy from roughly epoch 5 to epoch 13 before only partially
 escaping, whereas the Tanh control, whose activation always has a nonzero gradient,
 trains cleanly and converges by about epoch 20. Once this confound is removed the
 quantum head (B) and the classical Tanh head (D) are equal on every measured axis.
 
 \begin{figure*}[tb]
-\centering
-\begin{subfigure}[t]{0.49\textwidth}
-  \includegraphics[width=\linewidth]{Figures/500param_classical_deadrelu_training_history.png}
-  \caption{Classical ReLU control (C): the accuracy plateaus near 0.50 before
-  partially escaping.}
-  \label{fig:exp3_train_relu}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.49\textwidth}
-  \includegraphics[width=\linewidth]{Figures/500param_classical_tanh_training_history.png}
-  \caption{Classical Tanh control (D): clean, monotonic convergence.}
-  \label{fig:exp3_train_tanh}
-\end{subfigure}
-\caption{Training history of the two 556-parameter classical controls. The only
-difference between them is the inner activation function, which alone accounts for
-the gap between 79\% and 96\% accuracy.}
-\label{fig:exp3_training}
+    \centering
+    \begin{subfigure}[t]{0.49\textwidth}
+        \includegraphics[width=\linewidth]{Figures/500param_classical_deadrelu_training_history.png}
+        \caption{Classical ReLU control (C): the accuracy plateaus near 0.50 before
+            partially escaping.}
+        \label{fig:exp2_train_relu}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.49\textwidth}
+        \includegraphics[width=\linewidth]{Figures/500param_classical_tanh_training_history.png}
+        \caption{Classical Tanh control (D): clean, monotonic convergence.}
+        \label{fig:exp2_train_tanh}
+    \end{subfigure}
+    \caption{Training history of the two 556-parameter classical controls. The only
+        difference between them is the inner activation function, which alone accounts for
+        the gap between 79\% and 96\% accuracy.}
+    \label{fig:exp2_training}
 \end{figure*}
 
 \subsubsection{Encoding Ablation}
 
 A separate set of variants probes whether the limitation lies in the number of
-qubits or in how the features are loaded into them. Table~\ref{tab:exp3_encoding}
+qubits or in how the features are loaded into them. Table~\ref{tab:exp2_encoding}
 compares the learned linear encoding of Model~B against unsupervised PCA encodings.
 A frozen PCA projection into the circuit caps accuracy near 76\% regardless of its
 width, while the learned \texttt{Linear(128,4)} encoding into the same four qubits
@@ -287,21 +333,21 @@ four-qubit count, which identifies data encoding rather than circuit width as th
 limiting factor for the quantum model.
 
 \begin{table}[t]
-\centering
-\caption{Encoding ablation for the quantum head. All variants encode into four
-qubits; only the projection feeding the circuit changes.}
-\label{tab:exp3_encoding}
-\setlength{\tabcolsep}{4pt}
-\footnotesize
-\begin{tabular}{lcc}
-\toprule
-Encoding into the VQC & Params & Acc. \\
-\midrule
-Frozen PCA(128,4)                  & $\sim$40  & $\sim$76\% \\
-Frozen PCA(128,64) + Linear(64,4)  & $\sim$300 & $\sim$76\% \\
-Learned Linear(128,4) (Model B)    & 556       & $\sim$96\% \\
-\bottomrule
-\end{tabular}
+    \centering
+    \caption{Encoding ablation for the quantum head. All variants encode into four
+        qubits; only the projection feeding the circuit changes.}
+    \label{tab:exp2_encoding}
+    \setlength{\tabcolsep}{4pt}
+    \footnotesize
+    \begin{tabular}{lcc}
+        \toprule
+        Encoding into the VQC             & Params    & Acc.       \\
+        \midrule
+        Frozen PCA(128,4)                 & $\sim$40  & $\sim$76\% \\
+        Frozen PCA(128,64) + Linear(64,4) & $\sim$300 & $\sim$76\% \\
+        Learned Linear(128,4) (Model B)   & 556       & $\sim$96\% \\
+        \bottomrule
+    \end{tabular}
 \end{table}
 
 \subsubsection{Training Dynamics and Computational Cost}
@@ -338,3 +384,351 @@ classical control that uses a robust activation, because a width-limited ReLU
 baseline can fail for reasons unrelated to capacity and create a false advantage.
 
 \FloatBarrier
+% ##############################################################################
+% EXPERIMENT 3: FEW-SHOT LEARNING WITH QUANTUM SUPPORT VECTOR
+% ##############################################################################
+\subsection{Experiment 3: Few-Shot Learning with Quantum Support Vector Machines (QSVM)}
+\label{sec:exp3_results}
+
+\subsubsection{Feature Selection and Dimensionality Reduction}
+Prior to evaluating the support vector machines, a dimensionality reduction sweep was conducted to determine the optimal number of features to extract from the frozen classical Baseline CNN. The sweep evaluated latent feature sizes up to 16. The results indicated that $f=12$ features provided the optimal trade-off; classification metrics plateaued beyond this point, and selecting $f=12$ minimized the substantial computational overhead associated with simulating larger qubit registers (Figure~\ref{fig:qsvm_feature_sweep}). Consequently, all subsequent QSVM and classical SVM baselines were standardized to 12 input features, mapped to a 12-qubit quantum register.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.95\columnwidth]{Figures/qsvm_feature_sweep_f12.png}
+    \caption{Classification performance as a function of the number of extracted features ($f$). The performance plateaus at $f=12$, which was selected for the 12-qubit QSVM runs.}
+    \label{fig:qsvm_feature_sweep}
+\end{figure}
+
+\subsubsection{Geometric Difference Pre-Screening (Phase 1)}
+To assess the potential for quantum advantage before extensive model training, we computed the geometric difference metric $g(C||Q)$ between the classical RBF kernel and each quantum kernel under the tuned bandwidth. For the fidelity kernel, $g(C||Q) = 1.89$ with an off-diagonal standard deviation of $0.2426$, constant across all regularization scales ($10^{-6}$ to $10^{-10}$). For the projected kernel, $g(C||Q) = 12.01$ with an off-diagonal standard deviation of $0.3294$. Values of $g(C||Q)$ approaching $1$ indicate that the quantum kernel is effectively equivalent to the classical kernel up to a trivial reparameterization, rendering a practical quantum advantage impossible \cite{huang2021power}. The fidelity kernel's value ($g = 1.89$) lies close to this regime: the bandwidth tuning brings it nearly into agreement with the classical RBF kernel, which is consistent with the near-identical few-shot accuracies reported in Phase 2. The projected kernel remains more distinct from the classical kernel ($g = 12.01$), yet this distinctness does not translate into any empirical advantage, underscoring that a large geometric difference is necessary but not sufficient for separation. Combined with the empirical results presented in Phase 2, the pre-screening is fully consistent with the absence of a practical advantage in this setting.
+
+\subsubsection{Scaling Sweep and Hyperparameter Tuning (Phase 2)}
+A multi-seed scaling sweep was conducted across varying training sample sizes ($n \in \{2, 5, 10, 20, 50, 100, 200\}$ samples per class) to evaluate few-shot learning capabilities. We compared a classical SVM with a Radial Basis Function (RBF) kernel against two QSVM variants: a fidelity kernel and a projected kernel. The sweep was evaluated at several regularization parameters $C$; the results for the optimal value ($C = 0.25$) are summarised in Table~\ref{tab:qsvm_scaling_results}.
+
+For small training sets ($n \le 20$), no statistically significant differences were observed between the classical RBF kernel and either quantum kernel (paired t-test and Wilcoxon signed-rank test, $p > 0.05$ in all cases). At $n = 10$, the fidelity kernel produced a slightly higher point estimate ($0.5191$ vs. $0.5124$ for classical RBF), but this difference was not significant ($p = 0.797$). For $n \ge 50$, the classical RBF kernel consistently achieved a statistically significant advantage over both quantum kernels ($p < 0.05$). Similar trends were observed for $C = 0.1$. In all cases, the pre-registered null hypothesis of a quantum advantage was rejected, confirming the absence of a practical advantage for the tested quantum kernels on this dataset.
+
+\begin{table}[h]
+    \centering
+    \caption{Few-shot scaling sweep results for Classical SVM (RBF) vs. QSVM (Fidelity and Projected Kernels) at $C=0.25$. ($n$ = training samples per class). Accuracies are reported with 95\% confidence intervals. No quantum advantage was observed at any scale.}
+    \label{tab:qsvm_scaling_results}
+    \begin{tabular}{@{}lccc@{}}
+        \toprule
+        \textbf{$n$} & \textbf{Classical RBF}       & \textbf{QSVM Fidelity}       & \textbf{QSVM Projected} \\ \midrule
+        2            & \textbf{0.3628} [0.28, 0.43] & 0.3573 [0.28, 0.42]          & 0.3127 [0.25, 0.37]     \\
+        5            & \textbf{0.4268} [0.37, 0.48] & 0.4232 [0.35, 0.49]          & 0.4115 [0.36, 0.45]     \\
+        10           & 0.5124 [0.46, 0.55]          & \textbf{0.5191} [0.49, 0.54] & 0.4582 [0.42, 0.49]     \\
+        20           & \textbf{0.5727} [0.53, 0.60] & 0.5624 [0.53, 0.59]          & 0.5519 [0.51, 0.58]     \\
+        50           & \textbf{0.6302} [0.61, 0.64] & 0.6097 [0.59, 0.62]          & 0.5742 [0.54, 0.60]     \\
+        100          & \textbf{0.6765} [0.66, 0.69] & 0.6367 [0.62, 0.64]          & 0.6269 [0.59, 0.65]     \\
+        200          & \textbf{0.7270} [0.71, 0.74] & 0.6543 [0.64, 0.66]          & 0.6818 [0.66, 0.69]     \\ \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.95\columnwidth]{Figures/qsvm_scaling_sweep.png}
+    \caption{Classification accuracy as a function of training samples per class ($n$) for $C=0.25$.}
+    \label{fig:qsvm_scaling}
+\end{figure}
+
+
+% ==========================================
+% EXPERIMENT 4: QUANVOLUTION AND NOISE ROBUSTNESS
+% ==========================================
+
+\subsection{Experiment 4: Quanvolution and Noise Robustness}
+\label{sec:exp4_results}
+
+This experiment evaluates the generalisation and intrinsic noise robustness of a hybrid Quanvolutional filter against a strictly parameter-matched classical filter (52 trainable quantum parameters versus 46 classical parameters). To isolate the contribution of the quantum layer from the surrounding architecture, each comparison is run in two regimes: a ``Heavy Head'' configuration (the deep aggregation baseline of Section~\ref{sec:exp4_shared}) and a ``Light Head'' ablation, in which the deep convolutions are removed and the filter outputs route directly into a single linear classifier. All results are reported as the mean over ten random seeds, with significance assessed by a paired Wilcoxon signed-rank test (minimum attainable $p = 2/2^{10} \approx 0.002$).
+
+\subsubsection{Out-of-Distribution and Adversarial Robustness}
+
+Robustness is quantified as the mean accuracy over the full evaluated noise range (the noise-decay AUC normalised by the range); this measure includes the high-noise floor at which both models approach chance, so absolute values are lower than the clean accuracy. Results are summarised in Table~\ref{tab:exp4_auc} and the decay curves in Figure~\ref{fig:exp4_robustness_curves}.
+
+In the Heavy Head configuration the trained quantum and classical filters were statistically indistinguishable. Under OOD noise the quantum filter reached a robustness AUC of \(0.563 \pm 0.014\) against \(0.563 \pm 0.026\) for the classical filter (\(\Delta = +0.000\), \(p = 0.625\)); under Adversarial Training the classical filter was marginally ahead, \(0.675 \pm 0.033\) versus \(0.655 \pm 0.056\) (\(\Delta = -0.020\), \(p = 0.695\)), a difference well within seed variation. Clean accuracy (\(\sigma = 0\)) was similarly close (OOD: \(0.926\) quantum, \(0.914\) classical; Adversarial: \(0.897\) quantum, \(0.910\) classical). The decay trajectories overlap throughout, indicating no standalone quantum advantage when the filter is embedded within a high-capacity classical network.
+
+The Light Head ablation degraded both filters and produced the only statistically significant accuracy difference of the experiment, favouring the classical filter. Under OOD noise the filters remained statistically comparable with no noise. But with added noise the quanvolutional model degraded more steeply, whilethe classical filter held up better.
+And even more under Adversarial Training. The classical filter was significantly more robust (quantum \(0.545 \pm 0.034\) versus classical \(0.592 \pm 0.022\), \(\Delta = -0.047\), \(p = 0.014\)). Clean light-head accuracy was \(0.760\) (quantum) versus \(0.786\) (classical) for OOD and \(0.723\) versus \(0.811\) for Adversarial. The quantum light-head configuration also exhibited the largest seed variance in the experiment, with individual seeds collapsing toward chance accuracy. This indicates that the quantum filter's features are less linearly separable than the classical filter's, and rely more heavily on downstream capacity, rather than a uniform failure of the quantum layer.
+
+Training the variational circuit produced no significant benefit in the heavy configuration. Under the Heavy Head the random (frozen) quantum circuit slightly exceeded the trained circuit (OOD AUC \(0.598\) frozen versus \(0.563\) trained; Adversarial \(0.663\) versus \(0.655\)), while under the Light Head training yielded a small uplift (OOD \(0.549\) trained versus \(0.520\) frozen; Adversarial \(0.545\) versus \(0.528\)). None of the frozen-versus-classical comparisons reached significance (all \(p > 0.3\)). The 52 variational parameters therefore contribute little beyond a fixed random feature embedding, particularly when a high-capacity classical head is present.
+
+\begin{table}[tbp]
+    \centering
+    \caption{Clean accuracy ($\sigma=0$) and robustness AUC (mean accuracy over the full evaluated noise range), mean $\pm$ standard deviation over ten seeds. ``Q'' and ``C'' denote the quantum and classical filters; $p$ is the paired Wilcoxon signed-rank test on the per-seed AUC. The single significant difference (Adversarial Light Head) favours the classical filter.}
+    \label{tab:exp4_auc}
+    \setlength{\tabcolsep}{4pt}
+    \footnotesize
+    \begin{tabular}{llcccc}
+        \toprule
+        Regime & Head  & Clean Q & Clean C & AUC Q             & AUC C                      \\
+        \midrule
+        OOD    & Heavy & 0.926   & 0.914   & $0.563 \pm 0.014$ & $0.563 \pm 0.026$          \\
+        OOD    & Light & 0.760   & 0.786   & $0.549 \pm 0.050$ & $0.564 \pm 0.029$          \\
+        ADV    & Heavy & 0.897   & 0.910   & $0.655 \pm 0.056$ & $0.675 \pm 0.033$          \\
+        ADV    & Light & 0.723   & 0.811   & $0.545 \pm 0.034$ & $\mathbf{0.592 \pm 0.022}$ \\
+        \bottomrule
+    \end{tabular}
+
+    \vspace{0.5em}
+    {\footnotesize Wilcoxon $p$: OOD Heavy $0.625$; OOD Light $0.275$; Adv.\ Heavy $0.695$; Adv.\ Light $\mathbf{0.014}$.}
+\end{table}
+
+\begin{figure*}[tbp]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/quanv_ood_heavy_robustness.png}
+        \caption{OOD Noise: Heavy Head}
+        \label{fig:exp4_ood_heavy}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/quanv_ood_light_robustness.png}
+        \caption{OOD Noise: Light Head}
+        \label{fig:exp4_ood_light}
+    \end{subfigure}
+
+    \vspace{1em}
+
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/quanv_adv_heavy_robustness.png}
+        \caption{Adversarial Noise: Heavy Head}
+        \label{fig:exp4_adv_heavy}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/quanv_adv_light_robustness.png}
+        \caption{Adversarial Noise: Light Head}
+        \label{fig:exp4_adv_light}
+    \end{subfigure}
+
+    \caption{Robustness decay curves across the four evaluation quadrants (mean over ten seeds; shaded bands denote $\pm1$ standard deviation). Accuracy is plotted against increasing continuous noise magnitude ($\sigma$). The heavy-head curves overlap, while the light-head ablation degrades both filters and leaves the classical filter ahead.}
+    \label{fig:exp4_robustness_curves}
+\end{figure*}
+
+\subsubsection{Jacobian Smoothness Analysis}
+
+To characterise the structural sensitivity of the trained filters independently of their accuracy, we computed the median Jacobian Frobenius norm \(\|J\|_F\) of each filter's per-patch feature map over sampled clean test patches, evaluated on identical patches for both models. The per-seed distributions are shown in Figure~\ref{fig:exp4_jacobian_dists}.
+
+The smoothness ordering was found to be configuration-dependent. Under the Heavy Head, the trained quantum filter exhibited a significantly lower median Jacobian norm than the classical filter (OOD: \(0.747\) versus \(1.052\), \(p = 0.006\); Adversarial: \(0.684\) versus \(0.938\), \(p = 0.006\)), indicating a smoother, less perturbation-sensitive feature map. Under the Light Head this ordering reversed. The classical filter showed the lower median norm (OOD: \(0.282\) versus \(0.559\); Adversarial: \(0.218\) versus \(0.528\)). Although neither light-head difference reached significance (\(p = 0.106\) and \(p = 0.065\) respectively).
+
+Because the probe is evaluated on the trained filters, whose weights differ between the heavy and light configurations, the measured Jacobian reflects the learned feature map rather than an intrinsic property of the circuit topology. The reversal under ablation therefore does not support a claim of architecture-independent quantum smoothness. We report the heavy-head smoothness as a significant property of the trained model in that regime, while noting that it does not translate into any accuracy or robustness advantage.
+
+\begin{figure*}[tbp]
+    \centering
+    \begin{subfigure}[b]{0.24\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/quanv_ood_heavy_jacobian.png}
+        \caption{OOD Heavy}
+        \label{fig:exp4_jacob_ood_heavy}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.24\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/quanv_ood_light_jacobian.png}
+        \caption{OOD Light}
+        \label{fig:exp4_jacob_ood_light}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.24\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/quanv_adv_heavy_jacobian.png}
+        \caption{Adv Heavy}
+        \label{fig:exp4_jacob_adv_heavy}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.24\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/quanv_adv_light_jacobian.png}
+        \caption{Adv Light}
+        \label{fig:exp4_jacob_adv_light}
+    \end{subfigure}
+
+    \caption{Per-seed Jacobian Frobenius norms $\|J\|_F$ for the trained quantum and classical filters (each line is one seed; white line is the median). The quantum filter is the significantly smoother map under the Heavy Head ($p=0.006$) but the rougher map under the Light Head (not significant), indicating that the measured smoothness is a property of the learned weights in each regime rather than of the circuit topology.}
+    \label{fig:exp4_jacobian_dists}
+\end{figure*}
+
+
+% ==========================================
+% EXPERIMENT 5: TRUE QUANTUM CONVOLUTIONAL NETWORKS
+% ==========================================
+
+\subsection{Experiment 5: True Quantum Convolutional Networks}
+\label{sec:exp5_results}
+
+This experiment evaluates the fully coherent QCNN against two classical baselines: the strict-parity \emph{Tiny CNN} ($\sim$100 parameters) and the unconstrained \emph{Huge CNN} (8228 parameters). We compare the amplitude-encoded \emph{pure QCNN} against a \emph{Hybrid QCNN} (which uses a classical stem and angle encoding) to isolate data-loading vulnerabilities. Models are evaluated across four quadrants crossing dataset size (High-Data vs. Few-Shot) with training regime (Clean vs. Adversarial). Statistical significance is assessed via paired Wilcoxon signed-rank tests over ten seeds ($p<0.05$).
+
+Performance under noise is quantified via robustness AUC (the normalized area under the accuracy-versus-noise curve). Clean accuracy ($\sigma=0$) and robustness AUC are summarized in Table~\ref{tab:exp5_master}, significance tests in Table~\ref{tab:exp5_wilcoxon}, and decay trajectories in Figure~\ref{fig:exp5_robustness}.
+
+\begin{table}[tbp]
+    \centering
+    \caption{Clean accuracy ($\sigma=0$) and robustness AUC across training quadrants (mean $\pm$ std dev, ten seeds). The best robustness AUC per quadrant is bolded.}
+    \label{tab:exp5_master}
+    \setlength{\tabcolsep}{5pt}
+    \footnotesize
+    \begin{tabular}{llcc}
+        \toprule
+         & Model     & Clean ($\sigma{=}0$) & Robustness AUC              \\
+        \midrule
+        \multicolumn{4}{l}{\textit{Q1 — High-Data, Clean training}}       \\
+         & CNN\_Huge & $0.837 \pm 0.014$    & $0.346 \pm 0.019$           \\
+         & CNN\_Tiny & $0.735 \pm 0.025$    & $\mathbf{0.462 \pm 0.059}$  \\
+         & QCNN      & $0.779 \pm 0.027$    & $0.408 \pm 0.039$           \\
+         & QCNN\_Hyb & $0.761 \pm 0.034$    & $0.448 \pm 0.058$           \\
+        \addlinespace
+        \multicolumn{4}{l}{\textit{Q2 — High-Data, Adversarial training}} \\
+         & CNN\_Huge & $0.835 \pm 0.011$    & $\mathbf{0.673 \pm 0.026}$  \\
+         & CNN\_Tiny & $0.704 \pm 0.025$    & $0.544 \pm 0.040$           \\
+         & QCNN      & $0.754 \pm 0.028$    & $0.576 \pm 0.022$           \\
+         & QCNN\_Hyb & $0.786 \pm 0.013$    & $0.632 \pm 0.037$           \\
+        \addlinespace
+        \multicolumn{4}{l}{\textit{Q3 — Few-Shot, Clean training}}        \\
+         & CNN\_Huge & $0.595 \pm 0.162$    & $0.305 \pm 0.025$           \\
+         & CNN\_Tiny & $0.305 \pm 0.121$    & $0.283 \pm 0.064$           \\
+         & QCNN      & $0.523 \pm 0.127$    & $0.312 \pm 0.029$           \\
+         & QCNN\_Hyb & $0.524 \pm 0.064$    & $\mathbf{0.362 \pm 0.056}$  \\
+        \addlinespace
+        \multicolumn{4}{l}{\textit{Q4 — Few-Shot, Adversarial training}}  \\
+         & CNN\_Huge & $0.665 \pm 0.120$    & $\mathbf{0.479 \pm 0.063}$  \\
+         & CNN\_Tiny & $0.292 \pm 0.109$    & $0.286 \pm 0.072$           \\
+         & QCNN      & $0.478 \pm 0.118$    & $0.364 \pm 0.085$           \\
+         & QCNN\_Hyb & $0.557 \pm 0.081$    & $0.443 \pm 0.081$           \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsubsection{Clean Accuracy and Robustness Outcomes}
+
+Classical capacity dictates top-line clean accuracy: the unconstrained Huge CNN dominates both High-Data quadrants ($\sim$0.84). However, at strict parameter parity ($\sim$100 weights), the quantum models vastly outperform the Tiny CNN. The Tiny CNN collapses to near-chance performance ($<0.31$) in Few-Shot regimes, while the QCNNs sustain meaningful accuracy ($0.52$--$0.56$). At low capacity, quantum convolutions act as vastly superior, data-efficient feature extractors.
+
+Robustness AUC reveals some regime-dependencies:
+\begin{itemize}
+    \item \textbf{Against Strict Parity:} Both quantum models are uniformly superior or competitive with the Tiny CNN, particularly excelling in data-starved settings.
+    \item \textbf{Against Unconstrained Capacity:} The Huge CNN wins decisively under adversarial training (Q2, Q4). However, under Clean High-Data training (Q1), the Huge CNN massively overfits the clean distribution, becoming the \emph{least} robust model ($0.346$ AUC). Here, both constrained QCNNs are significantly more robust.
+    \item \textbf{Few-Shot Stability:} In Few-Shot Clean (Q3), the Hybrid QCNN achieves the highest AUC overall ($0.362$) with half the seed-to-seed variance of the classical models, marking it as the most reliable low-data learner.
+\end{itemize}
+
+\begin{table}[tbp]
+    \centering
+    \caption{Paired Wilcoxon signed-rank tests on per-seed robustness AUC ($\Delta>0$ favours the quantum model). Significant differences ($p<0.05$) in bold.}
+    \label{tab:exp5_wilcoxon}
+    \setlength{\tabcolsep}{5pt}
+    \footnotesize
+    \begin{tabular}{llcc}
+        \toprule
+        Quadrant & Comparison       & $\Delta$ AUC & $p$              \\
+        \midrule
+        \multirow{4}{*}{Q1}
+                 & QCNN vs.\ Tiny   & $-0.053$     & $0.064$          \\
+                 & QCNN vs.\ Huge   & $+0.062$     & $\mathbf{0.010}$ \\
+                 & Hybrid vs.\ Tiny & $-0.014$     & $0.846$          \\
+                 & Hybrid vs.\ Huge & $+0.102$     & $\mathbf{0.004}$ \\
+        \addlinespace
+        \multirow{4}{*}{Q2}
+                 & QCNN vs.\ Tiny   & $+0.033$     & $0.275$          \\
+                 & QCNN vs.\ Huge   & $-0.096$     & $\mathbf{0.002}$ \\
+                 & Hybrid vs.\ Tiny & $+0.088$     & $\mathbf{0.002}$ \\
+                 & Hybrid vs.\ Huge & $-0.041$     & $\mathbf{0.020}$ \\
+        \addlinespace
+        \multirow{4}{*}{Q3}
+                 & QCNN vs.\ Tiny   & $+0.029$     & $0.160$          \\
+                 & QCNN vs.\ Huge   & $+0.007$     & $0.625$          \\
+                 & Hybrid vs.\ Tiny & $+0.079$     & $\mathbf{0.020}$ \\
+                 & Hybrid vs.\ Huge & $+0.057$     & $0.064$          \\
+        \addlinespace
+        \multirow{4}{*}{Q4}
+                 & QCNN vs.\ Tiny   & $+0.078$     & $\mathbf{0.027}$ \\
+                 & QCNN vs.\ Huge   & $-0.115$     & $\mathbf{0.049}$ \\
+                 & Hybrid vs.\ Tiny & $+0.158$     & $\mathbf{0.006}$ \\
+                 & Hybrid vs.\ Huge & $-0.035$     & $0.322$          \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure*}[tbp]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/qcnn_robustness_HighData_Clean.png}
+        \caption{Q1: High-Data, Clean}
+        \label{fig:exp5_rob_q1}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/qcnn_robustness_HighData_Adv.png}
+        \caption{Q2: High-Data, Adv}
+        \label{fig:exp5_rob_q2}
+    \end{subfigure}
+
+    \vspace{1em}
+
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/qcnn_robustness_FewShot_Clean.png}
+        \caption{Q3: Few-Shot, Clean}
+        \label{fig:exp5_rob_q3}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/qcnn_robustness_FewShot_Adv.png}
+        \caption{Q4: Few-Shot, Adv}
+        \label{fig:exp5_rob_q4}
+    \end{subfigure}
+
+    \caption{Robustness decay curves across the four quadrants. Under clean high-data training (Q1), the Huge CNN starts highest but decays fastest. Under adversarial training (Q2, Q4), it retains dominance. The Hybrid QCNN consistently tracks above the pure QCNN.}
+    \label{fig:exp5_robustness}
+\end{figure*}
+
+\subsubsection{Encoding Ablation and Jacobian Smoothness}
+
+The Hybrid QCNN consistently exceeds the pure QCNN in robustness AUC across all four quadrants. This isolates the pure QCNN's fragility directly to its amplitude encoding, where high-frequency noise heavily reshapes the global $L_2$ norm. The classically-assisted angle encoding bypasses this mathematical vulnerability.
+
+To verify structural sensitivity, we computed the median Jacobian spectral norm $\|J\|_2$ (Table~\ref{tab:exp5_jacobian}, Figure~\ref{fig:exp5_jacobian}). In Q1 (High-Data Clean), the Huge CNN possesses the roughest map ($5.73$), correlating perfectly with its rapid robustness decay. The QCNN is significantly smoother ($3.52$). In the Few-Shot quadrants, the Tiny CNN achieves an artificially near-zero norm ($\sim$0.18). This indicates a mathematical collapse to a constant, underfitted function rather than actual robustness. Conversely, the quantum maps retain meaningful, relatively smooth operational variance ($0.33$--$0.82$).
+
+\begin{table}[tbp]
+    \centering
+    \caption{Median Jacobian spectral norm $\|J\|_2$ (smaller values indicate a locally smoother model). The Tiny CNN's near-zero norm in Few-Shot represents a collapsed, uninformative network.}
+    \label{tab:exp5_jacobian}
+    \setlength{\tabcolsep}{4pt}
+    \footnotesize
+    \begin{tabular}{lcccc}
+        \toprule
+        Model     & Q1              & Q2              & Q3              & Q4              \\
+        \midrule
+        CNN\_Huge & $5.73 \pm 0.62$ & $2.14 \pm 0.14$ & $3.48 \pm 2.12$ & $1.87 \pm 0.70$ \\
+        CNN\_Tiny & $4.14 \pm 0.94$ & $2.36 \pm 0.34$ & $0.19 \pm 0.08$ & $0.18 \pm 0.10$ \\
+        QCNN      & $3.52 \pm 1.02$ & $1.91 \pm 0.35$ & $0.75 \pm 0.74$ & $0.33 \pm 0.32$ \\
+        QCNN\_Hyb & $4.68 \pm 0.90$ & $1.90 \pm 0.17$ & $0.82 \pm 0.50$ & $0.77 \pm 0.39$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure*}[tbp]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/jacobian_slope_QCNN_vs_CNN_Huge.png}
+        \caption{Pure QCNN vs. Unconstrained Huge CNN}
+        \label{fig:exp5_jac_huge}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/jacobian_slope_QCNN_vs_CNN_Tiny.png}
+        \caption{Pure QCNN vs. Strict Parity Tiny CNN}
+        \label{fig:exp5_jac_tiny}
+    \end{subfigure}
+
+    \caption{Jacobian spectral norms $\|J\|_2$. (a) The QCNN is consistently smoother than the over-parameterized Huge CNN. (b) The matched Tiny CNN's near-zero norm in Few-Shot quadrants reflects a collapsed, uninformative function.}
+    \label{fig:exp5_jacobian}
+\end{figure*}
+
+\subsubsection{Summary of Findings}
+
+A true QCNN mapping classical spectral data offers no standalone advantage over unconstrained classical networks, as the Huge CNN dominates whenever scaling and adversarial training are permitted. However, at strict parameter parity, the QCNN demonstrates some superiority, particularly in data-starved (Few-Shot) settings where matched classical networks collapse entirely. Furthermore, the QCNN naturally regularizes against overfitting in clean, high-data environments.
