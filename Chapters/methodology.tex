@@ -493,3 +493,55 @@ To assess robustness, the models are evaluated under two distinct training regim
 Beyond empirical accuracy under noise, we algorithmically quantify the Lipschitz smoothness of both filters. A highly sensitive feature map amplifies small input noises, whereas a smooth feature map dampens them. We extract a random subset of 300 test-set patches and compute the Jacobian matrix $J$ of the filter function $f: \mathbb{R}^4 \to \mathbb{R}^{12}$ with respect to the input patch $x$:
 $$ J_{ij}(x) = \frac{\partial f_i(x)}{\partial x_j} $$
 We report the median Frobenius norm $||J||_F$ across the sampled patches. A significantly lower Jacobian norm in the \texttt{Quanv1dLayer} serves as mathematical verification of the regularisation hypothesis, proving that the quantum map is intrinsically smoother with respect to its inputs than the classical counterpart.
+
+\subsection{Experiment 5: True Quantum Convolutional Networks}
+\label{sec:exp5_methods}
+
+\subsubsection{Design Principles and the Quantum Data Caveat}
+\label{sec:exp5_philosophy}
+
+The final experiment shifts from hybrid classical-quantum models (such as the local sliding filters in Experiment 4) to true, fully coherent Quantum Convolutional Neural Networks (QCNNs) \cite{cong2019qcnn}. A true QCNN embeds the entire input vector into a single global quantum state and applies a hierarchy of weight-shared, translationally invariant unitaries, concluding with coherent pooling operations that progressively reduce the subsystem size. Theoretically, this architecture is proven to be immune to barren plateaus (vanishing gradients with depth) \cite{pesah2021absence} and exhibits strong inductive biases.
+
+However, QCNNs were fundamentally designed for \textit{quantum data} (e.g., recognizing phases of quantum matter). Applying them to classical astronomical spectra need us embedding classical data into a quantum state. This experiment investigates whether the architectural robustness of the QCNN persists when the input is classically embedded flux. To ensure the integrity of the data representation, we restricted this experiment to a high signal-to-noise ratio (SNR) four-class subset, explicitly excluding Quasar (QSO) classes that lacked sufficient pristine samples, as excessive baseline noise fatally disrupts state preparation.
+
+\subsubsection{Architectures: Pure QCNN vs. Classical Baselines}
+\label{sec:exp5_arch}
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=\textwidth]{Figures/qcnn_model.png}
+    \caption{Macro-architecture of the QCNN encoding ablation study. The input flux spectrum is routed through one of two distinct state preparation pipelines: Model A (Pure QCNN) applies $L_2$ normalization and amplitude-encodes the raw 4096-bin signal directly into 12 qubits, whereas Model B (Hybrid QCNN) utilizes a lightweight classical convolutional stem to compress the signal into 10 features before embedding them via multi-axis angle encoding. Both prepared states are then processed by an identical, weight-shared quantum convolutional and coherent pooling hierarchy. The three surviving qubits are measured across multiple Pauli bases and correlators, feeding a shared classical linear head to produce the final four class logits.}
+    \label{fig:exp5_ablation_macro}
+\end{figure*}
+
+\textbf{Amplitude-Encoded QCNN:} The primary model ingests the 4096-bin flux spectrum, applies $L_2$ normalization, and loads it into a 12-qubit register via Amplitude Encoding. The quantum feature map relies on two core variational blocks, illustrated in Figure~\ref{fig:qcnn_blocks}:
+\begin{itemize}
+    \item \textit{Convolution Block:} A parameterized $SU(4)$ unitary \cite{vidal2004su4} applied to pairs of adjacent qubits, requiring 15 trainable parameters. To enforce translational invariance and limit the parameter footprint, weights are heavily shared across the spatial dimension in a brickwork pattern with periodic boundary conditions.
+    \item \textit{Pooling Block:} Coherent pooling is executed via controlled-$Z$ and controlled-$X$ rotations acting between a "source" and "sink" qubit pair. The source qubit is subsequently traced out (ignored), halving the active register size.
+\end{itemize}
+The complete hierarchy consists of an alternating sequence: a 12-qubit convolution, a pooling reduction to 6 qubits, a 6-qubit convolution, a pooling reduction to 3 surviving qubits, and a final deep convolution. The 3 surviving qubits are measured in the Pauli $X$, $Y$, and $Z$ bases, alongside $Z \otimes Z$ pairwise correlators, producing a rich classical feature vector. A linear layer maps these to the final 4 class logits. This extremely compact architecture totals roughly 101 trainable parameters.
+
+\textbf{Classical Baselines:} Two classical controls were evaluated. The \textit{Classical Tiny Baseline} is a severely constrained 1D CNN with matched capacity (103 parameters), acting as the strict parity control. The \textit{Classical Huge Baseline} is an unconstrained, highly parameterized deep CNN, establishing the upper bound for classical performance on the same dataset. (8228 parameters)
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.95\columnwidth]{Figures/qcnn_blocks.pdf}
+    \caption{Variational building blocks of the true QCNN. (a) The convolutional block applies a general $SU(4)$ entangling operation. (b) The coherent pooling block transfers amplitude from the source qubit to the sink qubit via controlled rotations, after which the source qubit is traced out, reducing the dimensionality of the quantum state.}
+    \label{fig:qcnn_blocks}
+\end{figure}
+
+\subsubsection{The Encoding Ablation (Hybrid QCNN)}
+\label{sec:exp5_ablation}
+
+Amplitude encoding is notoriously susceptible to noise, as high-frequency perturbations alter the global $L_2$ norm, drastically reshaping the encoded quantum state. To determine whether empirical fragility arises from the QCNN architecture itself or the chosen embedding strategy, we designed an ablation model: the \textit{Hybrid QCNN}. In \ref{fig:exp5_ablation_macro} the same convolution and pooling blocks are retained, but the state preparation is modified.
+
+This variant prepends a lightweight classical convolutional stem to compress the 4096-bin spectrum into 10 continuous features. These features are then embedded into a 10-qubit circuit using Angle Encoding (repeated three times via data re-uploading \cite{perezsalinas2020reuploading}). The quantum state is then subjected to the \textit{exact same} weight-shared quantum convolution and pooling logic as the pure QCNN. By comparing the robustness decay of the Pure QCNN against the Hybrid QCNN, we isolate the specific mathematical vulnerability of amplitude encoding.
+
+\subsubsection{Evaluation Quadrants and Lipschitz Probing}
+\label{sec:exp5_evaluation}
+
+Models were evaluated across a matrix of four training quadrants: High-Data vs. Few-Shot (20 samples per class), and Clean Training vs. Adversarial Training (where dynamic noise $\sigma \sim \mathcal{U}(0.2, 0.6)$ was injected during gradient descent).
+
+During inference, performance was measured via robustness decay: test accuracy was recorded as continuous Gaussian noise ($\sigma$) incrementally increased from $0.0$ to $4.0$. The overarching robustness metric is defined as the normalized Area Under the Curve (AUC) of the accuracy-versus-noise plot up to $\sigma=1.5$. Furthermore, we evaluated paired statistical significance using the Wilcoxon signed-rank test.
+
+Finally, we algorithmically probed the local Lipschitz continuity of the models using Jacobian spectral norm analysis. For 128 randomly sampled test spectra, we computed the Jacobian matrix $J$ mapping the input space to the logit space. We report the median spectral norm $||J||_2$; a mathematically smaller spectral norm indicates a smoother manifold, providing a rigorous diagnostic for the network's intrinsic sensitivity to domain shifts.
