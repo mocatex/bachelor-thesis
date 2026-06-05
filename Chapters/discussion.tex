@@ -112,3 +112,13 @@ sees the wavelength axis. Whatever discriminative power a model of this family o
 comes from learning $w^{\ast}$, or its nonlinear generalisation, in the classical front
 end, which is consistent with the parity between quantum and classical heads found in
 both experiments.
+
+\subsection{Absence of Quantum Advantage in Few-Shot SVM Classification}
+The results of \hyperref[sec:exp3_results]{Experiment 3} conclusively demonstrate a lack of empirical quantum advantage when deploying a QSVM on the CNN-extracted latent features. Across all few-shot regimes, the classical RBF kernel systematically matched or outperformed the quantum fidelity and projected kernels.
+
+This outcome can be analyzed through the theoretical constraints of the respective kernel spaces. The classical RBF kernel implicitly maps input vectors into an infinite-dimensional functional space. This continuous, unconstrained mapping is highly effective at establishing linear decision boundaries within complex, highly correlated data manifolds, such as the spectrographic features extracted by our Baseline CNN.
+
+In contrast, the QSVM feature map is strictly bounded by the dimensionality of its corresponding Hilbert space. For the optimal feature set of $f=12$, the quantum circuit explores a $2^{12}$-dimensional space. While theoretically vast, the expressivity of this space is governed by discrete parameterized rotations and Pauli expansions. For this specific astronomical dataset, the rigid, periodic nature of the quantum feature map lacked the geometric flexibility inherent to the infinite-dimensional RBF kernel. The quantum mapping forced the data into a high-dimensional topology that did not naturally shatter the symmetric confusion pairs (e.g., starburst and star-forming subclasses) any better than classical density estimation.
+
+Furthermore, this empirical failure was accurately predicted by the geometric difference metric, $g(C||Q) \approx 1.89$, calculated during Phase 1. As established by Huang et al. (2021) \cite{huang2021power}, a low $g(C||Q)$ signifies that the classical and quantum kernels are geometrically aligned, meaning the latent features extracted by the 14-million parameter classical network were already sufficiently structured. Mapping these already highly processed features into a quantum state space introduced redundant parameterization rather than uncovering novel, exploitable linear separability.
+

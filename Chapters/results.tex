@@ -189,7 +189,10 @@ parameters, with the shared CNN extractor doing the heavy lifting, which is why 
 comparison had to be matched at the contested middle stage and why a large quantum
 advantage was never plausible in this regime.
 
-\FloatBarrier
+
+% ##############################################################################
+% EXPERIMENT 2: QUANTUM AND CLASSICAL HEADS ON FROZEN FEATURES
+% ##############################################################################
 \subsection{Experiment 2: Quantum and Classical Heads on Frozen Features}
 \label{sec:exp2}
 
@@ -381,3 +384,50 @@ classical control that uses a robust activation, because a width-limited ReLU
 baseline can fail for reasons unrelated to capacity and create a false advantage.
 
 \FloatBarrier
+% ##############################################################################
+% EXPERIMENT 3: FEW-SHOT LEARNING WITH QUANTUM SUPPORT VECTOR
+% ##############################################################################
+\subsection{Experiment 3: Few-Shot Learning with Quantum Support Vector Machines (QSVM)}
+\label{sec:exp3_results}
+
+\subsubsection{Feature Selection and Dimensionality Reduction}
+Prior to evaluating the support vector machines, a dimensionality reduction sweep was conducted to determine the optimal number of features to extract from the frozen classical Baseline CNN. The sweep evaluated latent feature sizes up to 16. The results indicated that $f=12$ features provided the optimal trade-off; classification metrics plateaued beyond this point, and selecting $f=12$ minimized the substantial computational overhead associated with simulating larger qubit registers (Figure~\ref{fig:qsvm_feature_sweep}). Consequently, all subsequent QSVM and classical SVM baselines were standardized to 12 input features, mapped to a 12-qubit quantum register.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.95\columnwidth]{Figures/qsvm_feature_sweep_f12.png}
+    \caption{Classification performance as a function of the number of extracted features ($f$). The performance plateaus at $f=12$, which was selected for the 12-qubit QSVM runs.}
+    \label{fig:qsvm_feature_sweep}
+\end{figure}
+
+\subsubsection{Geometric Difference Pre-Screening (Phase 1)}
+To assess the potential for quantum advantage before extensive model training, we computed the geometric difference metric $g(C||Q)$ between the classical RBF kernel and each quantum kernel. For the fidelity kernel, $g(C||Q) = 13.25$ with an off-diagonal standard deviation of $0.1431$ across all regularization scales ($10^{-6}$ to $10^{-10}$). For the projected kernel, $g(C||Q) = 22.06$ with an off-diagonal standard deviation of $0.2587$. Values of $g(C||Q)$ approaching $1$ would indicate that the quantum kernel is equivalent to the classical kernel up to a trivial reparameterization, making quantum advantage impossible \cite{huang2021power}. Our observed $g$ values are substantially larger than $1$, suggesting that the quantum kernels are distinct from the classical RBF kernel. However, the small off-diagonal standard deviations indicate that both quantum kernels are concentrated, limiting their expressive flexibility. Combined with the empirical results presented in Phase 2, the pre-screening does not contradict the absence of a practical advantage in this setting.
+
+\subsubsection{Scaling Sweep and Hyperparameter Tuning (Phase 2)}
+A multi-seed scaling sweep was conducted across varying training sample sizes ($n \in \{2, 5, 10, 20, 50, 100, 200\}$ samples per class) to evaluate few-shot learning capabilities. We compared a classical SVM with a Radial Basis Function (RBF) kernel against two QSVM variants: a fidelity kernel and a projected kernel. The sweep was evaluated at several regularization parameters $C$; the results for the optimal value ($C = 0.25$) are summarised in Table~\ref{tab:qsvm_scaling_results}.
+
+For small training sets ($n \le 20$), no statistically significant differences were observed between the classical RBF kernel and either quantum kernel (paired t-test and Wilcoxon signed-rank test, $p > 0.05$ in all cases). At $n = 10$, the fidelity kernel produced a slightly higher point estimate ($0.5191$ vs. $0.5124$ for classical RBF), but this difference was not significant ($p = 0.797$). For $n \ge 50$, the classical RBF kernel consistently achieved a statistically significant advantage over both quantum kernels ($p < 0.05$). Similar trends were observed for $C = 0.1$. In all cases, the pre-registered null hypothesis of a quantum advantage was rejected, confirming the absence of a practical advantage for the tested quantum kernels on this dataset.
+
+\begin{table}[h]
+    \centering
+    \caption{Few-shot scaling sweep results for Classical SVM (RBF) vs. QSVM (Fidelity and Projected Kernels) at $C=0.25$. ($n$ = training samples per class). Accuracies are reported with 95\% confidence intervals. No quantum advantage was observed at any scale.}
+    \label{tab:qsvm_scaling_results}
+    \begin{tabular}{@{}lccc@{}}
+        \toprule
+        \textbf{$n$} & \textbf{Classical RBF}       & \textbf{QSVM Fidelity}       & \textbf{QSVM Projected} \\ \midrule
+        2            & \textbf{0.3628} [0.28, 0.43] & 0.3573 [0.28, 0.42]          & 0.3127 [0.25, 0.37]     \\
+        5            & \textbf{0.4268} [0.37, 0.48] & 0.4232 [0.35, 0.49]          & 0.4115 [0.36, 0.45]     \\
+        10           & 0.5124 [0.46, 0.55]          & \textbf{0.5191} [0.49, 0.54] & 0.4582 [0.42, 0.49]     \\
+        20           & \textbf{0.5727} [0.53, 0.60] & 0.5624 [0.53, 0.59]          & 0.5519 [0.51, 0.58]     \\
+        50           & \textbf{0.6302} [0.61, 0.64] & 0.6097 [0.59, 0.62]          & 0.5742 [0.54, 0.60]     \\
+        100          & \textbf{0.6765} [0.66, 0.69] & 0.6367 [0.62, 0.64]          & 0.6269 [0.59, 0.65]     \\
+        200          & \textbf{0.7270} [0.71, 0.74] & 0.6543 [0.64, 0.66]          & 0.6818 [0.66, 0.69]     \\ \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.95\columnwidth]{Figures/qsvm_scaling_sweep.png}
+    \caption{Classification accuracy as a function of training samples per class ($n$) for $C=0.25$.}
+    \label{fig:qsvm_scaling}
+\end{figure}
