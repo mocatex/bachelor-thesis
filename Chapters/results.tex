@@ -6,6 +6,45 @@ training procedure and the construction of the frozen feature extractor are
 described in detail in the methodology, so here we recall only what is needed to
 read the figures and tables.
 
+% ###############################################################################
+% CLASSICAL BASELINE PERFORMANCE
+% ###############################################################################
+
+\subsection{Classical CNN Baseline Performance (62 Classes)}
+The Baseline CNN was trained for 300 epochs on the 62-class SDSS DR19 dataset. The network achieved a final test accuracy of $84.50\%$, with a final test loss of 0.2479. The training history indicates continuous convergence, with the training accuracy peaking at $91.69\%$ and validation accuracy stabilizing around $84.40\%$ by the final epoch (Figure~\ref{fig:cnn_baseline_history}).
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.95\columnwidth]{Figures/classical_training_history.png}
+    \caption{Training and validation accuracy and loss for the 62-class Baseline CNN over 300 epochs.}
+    \label{fig:cnn_baseline_history}
+\end{figure}
+
+Due to its high dimensionality, the complete $62 \times 62$ normalized confusion matrix is provided in Appendix A. A targeted class-wise analysis reveals significant performance disparities. The lowest recall rates were observed in fine-grained subclasses, specifically \texttt{STAR\_A5} ($35.2\%$), \texttt{QSO\_STARFORMING} ($38.8\%$), \texttt{QSO\_STARBURST} ($40.8\%$), and \texttt{STAR\_SUBDWARF\_F} ($45.7\%$). Furthermore, precision metrics highlight specific categories acting as attractors for false positives, most notably \texttt{GALAXY\_BROADLINE} ($35.2\%$ precision, absorbing 306 false positives) and \texttt{STAR\_SUBDWARF\_F} ($42.3\%$ precision, absorbing 123 false positives).
+
+The classification matrix reveals strictly symmetric topological overlaps (``mirrors'') between specific pairs in the feature space. The most severe symmetrical confusions occurred between \texttt{STAR\_A5} and \texttt{STAR\_F0} ($33.7\%$ total overlap), \texttt{QSO\_STARBURST} and \texttt{QSO\_STARBURST\_BROADLINE} ($28.7\%$ total overlap), and \texttt{QSO\_STARBURST\_BROADLINE} and \texttt{QSO\_STARFORMING} ($25.2\%$ total overlap).
+
+\subsection{Validation against Literature Benchmark: GaSNet-II Replica (13 Classes)}
+To validate the structural integrity and feature extraction capability of our 14-million parameter architecture against an established literature baseline, we conducted a replication experiment based on the 13-class classification framework proposed by Zhong et al. (2024) in the GaSNet-II study \cite{Zhong2024GaSNetII}. This benchmark leverages a distinct subset of SDSS spectra restricted to 13 high-population, coarse-grained subclasses.
+
+Operating on the GaSNet-II dataset, our network was trained for 75 epochs. The model achieved a final test accuracy of $92.51\%$ and a test loss of 0.2311, effectively matching the benchmark performance criteria. The training metrics demonstrated rapid early convergence, reaching a validation accuracy of $90.41\%$ by epoch 20 (Figure~\ref{fig:gasnet_history}).
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.95\columnwidth]{Figures/gasnet_training_history.png}
+    \caption{Training and validation accuracy and loss for the 13-class GaSNet-II replication over 75 epochs.}
+    \label{fig:gasnet_history}
+\end{figure}
+
+The normalized confusion matrix for the 13-class validation task is presented in Figure~\ref{fig:gasnet_cm}. Diagonal values demonstrate robust class separation, with true positive rates strictly exceeding $85\%$ across all categories. Peak classification performances were recorded for \texttt{STAR\_G2} ($97.4\%$), \texttt{STAR\_K5} ($97.2\%$), and \texttt{STAR\_A0} ($96.8\%$). The highest inter-class misclassification rate occurred between adjacent stellar temperatures, with $9.4\%$ of \texttt{STAR\_F9} spectra erroneously classified as \texttt{STAR\_G2}.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.95\columnwidth]{Figures/gasnet_confusion_matrix.png}
+    \caption{Normalized confusion matrix for the 13-class GaSNet-II replication experiment.}
+    \label{fig:gasnet_cm}
+\end{figure}
+
 
 % ##############################################################################
 % EXPERIMENT 1: BINARY CLASSIFICATION OF THE HARDEST PAIR

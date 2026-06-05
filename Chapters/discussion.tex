@@ -1,6 +1,12 @@
 \section{Discussion}
 \label{sec:discussion}
 
+\subsection{Classical Limitations and Quantum Machine Learning Motivation}
+The empirical results from the 62-class Baseline CNN expose the inherent topological limitations of classical feature extractors when navigating highly correlated, continuous physical manifolds. While the network successfully separated broad macro-categories (as evidenced by the robust $92.51\%$ accuracy in the coarse 13-class GaSNet-II task), its discriminatory power degraded rapidly when tasked with fine-grained subclass separation.
+
+The persistent presence of symmetric confusion pairs (e.g., \texttt{STAR\_A5} $\leftrightarrow$ \texttt{STAR\_F0} and \texttt{QSO\_STARBURST} $\leftrightarrow$ \texttt{QSO\_STARBURST\_BROADLINE}) indicates localized regions in the latent space where classical decision boundaries fail to linearly separate the data. Furthermore, the low precision of classes like \texttt{GALAXY\_BROADLINE} implies that the model utilizes specific labels as a ``sink'' for uncertain spectral signatures, lacking the geometric capacity to resolve the ambiguity. These specific classical failure modes provide the fundamental motivation for our subsequent Quantum Machine Learning (QML) experiments.
+
+
 \subsection{Spectral Attention of the Hybrid Model}
 \label{sec:interpretability}
 
@@ -33,17 +39,17 @@ cannot be given a spectral interpretation, because it sees only the compressed
 representation.
 
 \begin{figure*}[tbp]
-\centering
-\includegraphics[width=0.92\textwidth]{Figures/gradcam_saliency_angle_4q.png}
-\caption{Per-class spectral attention of the binary hybrid model on
-\texttt{GALAXY\_AGN\_BROADLINE} against \texttt{QSO\_STARBURST\_BROADLINE}, averaged
-over the test set. For each class the upper panel shows Grad-CAM on the extractor's
-last convolutional layer and the lower panel shows input-gradient saliency, both
-overlaid on the mean spectrum. Grad-CAM localises to a broad emission band for the AGN
-class and to the blue continuum for the quasar, whereas the raw saliency is diffuse.
-Both methods probe the classical extractor, since the quantum circuit receives only
-four scalar features.}
-\label{fig:gradcam}
+    \centering
+    \includegraphics[width=0.92\textwidth]{Figures/gradcam_saliency_angle_4q.png}
+    \caption{Per-class spectral attention of the binary hybrid model on
+        \texttt{GALAXY\_AGN\_BROADLINE} against \texttt{QSO\_STARBURST\_BROADLINE}, averaged
+        over the test set. For each class the upper panel shows Grad-CAM on the extractor's
+        last convolutional layer and the lower panel shows input-gradient saliency, both
+        overlaid on the mean spectrum. Grad-CAM localises to a broad emission band for the AGN
+        class and to the blue continuum for the quasar, whereas the raw saliency is diffuse.
+        Both methods probe the classical extractor, since the quantum circuit receives only
+        four scalar features.}
+    \label{fig:gradcam}
 \end{figure*}
 
 \subsection{Why Attending to Emission Lines Is Optimal}
@@ -56,14 +62,14 @@ wavelength bins and assume that the two classes have Gaussian class-conditional
 distributions with class means $\mu_0, \mu_1 \in \mathbb{R}^{L}$ and a shared
 covariance $\Sigma$,
 \begin{equation}
-x \mid y = c \;\sim\; \mathcal{N}(\mu_c, \Sigma), \qquad c \in \{0, 1\}.
-\label{eq:gauss}
+    x \mid y = c \;\sim\; \mathcal{N}(\mu_c, \Sigma), \qquad c \in \{0, 1\}.
+    \label{eq:gauss}
 \end{equation}
 Under this model the Bayes-optimal decision rule is linear and is given by Fisher's
 linear discriminant, which assigns $x$ to class~1 when $w^{\ast\top} x + b > 0$ with
 \begin{equation}
-w^{\ast} = \Sigma^{-1}(\mu_1 - \mu_0).
-\label{eq:fisher}
+    w^{\ast} = \Sigma^{-1}(\mu_1 - \mu_0).
+    \label{eq:fisher}
 \end{equation}
 The vector $w^{\ast}$ is also the weight that any well-trained differentiable
 classifier approximates, since for a model $f(x)$ that estimates the log-odds
@@ -76,16 +82,16 @@ correlations and approximate the covariance as diagonal,
 $\Sigma \approx \operatorname{diag}(\sigma_1^2, \dots, \sigma_L^2)$. The per-bin weight
 then reduces to
 \begin{equation}
-w^{\ast}_i = \frac{\mu_{1,i} - \mu_{0,i}}{\sigma_i^2},
-\label{eq:weight}
+    w^{\ast}_i = \frac{\mu_{1,i} - \mu_{0,i}}{\sigma_i^2},
+    \label{eq:weight}
 \end{equation}
 and the contribution of bin $i$ to the squared Mahalanobis separation between the
 classes is the per-bin Fisher ratio, the squared signal-to-noise of that bin,
 \begin{equation}
-J_i = \frac{(\mu_{1,i} - \mu_{0,i})^2}{\sigma_i^2},
-\qquad
-(\mu_1 - \mu_0)^{\top}\Sigma^{-1}(\mu_1 - \mu_0) = \sum_{i=1}^{L} J_i .
-\label{eq:fisherratio}
+    J_i = \frac{(\mu_{1,i} - \mu_{0,i})^2}{\sigma_i^2},
+    \qquad
+    (\mu_1 - \mu_0)^{\top}\Sigma^{-1}(\mu_1 - \mu_0) = \sum_{i=1}^{L} J_i .
+    \label{eq:fisherratio}
 \end{equation}
 The sum in \eqref{eq:fisherratio} is the total class separability, and each $J_i$ is
 the additive share contributed by bin $i$. It is maximised precisely at the wavelength
