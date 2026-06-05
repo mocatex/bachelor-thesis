@@ -6,6 +6,10 @@ training procedure and the construction of the frozen feature extractor are
 described in detail in the methodology, so here we recall only what is needed to
 read the figures and tables.
 
+
+% ##############################################################################
+% EXPERIMENT 1: BINARY CLASSIFICATION OF THE HARDEST PAIR
+% ##############################################################################
 \subsection{Experiment 1: Binary Classification of the Hardest Pair}
 \label{sec:exp1}
 
@@ -18,28 +22,28 @@ runs rather than seed averages, so their exact numbers differ slightly from the
 table.
 
 \begin{table*}[t]
-\centering
-\caption{Binary sweep results, reported as mean $\pm$ standard deviation over three
-seeds. Gap is the \texttt{STAR\_M8} recall minus the \texttt{STAR\_BROWN\_DWARF\_L}
-recall, so a smaller value is more balanced. Recall, gap and ROC-AUC are given as
-means. All configurations have about 24500 trainable parameters, dominated by the
-shared CNN extractor.}
-\label{tab:exp1_sweep}
-\footnotesize
-\setlength{\tabcolsep}{5pt}
-\begin{tabular}{llcccccc}
-\toprule
-Model & Config & Accuracy & Macro-F1 & BROWN rec & M8 rec & Gap & ROC-AUC \\
-\midrule
-Quantum   & 2q $\times$ 12L & $0.863\pm0.005$          & $0.830\pm0.005$          & 0.70 & 0.93 & 0.232 & 0.910 \\
-Quantum   & 3q $\times$ 8L  & $0.865\pm0.012$          & $0.835\pm0.009$          & 0.72 & 0.93 & 0.205 & 0.913 \\
-Quantum   & 4q $\times$ 6L  & $\mathbf{0.869\pm0.008}$ & $0.840\pm0.005$          & 0.73 & 0.93 & 0.200 & 0.927 \\
-Quantum   & 6q $\times$ 4L  & $0.860\pm0.012$          & $0.833\pm0.013$          & 0.76 & 0.90 & 0.140 & 0.924 \\
-Quantum   & 8q $\times$ 3L  & $0.860\pm0.013$          & $0.837\pm0.014$          & \textbf{0.80} & 0.89 & \textbf{0.083} & 0.927 \\
-Classical & 4 features      & $0.868\pm0.016$          & $\mathbf{0.843\pm0.016}$ & 0.77 & 0.91 & 0.136 & \textbf{0.933} \\
-Classical & 8 features      & $0.862\pm0.004$          & $0.836\pm0.006$          & 0.77 & 0.90 & 0.127 & 0.922 \\
-\bottomrule
-\end{tabular}
+    \centering
+    \caption{Binary sweep results, reported as mean $\pm$ standard deviation over three
+        seeds. Gap is the \texttt{STAR\_M8} recall minus the \texttt{STAR\_BROWN\_DWARF\_L}
+        recall, so a smaller value is more balanced. Recall, gap and ROC-AUC are given as
+        means. All configurations have about 24500 trainable parameters, dominated by the
+        shared CNN extractor.}
+    \label{tab:exp1_sweep}
+    \footnotesize
+    \setlength{\tabcolsep}{5pt}
+    \begin{tabular}{llcccccc}
+        \toprule
+        Model     & Config          & Accuracy                 & Macro-F1                 & BROWN rec     & M8 rec & Gap            & ROC-AUC        \\
+        \midrule
+        Quantum   & 2q $\times$ 12L & $0.863\pm0.005$          & $0.830\pm0.005$          & 0.70          & 0.93   & 0.232          & 0.910          \\
+        Quantum   & 3q $\times$ 8L  & $0.865\pm0.012$          & $0.835\pm0.009$          & 0.72          & 0.93   & 0.205          & 0.913          \\
+        Quantum   & 4q $\times$ 6L  & $\mathbf{0.869\pm0.008}$ & $0.840\pm0.005$          & 0.73          & 0.93   & 0.200          & 0.927          \\
+        Quantum   & 6q $\times$ 4L  & $0.860\pm0.012$          & $0.833\pm0.013$          & 0.76          & 0.90   & 0.140          & 0.924          \\
+        Quantum   & 8q $\times$ 3L  & $0.860\pm0.013$          & $0.837\pm0.014$          & \textbf{0.80} & 0.89   & \textbf{0.083} & 0.927          \\
+        Classical & 4 features      & $0.868\pm0.016$          & $\mathbf{0.843\pm0.016}$ & 0.77          & 0.91   & 0.136          & \textbf{0.933} \\
+        Classical & 8 features      & $0.862\pm0.004$          & $0.836\pm0.006$          & 0.77          & 0.90   & 0.127          & 0.922          \\
+        \bottomrule
+    \end{tabular}
 \end{table*}
 
 \subsubsection{Top-line Parity}
@@ -70,23 +74,23 @@ The representative confusion matrices in Figure~\ref{fig:exp1_cm} show the same
 picture, with the residual leakage concentrated on the minority class.
 
 \begin{figure*}[t]
-\centering
-\begin{subfigure}[t]{0.49\textwidth}
-  \includegraphics[width=\linewidth]{Figures/quantum_exp1_cm_test.png}
-  \caption{Quantum model (representative run).}
-  \label{fig:exp1_cm_q}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.49\textwidth}
-  \includegraphics[width=\linewidth]{Figures/classical_exp1_cm_test.png}
-  \caption{Classical mirror (representative run).}
-  \label{fig:exp1_cm_c}
-\end{subfigure}
-\caption{Representative single-run test confusion matrices for the binary task. Both
-models confuse the two spectrally adjacent classes, with the residual leakage
-concentrated on the minority class \texttt{STAR\_BROWN\_DWARF\_L}. Because these are
-single runs rather than seed averages, the values differ slightly from
-Table~\ref{tab:exp1_sweep}.}
-\label{fig:exp1_cm}
+    \centering
+    \begin{subfigure}[t]{0.49\textwidth}
+        \includegraphics[width=\linewidth]{Figures/quantum_exp1_cm_test.png}
+        \caption{Quantum model (representative run).}
+        \label{fig:exp1_cm_q}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.49\textwidth}
+        \includegraphics[width=\linewidth]{Figures/classical_exp1_cm_test.png}
+        \caption{Classical mirror (representative run).}
+        \label{fig:exp1_cm_c}
+    \end{subfigure}
+    \caption{Representative single-run test confusion matrices for the binary task. Both
+        models confuse the two spectrally adjacent classes, with the residual leakage
+        concentrated on the minority class \texttt{STAR\_BROWN\_DWARF\_L}. Because these are
+        single runs rather than seed averages, the values differ slightly from
+        Table~\ref{tab:exp1_sweep}.}
+    \label{fig:exp1_cm}
 \end{figure*}
 
 \subsubsection{Training Dynamics}
@@ -110,23 +114,23 @@ final test metrics confirm that the models train successfully, and that the spik
 are noise in the model-selection metric rather than a failure to learn.
 
 \begin{figure*}[t]
-\centering
-\begin{subfigure}[t]{0.49\textwidth}
-  \includegraphics[width=\linewidth]{Figures/quantum_exp1_training_history.png}
-  \caption{Quantum model.}
-  \label{fig:exp1_train_q}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.49\textwidth}
-  \includegraphics[width=\linewidth]{Figures/classical_exp1_training_history.png}
-  \caption{Classical mirror.}
-  \label{fig:exp1_train_c}
-\end{subfigure}
-\caption{Representative training histories for the binary task. In both models the
-training curves (blue) descend smoothly while the validation curves (yellow) are
-spiky. The instability appears in the classical mirror as strongly as in the quantum
-model, which rules out a quantum barren plateau and points instead to
-model-selection noise from the narrow bottleneck and the overlapping classes.}
-\label{fig:exp1_training}
+    \centering
+    \begin{subfigure}[t]{0.49\textwidth}
+        \includegraphics[width=\linewidth]{Figures/quantum_exp1_training_history.png}
+        \caption{Quantum model.}
+        \label{fig:exp1_train_q}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.49\textwidth}
+        \includegraphics[width=\linewidth]{Figures/classical_exp1_training_history.png}
+        \caption{Classical mirror.}
+        \label{fig:exp1_train_c}
+    \end{subfigure}
+    \caption{Representative training histories for the binary task. In both models the
+        training curves (blue) descend smoothly while the validation curves (yellow) are
+        spiky. The instability appears in the classical mirror as strongly as in the quantum
+        model, which rules out a quantum barren plateau and points instead to
+        model-selection noise from the narrow bottleneck and the overlapping classes.}
+    \label{fig:exp1_training}
 \end{figure*}
 
 \subsubsection{Summary of Findings}
@@ -147,8 +151,8 @@ comparison had to be matched at the contested middle stage and why a large quant
 advantage was never plausible in this regime.
 
 \FloatBarrier
-\subsection{Experiment 3: Quantum and Classical Heads on Frozen Features}
-\label{sec:exp3}
+\subsection{Experiment 2: Quantum and Classical Heads on Frozen Features}
+\label{sec:exp2}
 
 Coming from the prior experiments, where we found no advantage for quantum models
 over classical solutions, we push the problem harder and ask whether a quantum head
@@ -156,7 +160,7 @@ can be more parameter-efficient than a classical one on a hard four-class spectr
 task. The four classes are \texttt{STAR\_BROWN\_DWARF\_L}, \texttt{STAR\_M8},
 \texttt{GALAXY\_STARBURST} and \texttt{GALAXY\_STARFORMING}, balanced to 1000 samples
 per class and split $70/15/15$ into train, validation and test. As detailed in
-Section~\ref{sec:exp3_methods}, every head sits on the same frozen feature extractor
+Section~\ref{sec:exp2_methods}, every head sits on the same frozen feature extractor
 and receives the same 128-dimensional feature vector, so any difference comes from
 the head alone. The four heads are the dense classical baseline (Model~A, 5058
 parameters), the hybrid quantum head (Model~B, 556 parameters) and two
@@ -167,8 +171,8 @@ than the surrounding structure.
 
 \subsubsection{Overall Classification Performance}
 
-Table~\ref{tab:exp3_headline} summarises the headline results and
-Figure~\ref{fig:exp3_cm} shows the corresponding test confusion matrices. The dense
+Table~\ref{tab:exp2_headline} summarises the headline results and
+Figure~\ref{fig:exp2_cm} shows the corresponding test confusion matrices. The dense
 classical head (A), the quantum head (B) and the Tanh control (D) all reach roughly
 96\% overall accuracy with very similar per-class behaviour, while the ReLU control
 (C) collapses to about 79\%. The three successful models classify the hardest
@@ -180,55 +184,55 @@ that a tiny head is sufficient once the features are supplied by a strong frozen
 extractor.
 
 \begin{table}[t]
-\centering
-\caption{Experiment 3 headline results on the four-class test set. Accuracies are
-read from the confusion matrices and should be treated as $\pm 1$ percentage point.
-BD recall is the recall on the brown-dwarf class \texttt{STAR\_BROWN\_DWARF\_L}.}
-\label{tab:exp3_headline}
-\setlength{\tabcolsep}{4pt}
-\footnotesize
-\begin{tabular}{llccc}
-\toprule
- & Head & Params & Acc. & BD recall \\
-\midrule
-A & Dense classical    & 5058 & $\sim$96\% & 0.95 \\
-B & Quantum (Lin.+VQC) & 556  & $\sim$96\% & 0.93 \\
-C & Classical, ReLU    & 556  & $\sim$79\% & 0.18 \\
-D & Classical, Tanh    & 556  & $\sim$96\% & 0.94 \\
-\bottomrule
-\end{tabular}
+    \centering
+    \caption{Experiment 2 headline results on the four-class test set. Accuracies are
+        read from the confusion matrices and should be treated as $\pm 1$ percentage point.
+        BD recall is the recall on the brown-dwarf class \texttt{STAR\_BROWN\_DWARF\_L}.}
+    \label{tab:exp2_headline}
+    \setlength{\tabcolsep}{4pt}
+    \footnotesize
+    \begin{tabular}{llccc}
+        \toprule
+          & Head               & Params & Acc.       & BD recall \\
+        \midrule
+        A & Dense classical    & 5058   & $\sim$96\% & 0.95      \\
+        B & Quantum (Lin.+VQC) & 556    & $\sim$96\% & 0.93      \\
+        C & Classical, ReLU    & 556    & $\sim$79\% & 0.18      \\
+        D & Classical, Tanh    & 556    & $\sim$96\% & 0.94      \\
+        \bottomrule
+    \end{tabular}
 \end{table}
 
 \begin{figure*}[t]
-\centering
-\begin{subfigure}{0.45\textwidth}
-  \includegraphics[width=\linewidth]{Figures/5000param_classical_cm_test.png}
-  \caption{Dense classical, 5058 params (A).}
-  \label{fig:exp3_cm_dense}
-\end{subfigure}\hfill
-\begin{subfigure}{0.45\textwidth}
-  \includegraphics[width=\linewidth]{Figures/quantum_500param_cm_test.png}
-  \caption{Quantum, 556 params (B).}
-  \label{fig:exp3_cm_quantum}
-\end{subfigure}
+    \centering
+    \begin{subfigure}{0.45\textwidth}
+        \includegraphics[width=\linewidth]{Figures/5000param_classical_cm_test.png}
+        \caption{Dense classical, 5058 params (A).}
+        \label{fig:exp2_cm_dense}
+    \end{subfigure}\hfill
+    \begin{subfigure}{0.45\textwidth}
+        \includegraphics[width=\linewidth]{Figures/quantum_500param_cm_test.png}
+        \caption{Quantum, 556 params (B).}
+        \label{fig:exp2_cm_quantum}
+    \end{subfigure}
 
-\vspace{0.5em}
+    \vspace{0.5em}
 
-\begin{subfigure}{0.45\textwidth}
-  \includegraphics[width=\linewidth]{Figures/500param_classical_deadrelu_cm_test.png}
-  \caption{Classical ReLU control, 556 params (C).}
-  \label{fig:exp3_cm_relu}
-\end{subfigure}\hfill
-\begin{subfigure}{0.45\textwidth}
-  \includegraphics[width=\linewidth]{Figures/500param_classical_tanh_cm_test.png}
-  \caption{Classical Tanh control, 556 params (D).}
-  \label{fig:exp3_cm_tanh}
-\end{subfigure}
-\caption{Test-set confusion matrices for the four heads. The dense head (A), the
-quantum head (B) and the Tanh control (D) are almost indistinguishable, whereas the
-ReLU control (C) misroutes 75\% of brown dwarfs into
-\texttt{GALAXY\_STARFORMING}.}
-\label{fig:exp3_cm}
+    \begin{subfigure}{0.45\textwidth}
+        \includegraphics[width=\linewidth]{Figures/500param_classical_deadrelu_cm_test.png}
+        \caption{Classical ReLU control, 556 params (C).}
+        \label{fig:exp2_cm_relu}
+    \end{subfigure}\hfill
+    \begin{subfigure}{0.45\textwidth}
+        \includegraphics[width=\linewidth]{Figures/500param_classical_tanh_cm_test.png}
+        \caption{Classical Tanh control, 556 params (D).}
+        \label{fig:exp2_cm_tanh}
+    \end{subfigure}
+    \caption{Test-set confusion matrices for the four heads. The dense head (A), the
+        quantum head (B) and the Tanh control (D) are almost indistinguishable, whereas the
+        ReLU control (C) misroutes 75\% of brown dwarfs into
+        \texttt{GALAXY\_STARFORMING}.}
+    \label{fig:exp2_cm}
 \end{figure*}
 
 \subsubsection{The Parameter-Matched Control and the Dead-ReLU Artefact}
@@ -236,7 +240,7 @@ ReLU control (C) misroutes 75\% of brown dwarfs into
 The decisive comparison is between the three 556-parameter models. The quantum head
 (B) reaches 0.93 recall on \texttt{STAR\_BROWN\_DWARF\_L}, but the ReLU control (C)
 reaches only 0.18 and routes about 75\% of brown dwarfs into
-\texttt{GALAXY\_STARFORMING}, as seen in Figure~\ref{fig:exp3_cm_relu}, which caps
+\texttt{GALAXY\_STARFORMING}, as seen in Figure~\ref{fig:exp2_cm_relu}, which caps
 its overall accuracy near 79\%. Taken on its own this looks like a clear quantum
 advantage on the hardest class. The Tanh control (D), which is identical to C except
 that the inner ReLU is replaced by Tanh, fully recovers to 0.94 recall and about
@@ -247,35 +251,35 @@ The mechanism is a dead-ReLU effect. With only four neurons in the middle layer,
 ReLU unit that is pushed into its negative region outputs zero and receives zero
 gradient, so it never recovers, and losing even one or two of four units destroys
 the decision boundary for the minority class. The training curves in
-Figure~\ref{fig:exp3_training} make this visible. The ReLU control sits on a flat
+Figure~\ref{fig:exp2_training} make this visible. The ReLU control sits on a flat
 plateau near 50\% accuracy from roughly epoch 5 to epoch 13 before only partially
 escaping, whereas the Tanh control, whose activation always has a nonzero gradient,
 trains cleanly and converges by about epoch 20. Once this confound is removed the
 quantum head (B) and the classical Tanh head (D) are equal on every measured axis.
 
 \begin{figure*}[tb]
-\centering
-\begin{subfigure}[t]{0.49\textwidth}
-  \includegraphics[width=\linewidth]{Figures/500param_classical_deadrelu_training_history.png}
-  \caption{Classical ReLU control (C): the accuracy plateaus near 0.50 before
-  partially escaping.}
-  \label{fig:exp3_train_relu}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.49\textwidth}
-  \includegraphics[width=\linewidth]{Figures/500param_classical_tanh_training_history.png}
-  \caption{Classical Tanh control (D): clean, monotonic convergence.}
-  \label{fig:exp3_train_tanh}
-\end{subfigure}
-\caption{Training history of the two 556-parameter classical controls. The only
-difference between them is the inner activation function, which alone accounts for
-the gap between 79\% and 96\% accuracy.}
-\label{fig:exp3_training}
+    \centering
+    \begin{subfigure}[t]{0.49\textwidth}
+        \includegraphics[width=\linewidth]{Figures/500param_classical_deadrelu_training_history.png}
+        \caption{Classical ReLU control (C): the accuracy plateaus near 0.50 before
+            partially escaping.}
+        \label{fig:exp2_train_relu}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.49\textwidth}
+        \includegraphics[width=\linewidth]{Figures/500param_classical_tanh_training_history.png}
+        \caption{Classical Tanh control (D): clean, monotonic convergence.}
+        \label{fig:exp2_train_tanh}
+    \end{subfigure}
+    \caption{Training history of the two 556-parameter classical controls. The only
+        difference between them is the inner activation function, which alone accounts for
+        the gap between 79\% and 96\% accuracy.}
+    \label{fig:exp2_training}
 \end{figure*}
 
 \subsubsection{Encoding Ablation}
 
 A separate set of variants probes whether the limitation lies in the number of
-qubits or in how the features are loaded into them. Table~\ref{tab:exp3_encoding}
+qubits or in how the features are loaded into them. Table~\ref{tab:exp2_encoding}
 compares the learned linear encoding of Model~B against unsupervised PCA encodings.
 A frozen PCA projection into the circuit caps accuracy near 76\% regardless of its
 width, while the learned \texttt{Linear(128,4)} encoding into the same four qubits
@@ -287,21 +291,21 @@ four-qubit count, which identifies data encoding rather than circuit width as th
 limiting factor for the quantum model.
 
 \begin{table}[t]
-\centering
-\caption{Encoding ablation for the quantum head. All variants encode into four
-qubits; only the projection feeding the circuit changes.}
-\label{tab:exp3_encoding}
-\setlength{\tabcolsep}{4pt}
-\footnotesize
-\begin{tabular}{lcc}
-\toprule
-Encoding into the VQC & Params & Acc. \\
-\midrule
-Frozen PCA(128,4)                  & $\sim$40  & $\sim$76\% \\
-Frozen PCA(128,64) + Linear(64,4)  & $\sim$300 & $\sim$76\% \\
-Learned Linear(128,4) (Model B)    & 556       & $\sim$96\% \\
-\bottomrule
-\end{tabular}
+    \centering
+    \caption{Encoding ablation for the quantum head. All variants encode into four
+        qubits; only the projection feeding the circuit changes.}
+    \label{tab:exp2_encoding}
+    \setlength{\tabcolsep}{4pt}
+    \footnotesize
+    \begin{tabular}{lcc}
+        \toprule
+        Encoding into the VQC             & Params    & Acc.       \\
+        \midrule
+        Frozen PCA(128,4)                 & $\sim$40  & $\sim$76\% \\
+        Frozen PCA(128,64) + Linear(64,4) & $\sim$300 & $\sim$76\% \\
+        Learned Linear(128,4) (Model B)   & 556       & $\sim$96\% \\
+        \bottomrule
+    \end{tabular}
 \end{table}
 
 \subsubsection{Training Dynamics and Computational Cost}

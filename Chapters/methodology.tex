@@ -16,7 +16,7 @@ They are not the only ones we tried, and they are not necessarily the best possi
 To ensure fair and rigorous comparisons across all experiments, every model interacts with the SDSS DR19 dataset through a unified, heavily controlled data pipeline. This pipeline manages memory-efficient ingestion, artifact mitigation, robust augmentation, and the strict isolation of spectral features.
 
 \subsubsection{Data Ingestion and Memory Management}
-The raw dataset spans millions of astronomical observations, posing a substantial memory bottleneck. To circumvent this, the pipeline employs zero-copy datasets and a streamed ingestion process. Using the \texttt{pyarrow} backend, the parquet files are parsed in continuous batches and mapped directly into pre-allocated NumPy arrays. This approach prevents the catastrophic RAM spikes associated with loading the full dataset simultaneously. When an experiment demands a specific subset of the data (such as the binary classification in Experiment 1), the pipeline dynamically filters the dataset to the requested classes and remaps their integer labels, enabling a seamless transition between the full 62-class problem and targeted sub-problems.
+The raw dataset spans millions of astronomical observations, posing a substantial memory bottleneck. To circumvent this, the pipeline employs zero-copy datasets and a streamed ingestion process. Using the \texttt{pyarrow} backend, the parquet files are parsed in continuous batches and mapped directly into pre-allocated NumPy arrays. This approach prevents the catastrophic RAM spikes associated with loading the full dataset simultaneously. When an experiment demands a specific subset of the data (such as the binary classification in \hyperref[sec:exp1_methods]{Experiment 1}), the pipeline dynamically filters the dataset to the requested classes and remaps their integer labels, enabling a seamless transition between the full 62-class problem and targeted sub-problems.
 
 \subsubsection{Preprocessing and Artifact Mitigation}
 Raw flux spectra frequently exhibit spectrograph edge artifacts-sharp, high-amplitude spikes occurring at the physical boundary limits of the observing instruments. If left untreated, the networks fixate on these non-physical anomalies. To remove this noise, the first and last 100 wavelength bins of every spectrum are systematically cropped prior to any processing.
@@ -33,19 +33,24 @@ To prevent overfitting and simulate physical variance, an on-the-fly data augmen
     \item \textit{Flux Scaling:} The overall amplitude of the spectrum is multiplied by a randomized continuous scale factor, simulating variations in object distance and apparent magnitude.
     \item \textit{Contiguous Masking:} Taking inspiration from spectral dropout techniques, one to three random contiguous chunks (ranging from 15 to 50 bins) are entirely zeroed out. This forces the feature extractors to rely on global patterns rather than memorizing isolated, high-intensity emission lines.
     \item \textit{Gaussian Smoothing:} A 1D convolutional Gaussian blur with a randomized kernel size (derived from a stochastically generated sigma) is applied to simulate atmospheric seeing variations and lower-resolution instrument states.
-    \item \textit{Mixup:} With 50\% probability, an input is linearly interpolated with another random sample (\(\lambda \sim \text{Beta}(0.4,0.4)\)). The loss becomes the same weighted combination of the two original labels' cross‑entropy terms, effectively training on soft, mixed targets instead of hard class labels.
+    \item \textit{Mixup:} With 50\% probability, an input is linearly interpolated with another random sample (\(\lambda \sim \text{Beta}(0.4,0.4)\)). The loss becomes the same weighted combination of the two original labels' cross-entropy terms, effectively training on soft, mixed targets instead of hard class labels.
 \end{itemize}
 
 \subsubsection{Addressing Class Imbalance}
 As later mentioned the SDSS DR19 dataset is highly imbalanced, we offered two solutions to this problem. First a weighted random sampler
 
+
+
+% ##########################################################################################
+% BASELINE - CLASSICAL CNN (THE BEAST)
+% ##########################################################################################
 \subsection{Baseline: Big Classical CNN}
 \label{sec:baseline_cnn}
 
 \subsubsection{Design Principles}
 \label{sec:baseline_philosophy}
 
-The baseline architecture, internally referred to as the Beast (and later repurposed as the frozen extractor in Experiment 3), is designed to solve the full 62-class spectral classification problem on the SDSS DR19 dataset. Because astronomical spectra contain both highly localized, high-frequency structures (such as narrow emission and absorption lines) and broad, low-frequency trends (such as the thermal continuum), the network requires both fine-grained local feature extraction and a global receptive field.
+The baseline architecture, internally referred to as the Beast (and later repurposed as the frozen extractor in \hyperref[sec:exp2_methods]{Experiment 2}), is designed to solve the full 62-class spectral classification problem on the SDSS DR19 dataset. Because astronomical spectra contain both highly localized, high-frequency structures (such as narrow emission and absorption lines) and broad, low-frequency trends (such as the thermal continuum), the network requires both fine-grained local feature extraction and a global receptive field.
 
 To achieve this, the architecture combines three distinct paradigms. First, a multi-scale convolutional stem captures features at varying resolutions simultaneously. Second, a deep backbone of one-dimensional Squeeze-and-Excitation (SE) residual blocks \cite{hu2019squeeze} with dilated convolutions extracts hierarchical features while dynamically weighting the most informative spectral channels. Finally, a Transformer encoder \cite{vaswani2017attention} acts on the resulting sequence to capture long-range dependencies between distant spectral lines that would otherwise require an impractically deep purely convolutional network.
 
@@ -80,9 +85,13 @@ The model was trained from scratch on the full SDSS DR19 dataset. We optimized t
 Also, the SDSS DR19 dataset is highly imbalanced. The range in our curated subset is between 276 (STAR\_M0) 25'000 for the more common classes. To mitigate this imbalance, where the model would get a good avgerage accuracy by simply learning the majority classes but fail on the minority ones, we initially experimented with weighted random sampling, however this led to unstable training and worse overall performance. Instead, we
 used a Focal Loss \cite{lin2018focalloss}. This loss function down-weights the contribution of classes with a high number of samples and focuses the learning on the harder, underrepresented classes. This approach led to more stable training and improved performance on the minority classes.
 
-Beyond serving as the frozen backbone for Experiment 3, the baseline plays a crucial diagnostic role. During evaluation, a custom metric tracker generates a row-normalized confusion matrix to compute per-class recall. More importantly, it performs an automated algorithmic analysis to extract "Mirrors" (symmetric confusion pairs where the CNN frequently mistakes class A for class B and vice versa) and "Black Holes" (sink classes with high false-positive absorption). This systemic failure analysis provides the empirical justification for the classes selected in Experiment 1; by isolating the exact pairs that the highly parameterized classical Beast struggles to separate, we define the hardest possible target for the subsequent quantum head.
+Beyond serving as the frozen backbone for \hyperref[sec:exp2_methods]{Experiment 2}, the baseline plays a crucial diagnostic role. During evaluation, a custom metric tracker generates a row-normalized confusion matrix to compute per-class recall. More importantly, it performs an automated algorithmic analysis to extract "Mirrors" (symmetric confusion pairs where the CNN frequently mistakes class A for class B and vice versa) and "Black Holes" (sink classes with high false-positive absorption). This systemic failure analysis provides the empirical justification for the classes selected in the following experiments; by isolating the exact pairs that the highly parameterized classical Beast struggles to separate, we define the hardest possible target for the subsequent quantum head.
 
 
+
+% ##########################################################################################
+% EXPERIMENT 1: BINARY CLASSIFICATION WITH A VQC
+% ##########################################################################################
 
 \subsection{Experiment 1: Binary Classification}
 \label{sec:exp1_methods}
@@ -112,8 +121,7 @@ spectrum to a small feature vector whose width equals the number of qubits. The
 features are bounded to $[-\pi,\pi]$ by a $\tanh(\cdot)\,\pi$ transform, the middle
 stage processes them, and a small MLP head of \texttt{Linear} to width 32, batch
 normalisation, a ReLU, dropout and a final \texttt{Linear} to two logits produces
-the prediction. Unlike the frozen backbone of Experiment 3, this extractor is
-trained jointly with the rest of the model. Its internal structure is given in
+the prediction. Unlike the frozen backbone of \hyperref[sec:exp2_methods]{Experiment 2}, this extractor is trained jointly with the rest of the model. Its internal structure is given in
 Figure~\ref{fig:cnn_extractor}, with three convolutional blocks growing the channels
 from 1 to 64, an adaptive average pool and a three-stage projection head down to the
 feature width. The extractor holds about 24000 of the roughly 24500 trainable
@@ -154,8 +162,7 @@ The classical mirror replaces this circuit with the block of
 Figure~\ref{fig:classical_layer}, a \texttt{Linear} expansion to width eight, a
 $\tanh$ and a \texttt{Linear} back to the feature width. The $\tanh$ is deliberate,
 because an earlier ReLU version collapsed onto the majority class through the same
-dead-ReLU failure later confirmed in Experiment 3, so the honest control uses the
-non-dying activation. With four features the classical block holds 76 parameters
+dead-ReLU failure later confirmed in \hyperref[sec:exp2_methods]{Experiment 2}, so the honest control uses the non-dying activation. With four features the classical block holds 76 parameters
 against the 72 of the VQC, so the two middle stages are matched to within a handful
 of parameters.
 
@@ -197,67 +204,17 @@ a fixed 30 epochs and repeated over three seeds, and we report the mean and stan
 deviation across seeds. The protocol was kept deliberately plain, since the aim was
 a controlled comparison rather than a tuned performance record.
 
-\subsection{Experiment 2: Few-Shot Classification with Quantum Kernels}
+% ##########################################################################################
+% EXPERIMENT 2: CLASSIFIER HEADS ON A FROZEN EXTRACTOR
+% ##########################################################################################
+
+\subsection{Experiment 2: Classifier Heads on a Frozen Extractor}
 \label{sec:exp2_methods}
 
 \subsubsection{Design Principles}
 \label{sec:exp2_philosophy}
 
-The second experiment pivots from highly parameterized neural networks to the few-shot learning regime, investigating whether quantum support vector machines (QSVMs) exhibit a trainable advantage when data is exceedingly scarce. Deep classical networks are notoriously prone to overfitting on small datasets. Quantum kernels, mapping data into an exponentially large Hilbert space, theoretically offer enhanced linear separability. However, evaluating a quantum advantage requires a stringent protocol.
-
-To ensure a defensible comparison, this experiment operates under three constraints. First, we enforce strict balanced subsetting to prevent silent majority-class collapse at small sample sizes. Second, we evaluate over multiple resampled seeds per subset size, reporting the mean accuracy with 95\% confidence intervals rather than relying on a single favourable data draw. Third, the classical baseline, an RBF kernel SVM, is hyperparameter-tuned with the same rigour as the quantum models; a quantum model outperforming an untuned classical model does not constitute a true quantum advantage. Finally, we establish a pre-registered criterion for advantage: a quantum model is deemed superior at a specific sample size $n$ only if the lower bound of its 95\% confidence interval strictly exceeds the upper bound of the best classical model's confidence interval.
-
-\subsubsection{Data Processing and Bounded Encoding}
-\label{sec:exp2_encoding}
-
-For this experiment, 4 hard-to-separate classes were identified from the baseline's confusion matrix, via a four-crossing analysis that isolated the most symmetric and entangled pairs. Initial trials used easy-to-separate classes, but the resulting near-perfect accuracies at small $n$ made it impossible to detect any advantage.
-
-Unlike the frozen convolutional extractor in Experiment 3, the QSVM pipeline avoids high-capacity trainable feature extraction to prevent classical parameters from masking the quantum kernel's contribution. Instead, the raw 4096-bin flux spectra are deterministically downsampled using 1D adaptive average pooling to $N_{\text{features}}$ bins, mapping directly to the $N_{\text{features}}$ qubits of the quantum circuit. We systematically swept $N_{\text{features}}$ to determine the optimal dimensionality for both classical and quantum state preparation.
-
-A known failure mode in quantum kernels acting on raw continuous data is $2\pi$ wrap-around \cite{Bosco2025Periodic}, where distinct scalar values collapse onto the same rotation angle, and exponential kernel concentration \cite{thanasilp2024Exponential}, where highly expressive feature maps converge to a near-identity Gram matrix. To mitigate this, the pooled features $x_i$ are explicitly standard-scaled and subsequently mapped into a strictly bounded angular domain using a squashing function:
-$$ \tilde{x}_i = \frac{\pi}{2} \tanh(c \cdot x_i) $$
-where $c$ is a continuous bandwidth scaling parameter. This ensures all encoded rotations remain well within a single period $[-\pi/2, \pi/2]$, minimizing wrap-around and artificially induced concentration.
-
-The bounded features $\tilde{x}_i$ are injected into the quantum state via the feature map $U(x)$ illustrated in Figure~\ref{fig:qsvm_circuit}. The mapping consists of $R_Y$ and $R_Z$ rotations encoding each feature onto its respective qubit (the double-axis configuration), followed by a ring of CNOT gates that entangles nearest neighbours with periodic boundary conditions. To limit excessive expressivity that drives kernel concentration, the circuit relies on a shallow depth (defaulting to a single repetition).
-
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=\columnwidth]{Figures/qsvm_circuit.pdf} % Assuming compiled PDF name
-    \caption{Quantum feature map $U(x)$ utilized for the QSVM kernels, shown for four qubits. The scaled and bounded input features $\tilde{x}_i$ are encoded via $R_Y$ and $R_Z$ rotations on each qubit, followed by a hardware-efficient ring of CNOT gates. This unitary can be repeated to increase expressivity, though shallow depths are preferred to mitigate kernel concentration.}
-    \label{fig:qsvm_circuit}
-\end{figure}
-
-\subsubsection{Fidelity and Projected Quantum Kernels}
-\label{sec:exp2_kernels}
-
-The experiment evaluates two distinct quantum kernel formulations against the classical RBF baseline.
-
-\textbf{Fidelity Kernel:} The standard overlap quantum kernel defines the similarity between two data points $x$ and $x'$ as the squared fidelity of their corresponding quantum states:
-$$ k_F(x, x') = |\langle 0 | U^\dagger(x') U(x) | 0 \rangle|^2 $$
-While geometrically intuitive, computing the full Gram matrix for $N$ samples requires $\mathcal{O}(N^2)$ circuit executions, posing significant scaling challenges on hardware.
-
-\textbf{Projected Quantum Kernel (PQK):} Following Huang et al. \cite{huang2021power}, we also evaluate the PQK, which projects the quantum state back into a classical representation by measuring local observables, reducing the circuit complexity to $\mathcal{O}(N)$. Specifically, the quantum state is measured in the Pauli $X$, $Y$, and $Z$ bases for each qubit, yielding a $3N_{\text{features}}$-dimensional vector of expectation values:
-$$ p(x) = \bigcup_{q=1}^{N_{\text{features}}} \big\{ \langle X_q \rangle, \langle Y_q \rangle, \langle Z_q \rangle \big\} $$
-A classical RBF kernel is then computed over these quantum-projected vectors. The RBF bandwidth ($\gamma$) for the PQK is resolved using the median heuristic on the pairwise squared distances of the projected training features. This appraoch is not explicitly prescribed in the original PQK formulation, but it is a common practice in classical kernel methods.
-
-\subsubsection{Training Protocol and Pre-screening}
-\label{sec:exp2_protocol}
-
-The datasets are constructed from the targeted four-class subset of the SDSS DR19 dataset. The training set is subsampled to balanced sizes of $n \in \{2, 5, 10, 20, 50, 100, 200\}$ samples per class. The classical control is a Support Vector Classifier (SVC) equipped with an RBF kernel. To guarantee a fair comparison, the classical SVC undergoes a robust grid search over the regularization parameter $C \in \{0.1, 1, 10, 100\}$ and the bandwidth parameter $\gamma \in \{\text{scale}, 0.01, 0.1, 1.0\}$ at every evaluation step using stratified cross-validation. For the quantum evaluations, $C$ was also treated as an empirically optimized hyperparameter, evaluated after identifying the optimal $N_{\text{features}}$.
-
-Before initiating the compute-intensive scaling sweeps, we utilize a pre-training diagnostic metric: the geometric difference $g(K_C || K_Q)$ \cite{huang2021power}. Computed on the Gram matrices of a small data subset, this metric quantifies the divergence between the classical and quantum kernel geometries:
-$$ g = \left\| \sqrt{K_Q} (K_C + \lambda I)^{-1} \sqrt{K_Q} \right\|_2 $$
-where $\lambda$ is a regularization term evaluated across $\{10^{-6}, 10^{-8}, 10^{-10}\}$. If $g \approx 1$, the classical kernel seamlessly reproduces the quantum geometry, mathematically precluding a quantum advantage. We record $g$ prior to model fitting to empirically justify the search for advantage within the chosen encoding strategy.
-
-
-
-\subsection{Experiment 3: Classifier Heads on a Frozen Extractor}
-\label{sec:exp3_methods}
-
-\subsubsection{Design Principles}
-\label{sec:exp3_philosophy}
-
-The design of Experiment 3 follows two principles, control and fairness. Control,
+The design of Experiment 2 follows two principles, control and fairness. Control,
 because we want every measured difference to come from a single place. By reusing a
 strong pretrained network as a frozen feature extractor and varying only the small
 head on top of it, we remove feature learning from the comparison and reduce it to a
@@ -279,7 +236,7 @@ The shared backbone is a pretrained one-dimensional classifier that we refer to 
 the Beast. It combines a multi-scale convolutional stem, squeeze-and-excitation
 residual blocks and a two-layer Transformer encoder, totalling about 14 million
 parameters, and was trained from scratch on the full 62-class problem where it
-reaches roughly 84\% accuracy. For Experiment 3 its final
+reaches roughly 84\% accuracy. For Experiment 2 its final
 \texttt{Linear(128, num\_classes)} layer is replaced by an identity map and every
 parameter is frozen, so the backbone becomes a fixed function that turns each
 spectrum into the same 128-dimensional feature vector. We freeze it rather than
@@ -426,7 +383,7 @@ size of the circuit.
 \subsubsection{Training Protocol}
 \label{sec:training}
 
-Experiment 3 uses a four-class subset balanced to 1000 samples per class and split
+Experiment 2 uses a four-class subset balanced to 1000 samples per class and split
 $70/15/15$ into train, validation and test with seed $42$. All heads are trained on
 top of the frozen extractor with the Adam optimiser at a learning rate of $10^{-3}$
 and weight decay $10^{-4}$, a batch size of $256$ and a cross-entropy loss, for 100
@@ -436,6 +393,67 @@ throughout. In line with the design principles we record not only the final test
 accuracy but also per-class recall, the test confusion matrices, the convergence
 behaviour and the training cost.
 
+
+% ################################################################################
+% EXPERIMENT 3: FEW-SHOT CLASSIFICATION WITH QUANTUM KERNELS (QSVM)
+% ################################################################################
+
+\subsection{Experiment 3: Few-Shot Classification with Quantum Kernels}
+\label{sec:exp3_methods}
+
+\subsubsection{Design Principles}
+\label{sec:exp3_philosophy}
+
+The second experiment pivots from highly parameterized neural networks to the few-shot learning regime, investigating whether quantum support vector machines (QSVMs) exhibit a trainable advantage when data is exceedingly scarce. Deep classical networks are notoriously prone to overfitting on small datasets. Quantum kernels, mapping data into an exponentially large Hilbert space, theoretically offer enhanced linear separability. However, evaluating a quantum advantage requires a stringent protocol.
+
+To ensure a defensible comparison, this experiment operates under three constraints. First, we enforce strict balanced subsetting to prevent silent majority-class collapse at small sample sizes. Second, we evaluate over multiple resampled seeds per subset size, reporting the mean accuracy with 95\% confidence intervals rather than relying on a single favourable data draw. Third, the classical baseline, an RBF kernel SVM, is hyperparameter-tuned with the same rigour as the quantum models; a quantum model outperforming an untuned classical model does not constitute a true quantum advantage. Finally, we establish a pre-registered criterion for advantage: a quantum model is deemed superior at a specific sample size $n$ only if the lower bound of its 95\% confidence interval strictly exceeds the upper bound of the best classical model's confidence interval.
+
+\subsubsection{Data Processing and Bounded Encoding}
+\label{sec:exp3_encoding}
+
+For this experiment, 4 hard-to-separate classes were identified from the baseline's confusion matrix, via a four-crossing analysis that isolated the most symmetric and entangled pairs. Initial trials used easy-to-separate classes, but the resulting near-perfect accuracies at small $n$ made it impossible to detect any advantage.
+
+Unlike the frozen convolutional extractor in \hyperref[sec:exp2_methods]{Experiment 2}, the QSVM pipeline avoids high-capacity trainable feature extraction to prevent classical parameters from masking the quantum kernel's contribution. Instead, the raw 4096-bin flux spectra are deterministically downsampled using 1D adaptive average pooling to $N_{\text{features}}$ bins, mapping directly to the $N_{\text{features}}$ qubits of the quantum circuit. We systematically swept $N_{\text{features}}$ to determine the optimal dimensionality for both classical and quantum state preparation.
+
+A known failure mode in quantum kernels acting on raw continuous data is $2\pi$ wrap-around \cite{Bosco2025Periodic}, where distinct scalar values collapse onto the same rotation angle, and exponential kernel concentration \cite{thanasilp2024Exponential}, where highly expressive feature maps converge to a near-identity Gram matrix. To mitigate this, the pooled features $x_i$ are explicitly standard-scaled and subsequently mapped into a strictly bounded angular domain using a squashing function:
+$$ \tilde{x}_i = \frac{\pi}{2} \tanh(c \cdot x_i) $$
+where $c$ is a continuous bandwidth scaling parameter. This ensures all encoded rotations remain well within a single period $[-\pi/2, \pi/2]$, minimizing wrap-around and artificially induced concentration.
+
+The bounded features $\tilde{x}_i$ are injected into the quantum state via the feature map $U(x)$ illustrated in Figure~\ref{fig:qsvm_circuit}. The mapping consists of $R_Y$ and $R_Z$ rotations encoding each feature onto its respective qubit (the double-axis configuration), followed by a ring of CNOT gates that entangles nearest neighbours with periodic boundary conditions. To limit excessive expressivity that drives kernel concentration, the circuit relies on a shallow depth (defaulting to a single repetition).
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\columnwidth]{Figures/qsvm_circuit.pdf} % Assuming compiled PDF name
+    \caption{Quantum feature map $U(x)$ utilized for the QSVM kernels, shown for four qubits. The scaled and bounded input features $\tilde{x}_i$ are encoded via $R_Y$ and $R_Z$ rotations on each qubit, followed by a hardware-efficient ring of CNOT gates. This unitary can be repeated to increase expressivity, though shallow depths are preferred to mitigate kernel concentration.}
+    \label{fig:qsvm_circuit}
+\end{figure}
+
+\subsubsection{Fidelity and Projected Quantum Kernels}
+\label{sec:exp3_kernels}
+
+The experiment evaluates two distinct quantum kernel formulations against the classical RBF baseline.
+
+\textbf{Fidelity Kernel:} The standard overlap quantum kernel defines the similarity between two data points $x$ and $x'$ as the squared fidelity of their corresponding quantum states:
+$$ k_F(x, x') = |\langle 0 | U^\dagger(x') U(x) | 0 \rangle|^2 $$
+While geometrically intuitive, computing the full Gram matrix for $N$ samples requires $\mathcal{O}(N^2)$ circuit executions, posing significant scaling challenges on hardware.
+
+\textbf{Projected Quantum Kernel (PQK):} Following Huang et al. \cite{huang2021power}, we also evaluate the PQK, which projects the quantum state back into a classical representation by measuring local observables, reducing the circuit complexity to $\mathcal{O}(N)$. Specifically, the quantum state is measured in the Pauli $X$, $Y$, and $Z$ bases for each qubit, yielding a $3N_{\text{features}}$-dimensional vector of expectation values:
+$$ p(x) = \bigcup_{q=1}^{N_{\text{features}}} \big\{ \langle X_q \rangle, \langle Y_q \rangle, \langle Z_q \rangle \big\} $$
+A classical RBF kernel is then computed over these quantum-projected vectors. The RBF bandwidth ($\gamma$) for the PQK is resolved using the median heuristic on the pairwise squared distances of the projected training features. This appraoch is not explicitly prescribed in the original PQK formulation, but it is a common practice in classical kernel methods.
+
+\subsubsection{Training Protocol and Pre-screening}
+\label{sec:exp3_protocol}
+
+The datasets are constructed from the targeted four-class subset of the SDSS DR19 dataset. The training set is subsampled to balanced sizes of $n \in \{2, 5, 10, 20, 50, 100, 200\}$ samples per class. The classical control is a Support Vector Classifier (SVC) equipped with an RBF kernel. To guarantee a fair comparison, the classical SVC undergoes a robust grid search over the regularization parameter $C \in \{0.1, 1, 10, 100\}$ and the bandwidth parameter $\gamma \in \{\text{scale}, 0.01, 0.1, 1.0\}$ at every evaluation step using stratified cross-validation. For the quantum evaluations, $C$ was also treated as an empirically optimized hyperparameter, evaluated after identifying the optimal $N_{\text{features}}$.
+
+Before initiating the compute-intensive scaling sweeps, we utilize a pre-training diagnostic metric: the geometric difference $g(K_C || K_Q)$ \cite{huang2021power}. Computed on the Gram matrices of a small data subset, this metric quantifies the divergence between the classical and quantum kernel geometries:
+$$ g = \left\| \sqrt{K_Q} (K_C + \lambda I)^{-1} \sqrt{K_Q} \right\|_2 $$
+where $\lambda$ is a regularization term evaluated across $\{10^{-6}, 10^{-8}, 10^{-10}\}$. If $g \approx 1$, the classical kernel seamlessly reproduces the quantum geometry, mathematically precluding a quantum advantage. We record $g$ prior to model fitting to empirically justify the search for advantage within the chosen encoding strategy.
+
+
+% ################################################################################
+% EXPERIMENT 4: QUANVOLUTION AND NOISE ROBUSTNESS
+% ################################################################################
 \subsection{Experiment 4: Quanvolution and Noise Robustness}
 \label{sec:exp4_methods}
 
@@ -494,13 +512,19 @@ Beyond empirical accuracy under noise, we algorithmically quantify the Lipschitz
 $$ J_{ij}(x) = \frac{\partial f_i(x)}{\partial x_j} $$
 We report the median Frobenius norm $||J||_F$ across the sampled patches. A significantly lower Jacobian norm in the \texttt{Quanv1dLayer} serves as mathematical verification of the regularisation hypothesis, proving that the quantum map is intrinsically smoother with respect to its inputs than the classical counterpart.
 
+
+
+% ################################################################################
+% EXPERIMENT 5: TRUE QUANTUM CONVOLUTIONAL NETWORKS
+% ################################################################################
+
 \subsection{Experiment 5: True Quantum Convolutional Networks}
 \label{sec:exp5_methods}
 
 \subsubsection{Design Principles and the Quantum Data Caveat}
 \label{sec:exp5_philosophy}
 
-The final experiment shifts from hybrid classical-quantum models (such as the local sliding filters in Experiment 4) to true, fully coherent Quantum Convolutional Neural Networks (QCNNs) \cite{cong2019qcnn}. A true QCNN embeds the entire input vector into a single global quantum state and applies a hierarchy of weight-shared, translationally invariant unitaries, concluding with coherent pooling operations that progressively reduce the subsystem size. Theoretically, this architecture is proven to be immune to barren plateaus (vanishing gradients with depth) \cite{pesah2021absence} and exhibits strong inductive biases.
+The final experiment shifts from hybrid classical-quantum models (such as the local sliding filters in \hyperref[sec:exp4_methods]{Experiment 4}) to true, fully coherent Quantum Convolutional Neural Networks (QCNNs) \cite{cong2019qcnn}. A true QCNN embeds the entire input vector into a single global quantum state and applies a hierarchy of weight-shared, translationally invariant unitaries, concluding with coherent pooling operations that progressively reduce the subsystem size. Theoretically, this architecture is proven to be immune to barren plateaus (vanishing gradients with depth) \cite{pesah2021absence} and exhibits strong inductive biases.
 
 However, QCNNs were fundamentally designed for \textit{quantum data} (e.g., recognizing phases of quantum matter). Applying them to classical astronomical spectra need us embedding classical data into a quantum state. This experiment investigates whether the architectural robustness of the QCNN persists when the input is classically embedded flux. To ensure the integrity of the data representation, we restricted this experiment to a high signal-to-noise ratio (SNR) four-class subset, explicitly excluding Quasar (QSO) classes that lacked sufficient pristine samples, as excessive baseline noise fatally disrupts state preparation.
 
