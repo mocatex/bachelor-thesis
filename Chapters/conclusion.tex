@@ -1,0 +1,77 @@
+\section{Conclusion and Outlook}
+\label{sec:conclusion}
+
+This thesis set out to determine whether quantum machine learning offers a practical
+advantage for the classification of astronomical spectra, and to answer that question
+honestly rather than optimistically. The guiding principle throughout was fairness.
+Every quantum model was compared against a classical counterpart of matched size,
+trained under an identical pipeline, so that any measured difference could be
+attributed to the quantum component rather than to incidental design choices.
+
+We first established a strong classical foundation. A 14-million-parameter
+convolutional network reached 84.5\% accuracy on the full 62-class SDSS problem and
+reproduced the GaSNet-II benchmark at 92.5\% on a 13-class subset, confirming that the
+classical baseline is competitive with the published state of the art and that the
+coarse classification problem is essentially solved. This baseline also served as the
+frozen feature extractor for the later experiments.
+
+On top of this foundation we tested four different quantum approaches. A variational
+quantum circuit on the hardest binary pair reached the same accuracy as its
+parameter-matched classical mirror. Quantum and classical heads on frozen features both
+reached about 96\% on a four-class task, with no parameter-efficiency benefit for the
+quantum head. Quantum support vector machines showed no advantage in the few-shot
+regime and were overtaken by a classical kernel as the training set grew. A
+quanvolutional filter was statistically indistinguishable from a parameter-matched
+classical filter under increasing noise, and the only significant difference favoured
+the classical model. Across every paradigm the result was the same, namely parity at
+best and no quantum advantage.
+
+Just as important as the null result is how it was reached. In two separate experiments
+an apparent quantum advantage appeared and then dissolved under scrutiny, once traced
+to an under-built classical baseline and once to a dead-ReLU optimisation artefact that
+a single change of activation removed. These episodes are the heart of the thesis's
+contribution. The work delivers a disciplined fair-comparison methodology, with
+parameter matching, shared pipelines, robust classical controls, multiple seeds and
+statistical testing, and it demonstrates concretely that apparent quantum advantages
+must be treated as hypotheses to be ruled out rather than as results. Because all
+circuits were simulated without noise, the most favourable possible setting for quantum
+hardware, the absence of an advantage is a conservative and robust conclusion. For the
+spectral classification tasks studied here, and at the scales reachable on near-term
+devices, quantum machine learning matched but did not beat a carefully built classical
+model.
+
+\subsection{Outlook}
+\label{sec:conclusion_outlook}
+
+Within this thesis the most obvious quantum-specific levers were already pulled. We
+varied the circuit geometry across the full sweep and we compared angle encoding
+against amplitude encoding, and neither the shape of the circuit nor the way the data
+entered it produced an advantage over a matched classical model. The more promising
+open questions therefore lie less in tuning these hybrid models and more in changing the
+problem they are asked to solve.
+
+The clearest of these is whether quantum methods help at all on data that is already
+well suited to classical learning. Optical spectra are smooth, structured signals that
+convolutional networks handle naturally, which leaves little room for a quantum model to
+add anything. A fairer test of a genuine quantum advantage may require problems whose
+structure is provably hard for classical learners, or data that is quantum in origin
+rather than a classical measurement, where a quantum model is not forced to first
+compress the input through a classical front end. Identifying such a problem in an
+astronomical context, if one exists, is itself an open question.
+
+A second direction is to confront real hardware. All results here come from a noiseless
+simulator, which is the best case for quantum methods, so a natural extension is to
+repeat the comparisons on physical devices together with error mitigation, both to
+measure the cost of hardware noise and to test whether the structural properties seen in
+simulation, such as the smoother feature maps of the quanvolutional filter, survive in
+practice.
+
+Finally, the comparisons here were bounded by eight qubits, a single scientific domain
+and a handful of hard class pairs. Larger qubit counts as simulators and hardware
+improve, and the same fair-comparison framework applied to other signals, would show
+whether the parity found here is specific to SDSS spectra or a more general feature of
+near-term quantum machine learning. The geometric-difference pre-screening used in the
+kernel experiment is a cheap and principled way to decide in advance which of these
+problems are even worth the effort. None of these directions is likely to overturn the
+present finding on today's hardware, but each would sharpen the question of where, if
+anywhere, a near-term quantum advantage on real scientific data can be found.
