@@ -435,3 +435,61 @@ before optimisation begins. The extractor remains frozen and in evaluation mode
 throughout. In line with the design principles we record not only the final test
 accuracy but also per-class recall, the test confusion matrices, the convergence
 behaviour and the training cost.
+
+\subsection{Experiment 4: Quanvolution and Noise Robustness}
+\label{sec:exp4_methods}
+
+\subsubsection{Design Principles}
+\label{sec:exp4_philosophy}
+
+The fourth experiment explores the hypothesised regularisation properties of quantum representation spaces under domain shift and adversarial noise. Classical convolutional neural networks, while highly expressive, are known to be vulnerable to high-frequency perturbations \cite{szegedy2013intriguing}. Variational quantum circuits, governed by unitary dynamics and bounded observable spectra, theoretically exhibit a restricted Lipschitz constant that may naturally resist such perturbations \cite{sokolic2017robust}.
+
+To test this, we substitute standard classical convolutional filters with a parameter-matched Quanvolutional layer \cite{henderson2020quanvolutional}. The experiment enforces strict parameter parity to ensure any observed robustness arises intrinsically from the quantum geometry rather than a discrepancy in model capacity.
+
+\subsubsection{Shared Architecture and Bounded Attention}
+\label{sec:exp4_shared}
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=\textwidth]{Figures/quanvolution_model.png}
+    \caption{Complete data flow and shared macro-architecture for Experiment 4. The 1D input flux is pooled, patched, and squashed via spherical encoding and trainable bounded attention. The patches are then processed by the contested middle stage (either the quantum or classical filter) before passing through a shared deep aggregation head containing 1D convolutions and an MLP to output binary classification logits.}
+    \label{fig:exp4_macro}
+\end{figure*}
+
+Both the quantum and classical models share a unified macro-architecture, which is illustrated in Figure~\ref{fig:exp4_macro}. An input spectrum is first pooled to 1024 bins. Patches of size 4 are extracted with a stride of 2. To prevent the quantum wrap-around effect, where high-amplitude noise causes features to alias across $2\pi$ periodic boundaries, every patch $x$ is explicitly projected onto a hypersphere and scaled to a maximum phase of $\pi/2$:
+$$ x' = \frac{x}{||x||_2 + \epsilon} \cdot \frac{\pi}{2} $$
+Following this, the patches pass through a trainable Bounded Quantum Attention mechanism. A set of four learnable parameters is passed through a sigmoid function to create a bounding mask $m \in [0, 1]^4$, yielding the final encoded patch $\tilde{x} = x' \odot m$. This allows the network to selectively dampen individual spatial features within a patch without mathematically risking phase aliasing.
+
+Regardless of the middle stage (quantum or classical), the filter maps the 4-dimensional patch to 12 output channels. These channels are subsequently processed by a shared deep aggregation head comprising two stages of 1D convolutions (expanding from 12 to 64 channels) interlaced with ReLU activations, followed by adaptive max pooling. A final Multi-Layer Perceptron (MLP) yields the binary classification logits.
+
+\subsubsection{Quantum and Classical Filters}
+\label{sec:exp4_filters}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\columnwidth]{Figures/quanv_1D_layer.pdf}
+    \caption{Variational quantum circuit utilized within the \texttt{Quanv1dLayer}. The bounded patch inputs $\tilde{x}_i$ are encoded via cyclically alternating Pauli rotations over three layers. A terminal uncoupled layer of general rotations acts as a learnable Quantum Lens prior to the extraction of the 12 channel expectations.}
+    \label{fig:exp4_micro}
+\end{figure}
+
+\textbf{Quanvolutional Filter (\texttt{Quanv1dLayer}):} The quantum filter maps the 4-dimensional bounded patch $\tilde{x}$ into a 4-qubit variational circuit comprising $L=3$ layers. The internal gate structure of this filter is detailed in Figure~\ref{fig:exp4_micro}. To maximise feature distinctiveness across depths, the circuit employs a multi-axis data re-uploading strategy, where the encoding rotation shifts cyclically ($R_Y, R_Z, R_X$) per layer. Entanglement is generated via a robust ring of \texttt{IsingZZ} interactions, followed by general single-qubit \texttt{Rot} gates and a ring of \texttt{CNOT} gates.
+
+Crucially, the circuit concludes with a "Quantum Lens"---a final uncoupled layer of trainable \texttt{Rot} gates. This lens is designed to allow the model to globally rotate the prepared quantum state into a measurement basis that is maximally orthogonal to the injected noise directions. The state is then measured across local Pauli $Z$, Pauli $X$, and two-body correlation $Z \otimes Z$ observables, yielding the 12 output channels. In total, the quantum filter contains 52 trainable parameters (36 rotation weights, 12 lens weights, and 4 attention weights).
+
+\textbf{Parameter-Matched Classical Filter:} To serve as an honest baseline, the classical model replaces the quantum circuit with a lightweight Multi-Layer Perceptron. The network projects the 4-dimensional input through a hidden bottleneck of size 2, expanding out to 12 channels. Both layers utilise \texttt{Tanh} activations to strictly bound the classical outputs to $[-1, 1]$, mimicking the spectral bounds of the quantum Pauli expectations. This classical filter contains 46 trainable parameters, establishing an approximate parameter parity with the quantum filter.
+
+\subsubsection{Generalisation and Noise Injection Protocols}
+\label{sec:exp4_noise}
+
+To assess robustness, the models are evaluated under two distinct training regimes over 5000 balanced samples:
+\begin{itemize}
+    \item \textbf{Out-of-Distribution (OOD) Generalisation:} Models are trained exclusively on clean data. During evaluation, continuous Gaussian noise is incrementally injected into the test set spectra, scaled by the spectrum's standard deviation and a magnitude parameter $\sigma \in [0.0, 4.0]$. This tests the models' zero-shot resilience to atmospheric or instrumental degradation unseen during training.
+    \item \textbf{Adversarial Training:} Models are exposed to dynamic noise during the training phase itself. A custom PyTorch dataset wrapper intercepts data batches, passing 50\% cleanly and injecting uniform random noise $\sigma \sim \mathcal{U}(0.1, 0.6)$ into the remaining 50\%. Crucially, the flux vectors are re-standard-scaled post-injection to preserve the angular boundaries of the spherical encoding. This regime tests whether the quantum filter's structural constraints allow it to learn a more robust underlying physical representation when explicitly subjected to perturbations.
+\end{itemize}
+
+\subsubsection{Jacobian Smoothness Evaluation}
+\label{sec:exp4_jacobian}
+
+Beyond empirical accuracy under noise, we algorithmically quantify the Lipschitz smoothness of both filters. A highly sensitive feature map amplifies small input noises, whereas a smooth feature map dampens them. We extract a random subset of 300 test-set patches and compute the Jacobian matrix $J$ of the filter function $f: \mathbb{R}^4 \to \mathbb{R}^{12}$ with respect to the input patch $x$:
+$$ J_{ij}(x) = \frac{\partial f_i(x)}{\partial x_j} $$
+We report the median Frobenius norm $||J||_F$ across the sampled patches. A significantly lower Jacobian norm in the \texttt{Quanv1dLayer} serves as mathematical verification of the regularisation hypothesis, proving that the quantum map is intrinsically smoother with respect to its inputs than the classical counterpart.
