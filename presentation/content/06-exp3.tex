@@ -1,0 +1,52 @@
+% =====================================================================
+%  06 · Experiment 3 — Few-shot quantum kernels (QSVM)
+% =====================================================================
+\section{Experiment 3 · Quantum Kernels}
+
+\begin{frame}{Setup: the circuit as a fixed feature map}{Do quantum kernels win when data is scarce?}
+    \begin{columns}[c]
+        \begin{column}{0.46\textwidth}
+            \centering
+            \includegraphics[height=3.3cm]{qsvm_circuit}\par
+            {\scriptsize\color{zhawgrey}\textbf{Feature map} $U(x)$: $R_Y$/$R_Z$
+                rotations + a CNOT ring. Bounded encoding
+                $\tilde{x}=\tfrac{\pi}{2}\tanh(cx)$ avoids $2\pi$ wrap-around and
+                kernel concentration.}
+        \end{column}
+        \begin{column}{0.52\textwidth}
+            \begin{block}{Two quantum kernels}
+                \footnotesize
+                \textbf{Fidelity:} $|\langle 0|U^\dagger(x')U(x)|0\rangle|^2$ ---
+                $\mathcal{O}(N^2)$ circuits.\\
+                \textbf{Projected (PQK):} local Paulis $\to$ RBF --- $\mathcal{O}(N)$.
+            \end{block}
+            \begin{alertblock}{A pre-registered, honest protocol}
+                \footnotesize Balanced subsets · 95\% CIs over seeds · an RBF baseline
+                tuned just as hard · advantage declared \emph{only} if the quantum CI
+                strictly clears the classical CI.
+            \end{alertblock}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Result: no advantage --- and we knew in advance}{Classical RBF matches or wins}
+    \begin{columns}[c]
+        \begin{column}{0.55\textwidth}
+            \centering
+            \includegraphics[height=4.3cm]{qsvm_scaling_sweep}\par
+            {\scriptsize\color{zhawgrey}\textbf{Figure:}~accuracy vs.\ training samples
+                per class; mean $\pm$ 95\% CI.}
+        \end{column}
+        \begin{column}{0.43\textwidth}
+            \begin{itemize}
+                \item No significant gap for $n\leq 20$.
+                \item Classical RBF \textbf{wins} for $n\geq 50$ ($p<0.05$).
+            \end{itemize}
+            \begin{callout}[Predicted before training]
+                Geometric difference~\cite{huang2021power} $g(C\|Q)=1.89$ (fidelity)
+                --- near the regime where the classical kernel already reproduces the
+                quantum geometry.
+            \end{callout}
+        \end{column}
+    \end{columns}
+\end{frame}

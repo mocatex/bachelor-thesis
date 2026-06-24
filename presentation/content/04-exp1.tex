@@ -1,0 +1,77 @@
+% =====================================================================
+%  04 · Experiment 1 — Binary classification with a VQC
+% =====================================================================
+\section{Experiment 1 · Binary VQC}
+
+\begin{frame}{Setup: swap only the contested middle}{The hardest pair, isolated}
+    \centering
+    \includegraphics[width=0.95\textwidth]{exp2_quantum_model_hybrid_big_picture}\par
+    \vspace{2pt}
+    {\scriptsize\color{zhawgrey}\textbf{Figure:}~a trainable CNN extractor compresses
+        the 4096-bin spectrum to a few features in $[-\pi,\pi]$; the middle stage is
+        either a VQC or a parameter-matched classical block; a shared MLP head decides.}
+    \vspace{3pt}
+    \begin{callout}
+        The CNN extractor holds $\sim$24\,000 of $\sim$24\,500 parameters. The
+        contested circuit is just \textbf{72 angles} --- so any difference is
+        localised to that one stage.
+    \end{callout}
+\end{frame}
+
+\begin{frame}{Result: parity --- and a class-balance surprise}{\texttt{L brown dwarf} vs.\ \texttt{M8}}
+    \begin{columns}[T]
+        \begin{column}{0.6\textwidth}
+            \centering\footnotesize
+            \setlength{\tabcolsep}{4pt}
+            \begin{tabular}{llccc}
+                \toprule
+                Model              & Config          & Acc.                     & BROWN rec     & Gap            \\
+                \midrule
+                Quantum            & 2q$\times$12L   & $0.863$                  & 0.70          & 0.232          \\
+                \textbf{Quantum}   & \textbf{4q×6L}  & $\mathbf{0.869}$         & 0.73          & 0.200          \\
+                Quantum            & 8q$\times$3L    & $0.860$                  & \textbf{0.80} & \textbf{0.083} \\
+                Classical          & 4 feat.         & $0.868$                  & 0.77          & 0.136          \\
+                \bottomrule
+            \end{tabular}
+            \par\vspace{3pt}
+            {\scriptsize\color{zhawgrey}Mean over 3 seeds; full sweep $\pm$std in
+                backup. Gap $=$ recall difference between the two classes.}
+        \end{column}
+        \begin{column}{0.38\textwidth}
+            \begin{block}{Top-line}
+                Best quantum (0.869) and best classical (0.868) are within
+                \textbf{one std} --- no advantage.
+            \end{block}
+            \begin{exampleblock}{The one quantum-specific finding}
+                \textbf{Wide-shallow} circuits balance the classes best
+                (gap $23\%\!\to\!8\%$) --- against the barren-plateau expectation.
+            \end{exampleblock}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Lesson \#1: the advantage that wasn't}{How an apparent quantum win dissolved}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \begin{alertblock}{The early result}
+                A first run showed a \emph{large} quantum lead --- the classical
+                mirror used a \textbf{ReLU} block that collapsed onto the majority class.
+            \end{alertblock}
+            \begin{exampleblock}{After a fair rebuild}
+                Swapping the mirror's activation to \textbf{$\tanh$} closed the gap
+                entirely. The two models tied.
+            \end{exampleblock}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \begin{callout}[Takeaway]
+                The ``advantage'' lived in an \textbf{under-built baseline}, not in
+                the quantum circuit.
+                \vspace{4pt}
+
+                Spiky validation curves looked like a barren plateau --- but they
+                appear \emph{just as strongly} in the classical mirror, so they are
+                model-selection noise, not a quantum pathology.
+            \end{callout}
+        \end{column}
+    \end{columns}
+\end{frame}

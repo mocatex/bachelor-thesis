@@ -1,0 +1,72 @@
+% =====================================================================
+%  ZHAW scientific presentation — MAIN FILE  (engine: pdfLaTeX)
+%  Bachelor Thesis Defense — Quantum Machine Learning for Astronomical Objects
+%  Build:  latexmk -pdf main.tex      (or just save in VS Code)
+%  Slides live in content/*.tex.  Theme + styling: beamerthemezhaw.sty.
+% =====================================================================
+\documentclass[aspectratio=169, 11pt]{beamer}
+\usetheme{zhaw}
+
+% --- Feature toggles (defaults shown; flip as you like) --------------
+% \zhawprogressfalse     % turn off the bottom progress bar
+% \zhawfootlinefalse     % turn off the footer
+% \zhawframenumfalse     % hide frame numbers
+% \zhawframelogofalse    % hide the small corner logo on content slides
+
+% --- Packages used by the talk --------------------------------------
+\usepackage{booktabs}      % nicer tables
+\usepackage{multirow}      % grouped table rows
+\usepackage{pgfplots}\pgfplotsset{compat=1.18}
+\usetikzlibrary{arrows.meta, positioning, fit, backgrounds}
+
+% --- References ------------------------------------------------------
+\usepackage[style=numeric, backend=biber, sorting=none]{biblatex}
+\addbibresource{references.bib}
+
+% --- Appendix / backup ----------------------------------------------
+\usepackage{appendixnumberbeamer}
+
+% =====================================================================
+%  METADATA
+% =====================================================================
+\title[QML for Astronomical Objects]{Quantum Machine Learning for Analyzing Astronomical Objects}
+\subtitle{A fair comparison of quantum and classical models on SDSS spectra}
+\author{Moritz Feuchter \and Shpetim Veseli}
+\date{\today}
+
+\zhawschool{School of Engineering}                  % the school
+\zhawunit{Centre for Artificial Intelligence (CAI)} % dept / institute / centre
+\zhawgroup{}                                        % research group (optional)
+\zhawevent{Bachelor Thesis Defense}                 % course / conference (optional)
+
+% =====================================================================
+\begin{document}
+
+\maketitle                       % full-bleed blue title slide
+
+\zhawoutline                     % agenda slide
+
+\input{content/01-intro}
+\input{content/02-background}
+\input{content/03-baseline}
+\input{content/04-exp1}
+\input{content/05-exp2}
+\input{content/06-exp3}
+\input{content/07-exp4}
+\input{content/08-exp5}
+\input{content/09-conclusion}
+
+\input{content/90-references}
+
+% --- Closing slide ---------------------------------------------------
+\statementframe[zhawblue]{Thank you! \\[6pt]
+    {\normalsize No quantum advantage --- but a method to prove it.}\\[10pt]
+    {\normalsize\faEnvelope[regular]\ \ momo.feuchter@gmail.com
+        \qquad \faGithub\ \ ShpetimV/QML-AnalyzingGalaxies}\\[6pt]
+    {\normalsize Questions?}}
+
+% --- Appendix / backup slides ---------------------------------------
+\appendix
+\input{content/99-appendix}
+
+\end{document}

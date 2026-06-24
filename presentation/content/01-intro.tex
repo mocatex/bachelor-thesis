@@ -1,0 +1,100 @@
+% =====================================================================
+%  01 · Introduction — The Problem
+% =====================================================================
+\section{The Problem}
+
+\begin{frame}{Two million spectra}{The Sloan Digital Sky Survey (SDSS)}
+    \begin{columns}[T]
+        \begin{column}{0.52\textwidth}
+            Each SDSS spectrum is a \textbf{1D signal}: thousands of flux
+            measurements across wavelength, encoding a source's
+            \begin{itemize}
+                \item composition \& temperature,
+                \item redshift (distance / velocity),
+                \item and its \textbf{class}: star, galaxy or quasar.
+            \end{itemize}
+            \vspace{4pt}
+            SDSS has measured \textbf{$>$2 million} such spectra~\cite{york2000sdss}
+            --- far too many to classify by hand.
+        \end{column}
+        \begin{column}{0.46\textwidth}
+            \centering
+            \includegraphics[height=4.3cm]{sdss_spectra_example}\par
+            {\scriptsize\color{zhawgrey}\textbf{Figure:}~four spectral subclasses
+                from our curated SDSS~DR19 set.}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{The easy problem is solved}{...so we went looking for the hard one}
+    \begin{columns}[T]
+        \begin{column}{0.54\textwidth}
+            \begin{block}{Coarse classification (3 classes)}
+                Star vs.\ galaxy vs.\ quasar is \textbf{essentially solved}.
+                Modern deep models (e.g.\ GaSNet-II~\cite{zhong2024gasnet}) reach
+                \textbf{$\approx$99\%} accuracy.
+            \end{block}
+            \begin{alertblock}{Fine-grained subclasses (62 classes)}
+                Accuracy collapses at the boundaries between \emph{physically
+                    similar} types --- e.g.\ a late-type \texttt{M8} dwarf vs.\ an
+                \texttt{L} brown dwarf.
+            \end{alertblock}
+        \end{column}
+        \begin{column}{0.42\textwidth}
+            \vspace{1.2em}
+            \begin{callout}[The driving question]
+                Can \textbf{quantum machine learning} add anything useful
+                exactly where strong classical models begin to \textbf{struggle}?
+            \end{callout}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{A deliberately cautious investigation}{What a quantum model is here}
+    A \textbf{Variational Quantum Circuit (VQC)} is a circuit whose gate-rotation
+    angles are trained by gradient descent~\cite{perezsalinas2020reuploading} ---
+    exploiting an exponentially large state space and entanglement.
+
+    \begin{itemize}
+        \item A \emph{purely} quantum model \textbf{never trained} on raw spectra
+              (known trainability obstacles~\cite{mcclean2018barren}).
+        \item So every quantum model we study is \textbf{hybrid}: a classical
+              feature stage feeding a small quantum component.
+        \item All circuits run on a \textbf{noiseless statevector
+                  simulator}~\cite{bergholm2018pennylane}, $\leq 8$ qubits --- no
+              claims about real hardware.
+    \end{itemize}
+
+    \begin{callout}
+        We treat an apparent quantum advantage as a \textbf{hypothesis to be ruled
+            out}, not a result.
+    \end{callout}
+\end{frame}
+
+\begin{frame}{The central idea of this thesis}{Fairness as a discipline}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            Most applied QML places a powerful classical network in front of a tiny
+            circuit --- then credits the result to the \textbf{quantum} part.
+
+            \vspace{6pt}
+            We refuse that shortcut. \textbf{Every} quantum model is matched to a
+            classical twin of:
+            \begin{itemize}
+                \item the same \textbf{parameter count},
+                \item the same \textbf{surrounding pipeline},
+                \item trained under the \textbf{identical protocol}.
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \vspace{0.6em}
+            \begin{block}{Our three contributions}
+                \begin{enumerate}
+                    \item A competitive 14M-param \textbf{classical baseline} (``the Beast'').
+                    \item \textbf{Five fair comparisons} across four quantum paradigms.
+                    \item The \textbf{comparison itself} --- a reusable honesty methodology.
+                \end{enumerate}
+            \end{block}
+        \end{column}
+    \end{columns}
+\end{frame}

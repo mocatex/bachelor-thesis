@@ -1,0 +1,51 @@
+% =====================================================================
+%  08 · Experiment 5 — True quantum convolutional networks
+% =====================================================================
+\section{Experiment 5 · True QCNN}
+
+\begin{frame}{Setup: a fully coherent quantum network}{No classical extractor in front}
+    \centering
+    \includegraphics[width=0.72\textwidth]{qcnn_model}\par
+    \vspace{2pt}
+    {\scriptsize\color{zhawgrey}\textbf{Figure:}~amplitude-encode 4096 bins into 12
+        qubits $\to$ $SU(4)$ convolution + coherent pooling $\to$ 3 qubits.
+        $\sim$101 params.}
+    \vspace{4pt}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \begin{block}{Designed for quantum data}
+                Barren-plateau free~\cite{pesah2021absence} --- but built for quantum
+                states, not classical flux.
+            \end{block}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \begin{block}{Controls + ablation}
+                \textbf{Tiny CNN} ($\sim$100 p, strict parity), \textbf{Huge CNN}
+                (8228 p, upper bound), and a \textbf{Hybrid QCNN} (angle encoding).
+            \end{block}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Result: where the quantum inductive bias actually pays off}{Robustness across four quadrants}
+    \begin{columns}[c]
+        \begin{column}{0.48\textwidth}
+            \centering
+            \includegraphics[height=3.6cm]{qcnn_robustness_HighData_Clean}\par
+            {\scriptsize\color{zhawgrey}\textbf{Clean, high-data:} the Huge CNN starts
+                highest but \textbf{decays fastest} --- it overfits.}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \begin{block}{No \emph{absolute} advantage}
+                The unconstrained Huge CNN wins once scaling and adversarial training
+                are allowed.
+            \end{block}
+            \begin{exampleblock}{But under a strict budget}
+                At $\sim$100 params the QCNN \textbf{crushes} the matched Tiny CNN and
+                is the most reliable \textbf{few-shot} learner~\cite{caro2022generalization}.
+            \end{exampleblock}
+            \footnotesize\color{zhawgrey}Fragility $=$ amplitude encoding; the
+            angle-encoded Hybrid QCNN is uniformly more robust.
+        \end{column}
+    \end{columns}
+\end{frame}

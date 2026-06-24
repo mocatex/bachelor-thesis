@@ -1,0 +1,417 @@
+% =====================================================================
+%  99 · Appendix / Backup  (numbered separately; answers to likely Q&A)
+% =====================================================================
+\section{Backup Slides}
+
+\begin{frame}{Backup index}{What's parked here for your questions}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \footnotesize
+            \begin{enumerate}
+                \item Barren plateaus --- did we hit one?
+                \item Data re-uploading \& the Fourier view
+                \item The dead-ReLU mechanism
+                \item Parameter matching: angle $\neq$ weight
+                \item Fisher discriminant: why classical wins
+                \item Geometric difference $g(C\|Q)$
+                \item Fidelity vs.\ projected quantum kernels
+            \end{enumerate}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \footnotesize
+            \begin{enumerate}\setcounter{enumi}{7}
+                \item Amplitude vs.\ angle encoding
+                \item Quanvolution circuit \& Jacobian probe
+                \item QCNN: barren-plateau immunity \& few-shot
+                \item Compute cost \& the noiseless caveat
+                \item The $62\times62$ confusion analysis
+                \item Data choices: leakage, imbalance, augmentation
+                \item Full result tables (Exp 1, 4, 5)
+                \item Jacobian smoothness slopegraphs
+            \end{enumerate}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{1 · Barren plateaus --- did we hit one?}{Diagnosing the spiky validation curves}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \centering
+            \includegraphics[height=3.8cm]{quantum_exp1_training_history}\par
+            {\scriptsize\color{zhawgrey}Exp 1 quantum model: training smooth,
+                validation spiky.}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \begin{definition}[Barren plateau]
+                Gradient variance vanishes $\propto 2^{-n}$ in the qubit count
+                $n$~\cite{mcclean2018barren} --- training stalls.
+            \end{definition}
+            \begin{block}{Why this is \emph{not} one}
+                A plateau \textbf{flattens training}. Here loss falls smoothly
+                ($\sim$0.87 acc.) and the spikes appear \emph{equally} in the classical
+                mirror --- so it is model-selection noise, not a quantum effect.
+            \end{block}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{2 · Data re-uploading \& the Fourier view}{Why a shallow circuit can be expressive}
+    \begin{columns}[c]
+        \begin{column}{0.46\textwidth}
+            \centering
+            \includegraphics[height=4.2cm]{vqc_circuit}\par
+            {\scriptsize\color{zhawgrey}Each layer re-uploads $x$ via $R_Y(x_q)$,
+                then trainable $R_Y(\theta)$ + a CNOT ring; $L=5$.}
+        \end{column}
+        \begin{column}{0.52\textwidth}
+            \begin{block}{Re-uploading~\cite{perezsalinas2020reuploading}}
+                Re-injecting the input at every layer lets a shallow circuit reach
+                higher-order functions; even one qubit becomes a universal classifier.
+            \end{block}
+            \begin{block}{Fourier picture~\cite{schuld2021encoding}}
+                A VQC output is a \textbf{Fourier series} in $x$; the encoding gates
+                fix the accessible frequencies. So the encoding \emph{bounds} what the
+                model can represent --- which is why our encoding ablation mattered.
+            \end{block}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{3 · The dead-ReLU mechanism}{How a 556-param control fell to 79\%}
+    \begin{columns}[T]
+        \begin{column}{0.55\textwidth}
+            With a width-4 middle layer, a ReLU unit driven negative outputs $0$ and
+            receives $0$ gradient:
+            \[
+                \mathrm{ReLU}(z)=\max(0,z),\quad
+                \frac{\partial}{\partial z}\mathrm{ReLU}(z)=0 \;\text{for}\; z<0 .
+            \]
+            It \textbf{never recovers}. Losing even 1--2 of 4 units destroys the
+            minority-class boundary. $\tanh$ always has nonzero gradient, so it trains
+            cleanly.
+        \end{column}
+        \begin{column}{0.43\textwidth}
+            \begin{alertblock}{Consequence}
+                75\% of brown dwarfs were routed into \texttt{GALAXY\_STARFORMING};
+                recall fell to 0.18.
+            \end{alertblock}
+            \begin{callout}
+                Never report a VQC result without a parameter-matched classical
+                control that uses a \textbf{robust} activation.
+            \end{callout}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{4 · Parameter matching: an angle is not a weight}{Why we matched by construction}
+    \begin{block}{The objection}
+        A trainable rotation angle and a classical weight are \emph{not} equivalent
+        units of capacity --- so ``same parameter count'' could be meaningless.
+    \end{block}
+    \begin{block}{Our answer: structural mirrors}
+        We do not equate units. We hold the \textbf{entire pipeline fixed} and swap
+        \emph{only} the contested middle block for one with the same parameter count
+        and the same I/O shape (see Exp 2 models B/C/D). Any measured difference is
+        then localised to that block --- sidestepping the angle-vs-weight problem
+        entirely.
+    \end{block}
+    \begin{callout}
+        We also report \textbf{beyond} parameters: convergence speed, stability,
+        per-class recall, and wall-clock cost.
+    \end{callout}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{5 · Fisher discriminant: why the front end does the work}{A formal ``why''}
+    Model a preprocessed spectrum $x\in\mathbb{R}^L$ with Gaussian class-conditionals
+    $x\mid y{=}c \sim \mathcal{N}(\mu_c,\Sigma)$. The Bayes-optimal rule is
+    \textbf{linear}:
+    \[
+        w^\ast=\Sigma^{-1}(\mu_1-\mu_0),\qquad
+        w^\ast_i=\frac{\mu_{1,i}-\mu_{0,i}}{\sigma_i^2},\qquad
+        J_i=\frac{(\mu_{1,i}-\mu_{0,i})^2}{\sigma_i^2}.
+    \]
+    The per-bin Fisher ratio $J_i$ is maximised exactly at \textbf{broad emission
+        lines} and the \textbf{continuum slope} --- the regions Grad-CAM highlights.
+    \begin{callout}
+        $w^\ast$ is a function of the \emph{raw} spectrum. Only the classical
+        extractor sees the wavelength axis, so only it can learn $w^\ast$ --- the
+        head (quantum or classical) merely uses the result.
+    \end{callout}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{6 · Geometric difference $g(C\|Q)$}{A pre-training advantage filter}
+    \begin{columns}[T]
+        \begin{column}{0.54\textwidth}
+            \[
+                g=\big\|\sqrt{K_Q}\,(K_C+\lambda I)^{-1}\sqrt{K_Q}\big\|_2
+            \]
+            Computed on Gram matrices \emph{before} fitting~\cite{huang2021power}.
+            \begin{itemize}
+                \item $g\approx 1$: the classical kernel reproduces the quantum
+                      geometry $\Rightarrow$ \textbf{no advantage possible}.
+                \item Large $g$ is \textbf{necessary but not sufficient}.
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.44\textwidth}
+            \begin{block}{Our values}
+                \begin{itemize}
+                    \item Fidelity kernel: $g=1.89$ --- near the no-advantage regime.
+                    \item Projected kernel: $g=12.01$ --- distinct, yet \emph{still}
+                          no empirical gain.
+                \end{itemize}
+            \end{block}
+            \footnotesize Both consistent with the measured few-shot parity.
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{7 · Fidelity vs.\ projected quantum kernels}{Two ways to read a circuit as a kernel}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \begin{block}{Fidelity kernel}
+                \[ k_F(x,x')=|\langle 0|U^\dagger(x')U(x)|0\rangle|^2 \]
+                Geometrically intuitive but $\mathcal{O}(N^2)$ circuit evaluations.
+            \end{block}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \begin{block}{Projected kernel (PQK)}
+                Measure local Pauli $X,Y,Z$ per qubit $\to$ a $3N$-dim classical
+                vector, then an RBF on top. Only $\mathcal{O}(N)$ circuits.
+            \end{block}
+        \end{column}
+    \end{columns}
+    \centering
+    \includegraphics[height=3.5cm]{qsvm_feature_sweep_f12}\par
+    {\scriptsize\color{zhawgrey}\textbf{Figure:}~performance plateaus at $f=12$
+        features $\to$ 12-qubit register (bounded angle encoding mitigates $2\pi$
+        wrap-around \& kernel concentration).}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{8 · Amplitude vs.\ angle encoding}{The QCNN's real weak point}
+    \begin{columns}[c]
+        \begin{column}{0.5\textwidth}
+            \centering
+            \includegraphics[width=\linewidth]{qcnn_blocks}\par
+            {\scriptsize\color{zhawgrey}QCNN blocks: $SU(4)$ convolution +
+                coherent pooling (trace out source qubit).}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \begin{alertblock}{Amplitude encoding}
+                The raw 4096-bin signal is loaded as a global $L_2$-normalised state.
+                High-frequency noise reshapes the \emph{whole} vector
+                multiplicatively --- fragile.
+            \end{alertblock}
+            \begin{exampleblock}{Angle encoding (Hybrid QCNN)}
+                A small classical stem $\to$ 10 bounded features $\to$ localised
+                rotations. Same conv/pool blocks, \textbf{uniformly more robust} in
+                all four quadrants.
+            \end{exampleblock}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{9 · Quanvolution circuit \& the Jacobian probe}{Quantum Lens + smoothness}
+    \begin{columns}[c]
+        \begin{column}{0.5\textwidth}
+            \centering
+            \includegraphics[width=\linewidth]{quanv_1D_layer}\par
+            {\scriptsize\color{zhawgrey}Multi-axis re-uploading, IsingZZ ring, then a
+                trainable \textbf{Quantum Lens}; read out via $Z$, $X$, $Z{\otimes}Z$
+                (12 channels).}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            We probe local Lipschitz smoothness via the Jacobian
+            $J_{ij}=\partial f_i/\partial x_j$, reporting median $\|J\|_F$.
+            \begin{block}{Finding}
+                Heavy head: quantum filter \emph{is} smoother ($p=0.006$). But the
+                ordering \textbf{reverses} under the light head --- so smoothness is a
+                property of the \textbf{learned weights}, not the circuit topology.
+                It buys no accuracy.
+            \end{block}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{10 · True QCNN: immunity \& sample efficiency}{When the inductive bias pays off}
+    \begin{block}{Barren-plateau immunity}
+        True QCNNs are provably free of barren plateaus~\cite{pesah2021absence} ---
+        but that guarantee was designed for \textbf{quantum data}. Embedding classical
+        flux removes the premise, so no absolute advantage appears.
+    \end{block}
+    \begin{block}{Generalization under a budget~\cite{caro2022generalization}}
+        Generalization error scales with \textbf{gate count}. The 101-gate QCNN keeps
+        working at 20 samples/class, while the matched Tiny CNN overfits and collapses
+        to chance. The quantum bias manifests as \textbf{sample efficiency}, not
+        scalable representational power.
+    \end{block}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{11 · Compute cost \& the noiseless caveat}{Reading the null result correctly}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \begin{alertblock}{Cost}
+                Each forward/backward pass is a \textbf{statevector simulation}:
+                seconds/epoch on CPU vs.\ milliseconds for classical heads. Real
+                hardware adds shot noise and decoherence on top.
+            \end{alertblock}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \begin{block}{Why noiseless strengthens the result}
+                Simulation is the \textbf{best possible case} for the quantum side.
+                Real devices can only \emph{reduce} performance --- so finding no
+                advantage here is a \textbf{conservative} conclusion.
+            \end{block}
+        \end{column}
+    \end{columns}
+    \begin{callout}
+        Scope: $\leq 8$ qubits, one scientific domain (SDSS), a handful of hard pairs.
+        We test one specific hybrid regime --- not QML in general.
+    \end{callout}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{12 · The $62\times62$ confusion analysis}{Mirrors and black holes}
+    \begin{columns}[c]
+        \begin{column}{0.52\textwidth}
+            \centering
+            \includegraphics[height=5.0cm]{cm_cnn_baseline}\par
+            {\scriptsize\color{zhawgrey}Row-normalised 62-class confusion matrix.}
+        \end{column}
+        \begin{column}{0.46\textwidth}
+            \begin{block}{Automated failure mining}
+                \begin{itemize}
+                    \item \textbf{Mirrors:} \texttt{A5}$\leftrightarrow$\texttt{F0}
+                          (33.7\%), \texttt{STARBURST}$\leftrightarrow$\texttt{SB\_BROADLINE}.
+                    \item \textbf{Black holes:} \texttt{GALAXY\_BROADLINE} (35\%
+                          precision, 306 false positives).
+                \end{itemize}
+            \end{block}
+            \footnotesize This is what \emph{selected} the quantum experiments' target
+            classes --- objectively, not by hand.
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{13 · Data choices: leakage, imbalance, augmentation}{Defensible by design}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \begin{alertblock}{No redshift leakage}
+                Auxiliary scalars (redshift) let networks \emph{trivially} separate
+                classes. We withhold them --- models learn from flux alone.
+            \end{alertblock}
+            \begin{block}{Imbalance}
+                Weighted sampling was unstable; \textbf{Focal loss} down-weights easy
+                majority classes and stabilised training.
+            \end{block}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \begin{block}{On-the-fly augmentation}
+                \footnotesize
+                \begin{itemize}
+                    \item Class-aware redshift (circular) shift
+                    \item Gaussian read-noise + flux scaling
+                    \item Contiguous masking (spectral dropout)
+                    \item Gaussian smoothing (seeing)
+                    \item Mixup ($\lambda\sim\text{Beta}(0.4,0.4)$)
+                \end{itemize}
+            \end{block}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{14a · Full sweep --- Experiment 1}{Mean $\pm$ std over 3 seeds}
+    \centering\footnotesize
+    \setlength{\tabcolsep}{4pt}
+    \begin{tabular}{llcccc}
+        \toprule
+        Model     & Config          & Accuracy          & Macro-F1          & BROWN rec     & ROC-AUC        \\
+        \midrule
+        Quantum   & 2q$\times$12L   & $0.863\pm0.005$   & $0.830\pm0.005$   & 0.70          & 0.910          \\
+        Quantum   & 3q$\times$8L    & $0.865\pm0.012$   & $0.835\pm0.009$   & 0.72          & 0.913          \\
+        Quantum   & 4q$\times$6L    & $0.869\pm0.008$   & $0.840\pm0.005$   & 0.73          & 0.927          \\
+        Quantum   & 6q$\times$4L    & $0.860\pm0.012$   & $0.833\pm0.013$   & 0.76          & 0.924          \\
+        Quantum   & 8q$\times$3L    & $0.860\pm0.013$   & $0.837\pm0.014$   & \textbf{0.80} & 0.927          \\
+        Classical & 4 features      & $0.868\pm0.016$   & $0.843\pm0.016$   & 0.77          & \textbf{0.933} \\
+        Classical & 8 features      & $0.862\pm0.004$   & $0.836\pm0.006$   & 0.77          & 0.922          \\
+        \bottomrule
+    \end{tabular}
+    \par\vspace{6pt}
+    {\scriptsize\color{zhawgrey}All configs $\approx$24\,500 params, dominated by the
+        shared CNN extractor. Wide-shallow (8q$\times$3L) is the most class-balanced.}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{14b · Full results --- Experiments 4 \& 5}{Robustness AUC, 10 seeds}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \centering{\scriptsize\textbf{Exp 4 · Quanvolution}}\par
+            \footnotesize
+            \setlength{\tabcolsep}{3pt}
+            \begin{tabular}{llcc}
+                \toprule
+                Regime & Head  & AUC Q             & AUC C             \\
+                \midrule
+                OOD    & Heavy & $0.563$           & $0.563$           \\
+                OOD    & Light & $0.549$           & $0.564$           \\
+                ADV    & Heavy & $0.655$           & $0.675$           \\
+                ADV    & Light & $0.545$           & $\mathbf{0.592}$  \\
+                \bottomrule
+            \end{tabular}
+            \par{\scriptsize\color{zhawgrey}Only Adv-Light significant ($p=0.014$,
+                favours C).}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \centering{\scriptsize\textbf{Exp 5 · True QCNN (best AUC/quadrant)}}\par
+            \footnotesize
+            \setlength{\tabcolsep}{3pt}
+            \begin{tabular}{lcccc}
+                \toprule
+                Model     & Q1            & Q2            & Q3            & Q4            \\
+                \midrule
+                CNN Huge  & 0.346         & \textbf{0.673} & 0.305        & \textbf{0.479} \\
+                CNN Tiny  & \textbf{0.462} & 0.544        & 0.283         & 0.286         \\
+                QCNN      & 0.408         & 0.576         & 0.312         & 0.364         \\
+                QCNN Hyb  & 0.448         & 0.632         & \textbf{0.362} & 0.443        \\
+                \bottomrule
+            \end{tabular}
+            \par{\scriptsize\color{zhawgrey}Q1 clean / Q2 adv (high-data); Q3/Q4
+                few-shot. Huge wins when scaling is allowed; QCNNs win at parity.}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{15 · Jacobian smoothness slopegraphs}{A second robustness probe (Exp 4 \& 5)}
+    Median Jacobian norm of the input$\to$logit map --- smaller $=$ smoother.
+    \begin{columns}[c]
+        \begin{column}{0.5\textwidth}
+            \centering
+            \includegraphics[height=2.9cm]{jacobian_slope_QCNN_vs_CNN_Huge}\par
+            {\scriptsize\color{zhawgrey}QCNN ($3.52$) smoother than the
+                over-parameterised Huge CNN ($5.73$), which decays fastest.}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \centering
+            \includegraphics[height=2.9cm]{jacobian_slope_QCNN_vs_CNN_Tiny}\par
+            {\scriptsize\color{zhawgrey}Few-shot: Tiny CNN's near-zero norm ($\sim$0.18)
+                is \emph{collapse}, not robustness.}
+        \end{column}
+    \end{columns}
+    \begin{callout}
+        \textbf{Regime-dependent} (Exp 4's ordering even reversed between heads) --- it
+        reflects the \emph{learned weights}, not the topology, and buys no advantage.
+    \end{callout}
+\end{frame}

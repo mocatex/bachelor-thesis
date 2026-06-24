@@ -1,0 +1,96 @@
+% =====================================================================
+%  07 · Discussion, Conclusion and Outlook
+% =====================================================================
+\section{Conclusions \& Outlook}
+
+\begin{frame}{The scorecard}{Five fair comparisons, one verdict}
+    \centering\small
+    \setlength{\tabcolsep}{6pt}
+    \renewcommand{\arraystretch}{1.25}
+    \begin{tabular}{lll}
+        \toprule
+        \textbf{Paradigm}            & \textbf{Task}              & \textbf{Verdict vs.\ matched classical} \\
+        \midrule
+        Exp 1 · Binary VQC           & hardest pair               & \textbf{Parity} (early lead was a weak baseline) \\
+        Exp 2 · Quantum head         & 4-class, frozen feats.     & \textbf{Parity} (saving belongs to extractor)    \\
+        Exp 3 · QSVM kernels         & few-shot                   & \textbf{No advantage} (classical wins as $n\uparrow$) \\
+        Exp 4 · Quanvolution         & noise robustness           & \textbf{No advantage} (one sig.\ diff: classical) \\
+        Exp 5 · True QCNN            & fully quantum              & \textbf{Parity}; edge only at strict parity / few-shot \\
+        \bottomrule
+    \end{tabular}
+    \vspace{6pt}
+    \begin{callout}
+        Quantum models \textbf{matched} a carefully built classical model --- and at
+        the scales reachable on near-term devices, never beat it.
+    \end{callout}
+\end{frame}
+
+\statementframe{Parity, not advantage.\\[6pt]
+    {\normalsize And because every circuit was simulated \textbf{without noise},
+        this is the \emph{best case} for quantum --- so the null result is conservative.}}
+
+\begin{frame}{Why? The hard work is classical}{Interpretability confirms it}
+    \begin{columns}[c]
+        \begin{column}{0.5\textwidth}
+            \centering
+            \includegraphics[height=5cm]{gradcam_saliency_angle_4q}\par
+            {\scriptsize\color{zhawgrey}\textbf{Figure:}~Grad-CAM localises to broad
+                emission lines and continuum slope --- the features an astronomer uses.}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            The quantum circuit only sees \textbf{4 compressed numbers} --- never the
+            wavelength axis. The Bayes-optimal discriminant
+            $w^\ast=\Sigma^{-1}(\mu_1-\mu_0)$ is a function of the \emph{raw} spectrum,
+            so only the \textbf{classical front end} can represent it.
+
+            \vspace{6pt}
+            {\color{zhawblue}\bfseries Find the features (classical); then any small
+                head --- quantum or classical --- can decide.}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{The contribution is the comparison}{A reusable honesty discipline}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \begin{block}{What we deliver}
+                \begin{itemize}
+                    \item Parameter matching at the contested stage.
+                    \item Shared pipelines \& identical protocols.
+                    \item \textbf{Robust} classical controls (no dead-ReLU traps).
+                    \item Multiple seeds, CIs, Wilcoxon tests.
+                    \item Cheap \textbf{pre-screening} ($g(C\|Q)$).
+                \end{itemize}
+            \end{block}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \begin{alertblock}{Twice, an ``advantage'' dissolved}
+                Once it was an \textbf{under-built baseline}; once a
+                \textbf{dead-ReLU artefact}. A single fix erased each.
+            \end{alertblock}
+            \begin{callout}
+                Treat an apparent quantum advantage as a \textbf{hypothesis to rule
+                    out} --- the classical control matters more than the circuit.
+            \end{callout}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Outlook: where a real advantage might hide}{Next steps}
+    \begin{itemize}
+        \item \textbf{Change the problem, not the circuit.} Optical spectra are smooth
+              signals classical nets handle naturally. A fair test may need data that
+              is \emph{provably hard} classically --- or \textbf{quantum in origin}.
+        \item \textbf{Confront real hardware.} Repeat on physical devices with error
+              mitigation; check whether structural traits (e.g.\ smoother feature maps)
+              survive noise.
+        \item \textbf{Scale the qubits} and apply the same framework to other signals,
+              to see whether this parity is specific to SDSS spectra.
+        \item \textbf{Pre-screen first.} The geometric-difference metric is a cheap,
+              principled filter for deciding which problems are even worth the effort.
+    \end{itemize}
+    \begin{callout}
+        None of these is likely to overturn the finding on today's hardware --- but
+        each sharpens \emph{where}, if anywhere, a near-term advantage could live.
+    \end{callout}
+\end{frame}

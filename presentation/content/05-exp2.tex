@@ -1,0 +1,112 @@
+% =====================================================================
+%  05 · Experiment 2 — Classifier heads on a frozen extractor
+% =====================================================================
+\section{Experiment 2 · Frozen-Feature Heads}
+
+\begin{frame}{Setup: four heads, one frozen Beast}{Isolating the head, four classes}
+    \begin{columns}[T]
+        \begin{column}{0.46\textwidth}
+            The frozen Beast turns every spectrum into the \textbf{same}
+            128-dim vector. Only the small head on top changes:
+            \begin{itemize}
+                \item \textbf{A} --- dense classical, \textbf{5058} params.
+                \item \textbf{B} --- hybrid \textbf{quantum} (Linear+VQC), 556.
+                \item \textbf{C} --- classical mirror, \textbf{ReLU}, 556.
+                \item \textbf{D} --- classical mirror, \textbf{$\tanh$}, 556.
+            \end{itemize}
+            \vspace{2pt}
+            B, C, D share the \emph{exact} shape \& parameter count --- isolating the
+            circuit, not the structure.
+        \end{column}
+        \begin{column}{0.52\textwidth}
+            \centering
+            \includegraphics[width=\linewidth]{3models}\par
+            {\scriptsize\color{zhawgrey}\textbf{Figure:}~the three interchangeable
+                20-parameter middle stages (B quantum, C ReLU, D $\tanh$) in an
+                otherwise identical pipeline.}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Result: quantum ties the dense head at $9\times$ fewer params}{...and one control collapses}
+    \begin{columns}[c]
+        \begin{column}{0.44\textwidth}
+            \centering\small
+            \setlength{\tabcolsep}{4pt}
+            \begin{tabular}{llcc}
+                \toprule
+                          & Head           & Params        & Acc.                \\
+                \midrule
+                A         & Dense          & 5058          & $\sim$96\%          \\
+                \textbf{B} & \textbf{Quantum} & \textbf{556} & $\mathbf{\sim96\%}$ \\
+                C         & Cl.\ ReLU      & 556           & $\sim$79\%          \\
+                D         & Cl.\ $\tanh$   & 556           & $\sim$96\%          \\
+                \bottomrule
+            \end{tabular}
+            \par\vspace{6pt}
+            {\scriptsize\color{zhawgrey}A, B and D are nearly indistinguishable;
+                only the ReLU control fails.}
+        \end{column}
+        \begin{column}{0.55\textwidth}
+            \centering
+            \includegraphics[height=3.9cm]{quantum_500param_cm_test}\par
+            {\scriptsize\color{zhawgrey}\textbf{Quantum head (B):} the hardest class,
+                \texttt{STAR\_BROWN\_DWARF\_L}, recalled at 0.93.}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Lesson \#2: a 17-point swing from one activation}{The dead-ReLU artefact}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \centering
+            \includegraphics[height=3.5cm]{500param_classical_deadrelu_training_history}\par
+            {\scriptsize\color{zhawgrey}\textbf{ReLU (C):} stuck near 50\% for many
+                epochs $\to$ 79\%.}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \centering
+            \includegraphics[height=3.5cm]{500param_classical_tanh_training_history}\par
+            {\scriptsize\color{zhawgrey}\textbf{$\tanh$ (D):} clean convergence $\to$ 96\%.}
+        \end{column}
+    \end{columns}
+    \vspace{2pt}
+    \begin{callout}
+        With only 4 neurons, a ReLU pushed negative \textbf{dies} (zero output, zero
+        gradient). The single largest accuracy swing of the experiment came from the
+        \textbf{activation function} --- not from quantum vs.\ classical.
+    \end{callout}
+\end{frame}
+
+\begin{frame}{Where the real saving comes from}{Encoding $>$ qubit count; extractor $>$ head}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \begin{block}{Encoding ablation (same 4 qubits)}
+                \centering\small
+                \setlength{\tabcolsep}{4pt}
+                \begin{tabular}{lcc}
+                    \toprule
+                    Encoding into VQC      & Params    & Acc.       \\
+                    \midrule
+                    Frozen PCA(128,4)      & $\sim$40  & $\sim$76\% \\
+                    Frozen PCA + Lin.      & $\sim$300 & $\sim$76\% \\
+                    \textbf{Learned Linear} & 556      & $\mathbf{\sim96\%}$ \\
+                    \bottomrule
+                \end{tabular}
+            \end{block}
+            \footnotesize Which four numbers enter the circuit matters --- not the
+            four-qubit count.
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \begin{callout}[The honest reading]
+                The $9\times$ parameter saving is \textbf{real} --- but it belongs to
+                the strong frozen extractor, since the classical $\tanh$ head gets the
+                \emph{same} saving.
+            \end{callout}
+            \begin{alertblock}{Cost}
+                The quantum head is \textbf{seconds/epoch} (statevector simulation)
+                vs.\ \textbf{milliseconds} for the classical heads.
+            \end{alertblock}
+        \end{column}
+    \end{columns}
+\end{frame}

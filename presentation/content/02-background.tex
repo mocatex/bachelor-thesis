@@ -1,0 +1,61 @@
+% =====================================================================
+%  02 · Background — The Approaches
+% =====================================================================
+\section{Background \& Approaches}
+
+\begin{frame}{Variational quantum circuits in one slide}{Expressivity vs.\ trainability}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \begin{block}{What makes them expressive}
+                \textbf{Data re-uploading}~\cite{perezsalinas2020reuploading}: the
+                input is re-injected at every layer. Even a single qubit can become
+                a universal classifier. A VQC is effectively a \textbf{Fourier
+                    series} in its input~\cite{schuld2021encoding}.
+            \end{block}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \begin{alertblock}{What makes them hard}
+                \textbf{Barren plateaus}~\cite{mcclean2018barren}: in deep, wide,
+                random circuits gradients vanish \emph{exponentially} in the qubit
+                count --- and training stalls.
+            \end{alertblock}
+        \end{column}
+    \end{columns}
+    \vspace{2pt}
+    \begin{callout}
+        Width, depth and trainability trade off against each other --- a tension our
+        architecture sweeps probe directly.
+    \end{callout}
+\end{frame}
+
+\begin{frame}{Four quantum paradigms --- one fair test each}{Roadmap of the talk}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \begin{block}{1 · Trainable circuits (VQC)}
+                A small variational circuit as a classifier \textbf{head}.
+                \\[2pt]\footnotesize Exp 1 (binary) · Exp 2 (4-class, frozen features)
+            \end{block}
+            \begin{block}{2 · Quantum kernels (QSVM)}
+                The circuit as a fixed \textbf{feature
+                    map}~\cite{havlicek2019,schuld2019feature} for a support-vector
+                machine.
+                \\[2pt]\footnotesize Exp 3 (few-shot)
+            \end{block}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \begin{block}{3 · Quanvolution}
+                A small circuit \textbf{slid across} the signal like a convolutional
+                kernel~\cite{henderson2020quanvolutional}.
+                \\[2pt]\footnotesize Exp 4 (noise robustness)
+            \end{block}
+            \begin{block}{4 · True QCNN}
+                The whole spectrum embedded into \textbf{one quantum
+                    state}~\cite{cong2019qcnn}, with coherent pooling.
+                \\[2pt]\footnotesize Exp 5 (fully quantum)
+            \end{block}
+        \end{column}
+    \end{columns}
+    \vspace{2pt}
+    \centering{\small\color{zhawgrey}Every paradigm is benchmarked against a
+        parameter-matched classical control.}
+\end{frame}

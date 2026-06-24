@@ -1,0 +1,294 @@
+%% =====================================================================
+%%  beamerthemezhaw.sty  —  "Bold modern" ZHAW scientific presentation theme
+%% ---------------------------------------------------------------------
+%%  Engine : pdfLaTeX        Fonts : Fira Sans + Fira Mono + newtxsf (math)
+%%  Brand  : ZHAW corporate blue #0064A6
+%%  Usage  : \documentclass[aspectratio=169]{beamer}
+%%           \usetheme{zhaw}
+%%
+%%  This file mirrors the repo's cheatsheet.cls layout:
+%%    1) CONFIG    — colours, fonts, toggles, logos, geometry: edit freely.
+%%    2) MACHINERY — the implementation: edit rarely.
+%% =====================================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{beamerthemezhaw}[2026/06/23 v1.0 ZHAW bold-modern beamer theme]
+\mode<presentation>
+
+% =====================================================================
+%  1) CONFIG  ----------------------------------------------------------
+% =====================================================================
+\RequirePackage{xcolor}
+
+%% 1a · Brand colours --------------------------------------------------
+\definecolor{zhawblue}{HTML}{0064A6}   % official ZHAW corporate blue
+\definecolor{zhawnavy}{HTML}{08263A}   % deep navy — dark "statement" slides
+\definecolor{zhawink}{HTML}{1A1A1A}    % body text
+\definecolor{zhawgrey}{HTML}{5A6B78}   % secondary text / captions / rules
+\definecolor{zhawtint}{HTML}{E8F1F8}   % light-blue tint: blocks, code, callouts
+\definecolor{zhawaccent}{HTML}{00A3E0} % brighter accent: links, strings, hints
+
+%% 1b · Feature toggles (flip in main.tex, AFTER \usetheme{zhaw}) ------
+\newif\ifzhawfootline  \zhawfootlinetrue   % minimal footer (title · unit · no.)
+\newif\ifzhawprogress  \zhawprogresstrue   % thin progress bar at bottom edge
+\newif\ifzhawframenum  \zhawframenumtrue   % show "n / N" frame numbers
+\newif\ifzhawtitlelogo \zhawtitlelogotrue  % logo lock-up on title/section slides
+\newif\ifzhawframelogo \zhawframelogotrue  % small logo top-right on content slides
+
+%% 1c · Logo files (vector PDFs; swap for official ZHAW print assets) --
+\newcommand{\zhawlogolight}{assets/zhaw-logo-white.pdf} % for blue / navy slides
+\newcommand{\zhawlogodark}{assets/zhaw-logo-blue.pdf}   % for white slides
+
+%% 1d · Geometry ------------------------------------------------------
+\newcommand{\zhawhmargin}{0.9cm}       % left/right text margin
+% Frame-title spacing (negative pulls things UP / closer together):
+\newlength{\zhawtitletop}    \setlength{\zhawtitletop}{-0.28cm} % space above the frame title (closer to top edge)
+\newlength{\zhawtitlerulegap}\setlength{\zhawtitlerulegap}{-10pt} % gap between the title and the accent rule
+
+% =====================================================================
+%  2) MACHINERY  -------------------------------------------------------
+%     (Below here you usually don't need to edit.)
+% =====================================================================
+
+%% 2a · Packages & fonts ----------------------------------------------
+\RequirePackage{fix-cm}    % make CM fonts scalable to any size — newtxsf uses
+% CM-sans for upright math; this avoids 5.5pt "size
+% not available" substitution warnings.
+\RequirePackage{amsmath}
+\RequirePackage[T1]{fontenc}
+\RequirePackage[sfdefault]{FiraSans}        % modern grotesque, Theinhardt-ish
+\RequirePackage[scaled=0.85]{FiraMono}      % monospace for code
+\RequirePackage{newtxsf}                     % sans-serif math to match Fira
+\RequirePackage{microtype}
+\RequirePackage{etoolbox}
+\RequirePackage{tikz}
+\usetikzlibrary{calc}
+\RequirePackage[most]{tcolorbox}
+\RequirePackage{listings}
+\RequirePackage{fontawesome5}                % modern icons (\faEnvelope, \faGithub …)
+
+\renewcommand{\familydefault}{\sfdefault}
+\graphicspath{{assets/}{./}}                 % \includegraphics resolves under assets/
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+%% 2b · Metadata commands (set these in main.tex) ---------------------
+\newcommand{\zhaw@school}{}\newcommand{\zhawschool}[1]{\renewcommand{\zhaw@school}{#1}}
+\newcommand{\zhaw@unit}{}  \newcommand{\zhawunit}[1]{\renewcommand{\zhaw@unit}{#1}}
+\newcommand{\zhaw@group}{} \newcommand{\zhawgroup}[1]{\renewcommand{\zhaw@group}{#1}}
+\newcommand{\zhaw@event}{} \newcommand{\zhawevent}[1]{\renewcommand{\zhaw@event}{#1}}
+
+%% 2c · Base colours & geometry ---------------------------------------
+\setbeamersize{text margin left=\zhawhmargin, text margin right=\zhawhmargin}
+\setbeamercolor{normal text}{fg=zhawink, bg=white}
+\setbeamercolor{structure}{fg=zhawblue}
+\setbeamercolor{frametitle}{fg=zhawink, bg=white}
+\setbeamercolor{title}{fg=white}
+\setbeamercolor{itemize item}{fg=zhawblue}
+\setbeamercolor{itemize subitem}{fg=zhawaccent}
+\setbeamercolor{itemize subsubitem}{fg=zhawgrey}
+\setbeamercolor{enumerate item}{fg=zhawblue}
+\setbeamercolor{caption name}{fg=zhawblue}
+\setbeamercolor{footline}{fg=zhawgrey, bg=white}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{headline}{}
+\setbeamertemplate{itemize items}[square]
+\setbeamertemplate{enumerate items}[default]
+\setbeamertemplate{caption}[numbered]
+\setbeamerfont{frametitle}{series=\bfseries}
+\setbeamerfont{footline}{size=\scriptsize}
+
+% Links (hyperref is loaded by beamer)
+\hypersetup{colorlinks=true, linkcolor=zhawaccent, urlcolor=zhawaccent,
+    citecolor=zhawaccent, filecolor=zhawaccent}
+% Make \translate (beamer/translator, e.g. the "Appendix" part name) safe inside
+% PDF bookmark strings → avoids hyperref "Token not allowed in a PDF string" warning.
+\pdfstringdefDisableCommands{\let\translate\@firstofone}
+
+%% 2d · Blocks (restyled beamer blocks + theorem/definition) ----------
+\setbeamertemplate{blocks}[rounded][shadow=false]
+\setbeamercolor{block title}{bg=zhawblue, fg=white}
+\setbeamercolor{block body}{bg=zhawtint, fg=zhawink}
+\setbeamercolor{block title alerted}{bg=red!75!black, fg=white}
+\setbeamercolor{block body alerted}{bg=red!8, fg=zhawink}
+\setbeamercolor{block title example}{bg=green!45!black, fg=white}
+\setbeamercolor{block body example}{bg=green!8, fg=zhawink}
+\setbeamertemplate{theorems}[numbered]
+
+%% 2e · Signature "callout" box (tinted, left accent bar) -------------
+\newtcolorbox{callout}[1][]{%
+    enhanced, breakable=false, colback=zhawtint, colframe=zhawtint,
+    boxrule=0pt, arc=3pt, left=10pt, right=10pt, top=7pt, bottom=7pt,
+    borderline west={3pt}{0pt}{zhawblue},
+    before upper={\ifblank{#1}{}{{\bfseries\color{zhawblue}#1\par\smallskip}}}%
+}
+
+%% 2f · Code: inline \code{...}, \lstinline|...|, and codeblock -------
+\lstdefinestyle{zhaw}{%
+    basicstyle=\ttfamily\footnotesize\color{zhawink},
+    keywordstyle=\color{zhawblue}\bfseries,
+    commentstyle=\color{zhawgrey}\itshape,
+    stringstyle=\color{zhawaccent},
+    numberstyle=\tiny\color{zhawgrey},
+    showstringspaces=false, breaklines=true, breakatwhitespace=false,
+    tabsize=2, columns=fullflexible, keepspaces=true, upquote=true,
+}
+\lstset{style=zhaw}
+% inline pill — for snippets WITHOUT _ # % & { } \  (use \lstinline for those)
+\newtcbox{\code}{on line, boxsep=0pt, left=3pt, right=3pt, top=1pt, bottom=1pt,
+    arc=2pt, colback=zhawtint, colframe=zhawtint,
+    fontupper=\ttfamily\color{zhawink}, nobeforeafter, tcbox raise base}
+% code block — \begin{codeblock}[python] ... \end{codeblock}  (frame must be [fragile])
+\newtcblisting{codeblock}[1][text]{%
+    listing only, enhanced,
+    listing options={style=zhaw, language=#1, numbers=left, numbersep=9pt},
+    colback=zhawtint, colframe=zhawtint, boxrule=0pt, arc=3pt,
+    left=16pt, right=8pt, top=6pt, bottom=6pt,
+    borderline west={3pt}{0pt}{zhawblue},
+}
+
+%% 2g · Full-bleed coloured frame helper ------------------------------
+%   \zhawfullframe{<bg colour>}{<body>}
+\newcommand{\zhawfullframe}[2]{%
+    {\setbeamercolor{background canvas}{bg=#1}%
+        \begin{frame}[plain]#2\end{frame}}%
+}
+% leading-zero section number, e.g. 02
+\newcommand{\zhawsecno}{\ifnum\value{section}<10 0\fi\thesection}
+
+%% 2g-bis · Logo overlays as macros ----------------------------------
+%   A tikzpicture placed *directly* inside a primitive \if...\fi makes
+%   tikz swallow the \fi. So each logo lives in its own macro and is
+%   invoked with  \ifX\expandafter\macro\fi  (closes \fi before tikz runs).
+\newcommand{\zhaw@titlelogo}{%   bottom-left lock-up: logo + school/unit
+    \begin{tikzpicture}[remember picture, overlay]
+        \node[anchor=south west, inner sep=0pt]
+        at ([shift={(\zhawhmargin,0.95cm)}]current page.south west)
+            {\includegraphics[height=0.92cm]{\zhawlogolight}};
+        \node[anchor=south west, inner sep=0pt, text=white, xshift=1.45cm, yshift=0.03cm]
+        at ([shift={(\zhawhmargin,0.95cm)}]current page.south west)
+            {\footnotesize\shortstack[l]{%  shortstack (not tabular) — tabular would load CM-sans math fonts
+                    \textbf{ZHAW}\,\zhaw@school \\[1pt]
+                    {\color{white!80}\zhaw@unit}}};
+    \end{tikzpicture}}
+\newcommand{\zhaw@divlogo}{%    bottom-right logo on section dividers
+    \begin{tikzpicture}[remember picture, overlay]
+        \node[anchor=south east, inner sep=0pt]
+        at ([shift={(-\zhawhmargin,0.9cm)}]current page.south east)
+            {\includegraphics[height=0.8cm]{\zhawlogolight}};
+    \end{tikzpicture}}
+\newcommand{\zhaw@cornerlogo}{% small top-right logo on content slides
+    \begin{tikzpicture}[remember picture, overlay]
+        \node[anchor=north east, inner sep=0pt]
+        at ([shift={(-\zhawhmargin,-0.5cm)}]current page.north east)
+            {\includegraphics[height=0.5cm]{\zhawlogodark}};
+    \end{tikzpicture}}
+
+%% 2h · Title page (full-bleed blue) ----------------------------------
+\newcommand{\zhawmaketitle}{%
+    {\setbeamercolor{background canvas}{bg=zhawblue}%
+        \begin{frame}[plain]
+            \vfill
+            {\color{white!85}\footnotesize
+                \ifx\zhaw@event\empty\else\zhaw@event\quad\textbullet\quad\fi\insertdate\par}
+            \vspace{6pt}
+            % Title / subtitle size on the title page — adjust these two \fontsize{}{}
+            % values to taste (first number = size, second = line height).
+            {\color{white}\bfseries\fontsize{24}{28}\selectfont\inserttitle\par}
+            \ifx\insertsubtitle\empty\else
+                \vspace{5pt}{\color{white!88}\fontsize{13}{17}\selectfont\insertsubtitle\par}\fi
+            \vspace{12pt}{\color{white}\rule{3.4cm}{2pt}\par}
+            \vspace{12pt}
+            {\color{white}\normalsize\insertauthor
+                \ifx\zhaw@group\empty\else\quad\textbullet\quad\zhaw@group\fi\par}
+            \vfill\vfill
+            \ifzhawtitlelogo\expandafter\zhaw@titlelogo\fi
+        \end{frame}}%
+}
+\renewcommand{\maketitle}{\zhawmaketitle}
+
+%% 2i · Section divider (full-bleed blue) -----------------------------
+\AtBeginSection[]{%
+    {\setbeamercolor{background canvas}{bg=zhawblue}%
+        \begin{frame}[plain]
+            \vfill
+            {\color{white!70}\bfseries\fontsize{52}{52}\selectfont\zhawsecno\par}
+            \vspace{4pt}{\color{white}\rule{2.6cm}{2pt}\par}
+            % \insertsection is a hyperlink; force its link colour to white here
+            \vspace{10pt}{\hypersetup{linkcolor=white}\color{white}%
+                \bfseries\fontsize{26}{30}\selectfont\insertsection\par}
+            \vfill\vfill
+            \ifzhawtitlelogo\expandafter\zhaw@divlogo\fi
+        \end{frame}}%
+}
+
+%% 2j · "Statement" frame — one big idea  \statementframe[colour]{text} -
+\newcommand{\statementframe}[2][zhawnavy]{%
+    {\setbeamercolor{background canvas}{bg=#1}%
+        \begin{frame}[plain]
+            \centering\vfill
+            {\color{white}\bfseries\fontsize{24}{30}\selectfont #2\par}
+            \vfill
+        \end{frame}}%
+}
+
+%% 2k · Frame title (content slides): bold + thin blue rule + logo -----
+\setbeamertemplate{frametitle}{%
+    \ifzhawframelogo\expandafter\zhaw@cornerlogo\fi
+    \vspace*{\zhawtitletop}\par                          % gap above title  (CONFIG §1d)
+    {\usebeamerfont{frametitle}\usebeamercolor[fg]{frametitle}\large\insertframetitle\par}%
+    \ifx\insertframesubtitle\empty\else
+        {\small\color{zhawgrey}\insertframesubtitle\par}\fi
+    \vspace{\zhawtitlerulegap}{\color{zhawblue}\rule{2.2cm}{1.6pt}}\par\vspace{1pt}% gap below title (CONFIG §1d)
+}
+
+%% 2l · Outline frame  \zhawoutline[Title] ----------------------------
+\setbeamercolor{section in toc}{fg=zhawink}
+\setbeamertemplate{section in toc}{%
+    \leavevmode{\color{zhawblue}\bfseries\inserttocsectionnumber.}~\inserttocsection\par}
+\newcommand{\zhawoutline}[1][Outline]{%
+    \begin{frame}{#1}\vspace{0.3cm}\tableofcontents\end{frame}}
+
+%% 2m · Footline (minimal) + progress bar ----------------------------
+%   Wrapped in a \vbox so the (optional) rows stack vertically and
+%   \nointerlineskip stays in vertical mode.
+\setbeamertemplate{footline}{%
+    \vbox{%
+        \ifzhawfootline
+            \hbox{%
+                \begin{beamercolorbox}[wd=.55\paperwidth, ht=2.6ex, dp=1.3ex,
+                        leftskip=\zhawhmargin]{footline}%
+                    \usebeamerfont{footline}\insertshorttitle
+                \end{beamercolorbox}%
+                \begin{beamercolorbox}[wd=.45\paperwidth, ht=2.6ex, dp=1.3ex,
+                        rightskip=\zhawhmargin]{footline}%
+                    \usebeamerfont{footline}\hfill
+                    \ifx\zhaw@unit\empty\else\zhaw@unit\fi
+                    \ifzhawframenum\quad\insertframenumber\,/\,\inserttotalframenumber\fi
+                \end{beamercolorbox}%
+            }%
+        \fi
+        \ifzhawprogress
+            \nointerlineskip
+            % First LaTeX pass: \inserttotalframenumber is 0 (not yet known). Two traps:
+            %  (1) dividing by it -> "Dimension too large";
+            %  (2) PGF's ternary "cond ? a : b" evaluates BOTH branches, so even a
+            %      guarded "total<1 ? 0 : n/total" still runs n/0 -> "divide by 0".
+            % Both make pdflatex exit 1 on pass 1, which stops latexmk before biber and
+            % leaves citations unresolved. Guard at the TeX level with \ifnum so the
+            % division is never reached until the total is known; bar is 0-width meanwhile.
+            \ifnum\inserttotalframenumber<1\relax
+                \def\zhaw@pbfrac{0}%
+            \else
+                \pgfmathsetmacro{\zhaw@pbfrac}{min(1,\insertframenumber/\inserttotalframenumber)}%
+            \fi
+            \hbox{%
+                \begin{beamercolorbox}[wd=\paperwidth, ht=1.6pt, dp=0pt, sep=0pt]{footline}%
+                    \rlap{\color{zhawtint}\rule{\paperwidth}{1.6pt}}%
+                    \rlap{\color{zhawblue}\rule{\zhaw@pbfrac\paperwidth}{1.6pt}}%
+                \end{beamercolorbox}%
+            }%
+        \fi
+    }%
+}
+
+\mode<all>

@@ -1,0 +1,52 @@
+% =====================================================================
+%  07 · Experiment 4 — Quanvolution and noise robustness
+% =====================================================================
+\section{Experiment 4 · Quanvolution}
+
+\begin{frame}{Setup: a quantum filter slid across the signal}{Does unitarity buy noise robustness?}
+    \centering
+    \includegraphics[width=0.96\textwidth]{quanvolution_model}\par
+    \vspace{2pt}
+    {\scriptsize\color{zhawgrey}\textbf{Figure:}~pool $\to$ patch $\to$ spherical
+        encoding + bounded attention $\to$ contested filter (quantum or classical)
+        $\to$ shared deep head.}
+    \vspace{3pt}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \begin{block}{The hypothesis}
+                Unitary dynamics $\Rightarrow$ a restricted Lipschitz
+                constant~\cite{sokolic2017robust} $\Rightarrow$ intrinsic resistance to
+                perturbations.
+            \end{block}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \begin{block}{Strict parity}
+                \textbf{52} quantum params vs.\ \textbf{46} classical. Tested under
+                OOD \& adversarial noise, with a heavy and a light head.
+            \end{block}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Result: indistinguishable --- and the one gap favours classical}{Robustness decay, 10 seeds}
+    \begin{columns}[c]
+        \begin{column}{0.5\textwidth}
+            \centering
+            \includegraphics[height=3.4cm]{quanv_ood_heavy_robustness}\par
+            {\scriptsize\color{zhawgrey}\textbf{Heavy head:} curves overlap
+                ($\Delta=0.000$, $p=0.625$).}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \centering
+            \includegraphics[height=3.4cm]{quanv_adv_light_robustness}\par
+            {\scriptsize\color{zhawgrey}\textbf{Light head, adversarial:} classical
+                ahead ($\Delta=-0.047$, $p=0.014$).}
+        \end{column}
+    \end{columns}
+    \vspace{2pt}
+    \begin{callout}
+        A \textbf{frozen random} circuit does as well as the trained one --- the 52
+        variational params add little beyond a fixed embedding. The deep classical head
+        does the work.
+    \end{callout}
+\end{frame}

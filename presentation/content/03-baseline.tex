@@ -1,0 +1,102 @@
+% =====================================================================
+%  03 · Data and the Classical Baseline
+% =====================================================================
+\section{Data \& Classical Baseline}
+
+\begin{frame}{From 2 million raw spectra to a clean benchmark}{SDSS DR19 curation}
+    \begin{columns}[T]
+        \begin{column}{0.55\textwidth}
+            \begin{itemize}
+                \item Drop unreliable redshifts (\texttt{ZWARNING > 0}).
+                \item \textbf{Merge} $>$100 raw subclasses into physically coherent
+                      groups (e.g.\ \texttt{B3II}, \texttt{B3V} $\to$ \texttt{B3}).
+                \item Enforce $\geq 250$ samples/class; cap at 25\,000 to fight
+                      imbalance.
+                \item \textbf{Withhold} redshift scalars --- they let networks cheat;
+                      force raw-flux learning.
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.43\textwidth}
+            \centering
+            \includegraphics[height=3.7cm]{sdss_spectra_example}\par
+            {\scriptsize\color{zhawgrey}\textbf{Figure:}~example classes ---
+                \texttt{QSO}, \texttt{GALAXY}, \texttt{STAR\_O8}, \texttt{STAR\_M2}.}
+        \end{column}
+    \end{columns}
+    \begin{callout}[Final dataset]
+        \textbf{642\,588 spectra}, \textbf{62 classes} --- a rigorous classical testbed.
+    \end{callout}
+\end{frame}
+
+\begin{frame}{The classical baseline: ``the Beast''}{$\sim$14M parameters, built to be hard to beat}
+    \centering
+    \includegraphics[width=\textwidth]{baseline_cnn_viz}\par
+    \vspace{2pt}
+    {\scriptsize\color{zhawgrey}\textbf{Figure:}~multi-scale stem $\to$ dilated
+        SE-residual backbone~\cite{hu2019squeeze} $\to$ Transformer
+        encoder~\cite{vaswani2017attention} $\to$ MLP head (62 logits).}
+    \vspace{4pt}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \begin{block}{Why this design}
+                Spectra mix \textbf{local} lines and a \textbf{global} continuum --- so
+                we need both fine extraction and a global receptive field.
+            \end{block}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \begin{block}{Two roles}
+                A competitive baseline \emph{and} the \textbf{frozen feature
+                    extractor} reused in Experiment 2.
+            \end{block}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{The Beast is competitive with the state of the art}{Two validations}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \centering
+            \includegraphics[height=3.7cm]{gasnet_confusion_matrix}\par
+            {\scriptsize\color{zhawgrey}\textbf{13-class GaSNet-II
+                    replica}~\cite{Zhong2024GaSNetII}: \textbf{92.5\%}.}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \begin{block}{Headline numbers}
+                \begin{itemize}
+                    \item \textbf{84.5\%} on the full \textbf{62-class} problem.
+                    \item \textbf{92.5\%} reproducing the \textbf{GaSNet-II}
+                          13-class benchmark.
+                \end{itemize}
+            \end{block}
+            \begin{exampleblock}{Training recipe}
+                OneCycle LR~\cite{smith2017onecyclelr}, 300 epochs,
+                \textbf{Focal loss}~\cite{lin2018focalloss} for imbalance, GELU
+                throughout (no dead neurons).
+            \end{exampleblock}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Letting the baseline pick its own hardest fights}{Confusion-driven target selection}
+    \begin{columns}[T]
+        \begin{column}{0.54\textwidth}
+            An automated analysis of the $62\times62$ confusion matrix extracts:
+            \begin{itemize}
+                \item \textbf{Mirrors} --- symmetric A$\leftrightarrow$B confusions
+                      (e.g.\ \texttt{STAR\_A5} $\leftrightarrow$ \texttt{STAR\_F0},
+                      33.7\% overlap).
+                \item \textbf{Black holes} --- ``sink'' classes that absorb
+                      false positives (e.g.\ \texttt{GALAXY\_BROADLINE}).
+            \end{itemize}
+            \vspace{4pt}
+            The single hardest pair, \texttt{STAR\_BROWN\_DWARF\_L} vs.\
+            \texttt{STAR\_M8}, becomes the target for the quantum experiments.
+        \end{column}
+        \begin{column}{0.44\textwidth}
+            \begin{callout}[Why this matters]
+                We don't hand the quantum model an easy task. We give it the
+                \textbf{exact pairs} a 14M-param network cannot separate.
+            \end{callout}
+        \end{column}
+    \end{columns}
+\end{frame}
