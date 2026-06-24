@@ -35,12 +35,12 @@
             \setlength{\tabcolsep}{4pt}
             \begin{tabular}{llcc}
                 \toprule
-                          & Head           & Params        & Acc.                \\
+                           & Head             & Params       & Acc.                \\
                 \midrule
-                A         & Dense          & 5058          & $\sim$96\%          \\
+                A          & Dense            & 5058         & $\sim$96\%          \\
                 \textbf{B} & \textbf{Quantum} & \textbf{556} & $\mathbf{\sim96\%}$ \\
-                C         & Cl.\ ReLU      & 556           & $\sim$79\%          \\
-                D         & Cl.\ $\tanh$   & 556           & $\sim$96\%          \\
+                C          & Cl.\ ReLU        & 556          & $\sim$79\%          \\
+                D          & Cl.\ $\tanh$     & 556          & $\sim$96\%          \\
                 \bottomrule
             \end{tabular}
             \par\vspace{6pt}
@@ -86,11 +86,11 @@
                 \setlength{\tabcolsep}{4pt}
                 \begin{tabular}{lcc}
                     \toprule
-                    Encoding into VQC      & Params    & Acc.       \\
+                    Encoding into VQC       & Params    & Acc.                \\
                     \midrule
-                    Frozen PCA(128,4)      & $\sim$40  & $\sim$76\% \\
-                    Frozen PCA + Lin.      & $\sim$300 & $\sim$76\% \\
-                    \textbf{Learned Linear} & 556      & $\mathbf{\sim96\%}$ \\
+                    Frozen PCA(128,4)       & $\sim$40  & $\sim$76\%          \\
+                    Frozen PCA + Lin.       & $\sim$300 & $\sim$76\%          \\
+                    \textbf{Learned Linear} & 556       & $\mathbf{\sim96\%}$ \\
                     \bottomrule
                 \end{tabular}
             \end{block}

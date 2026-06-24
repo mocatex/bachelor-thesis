@@ -337,15 +337,15 @@
     \setlength{\tabcolsep}{4pt}
     \begin{tabular}{llcccc}
         \toprule
-        Model     & Config          & Accuracy          & Macro-F1          & BROWN rec     & ROC-AUC        \\
+        Model     & Config        & Accuracy        & Macro-F1        & BROWN rec     & ROC-AUC        \\
         \midrule
-        Quantum   & 2q$\times$12L   & $0.863\pm0.005$   & $0.830\pm0.005$   & 0.70          & 0.910          \\
-        Quantum   & 3q$\times$8L    & $0.865\pm0.012$   & $0.835\pm0.009$   & 0.72          & 0.913          \\
-        Quantum   & 4q$\times$6L    & $0.869\pm0.008$   & $0.840\pm0.005$   & 0.73          & 0.927          \\
-        Quantum   & 6q$\times$4L    & $0.860\pm0.012$   & $0.833\pm0.013$   & 0.76          & 0.924          \\
-        Quantum   & 8q$\times$3L    & $0.860\pm0.013$   & $0.837\pm0.014$   & \textbf{0.80} & 0.927          \\
-        Classical & 4 features      & $0.868\pm0.016$   & $0.843\pm0.016$   & 0.77          & \textbf{0.933} \\
-        Classical & 8 features      & $0.862\pm0.004$   & $0.836\pm0.006$   & 0.77          & 0.922          \\
+        Quantum   & 2q$\times$12L & $0.863\pm0.005$ & $0.830\pm0.005$ & 0.70          & 0.910          \\
+        Quantum   & 3q$\times$8L  & $0.865\pm0.012$ & $0.835\pm0.009$ & 0.72          & 0.913          \\
+        Quantum   & 4q$\times$6L  & $0.869\pm0.008$ & $0.840\pm0.005$ & 0.73          & 0.927          \\
+        Quantum   & 6q$\times$4L  & $0.860\pm0.012$ & $0.833\pm0.013$ & 0.76          & 0.924          \\
+        Quantum   & 8q$\times$3L  & $0.860\pm0.013$ & $0.837\pm0.014$ & \textbf{0.80} & 0.927          \\
+        Classical & 4 features    & $0.868\pm0.016$ & $0.843\pm0.016$ & 0.77          & \textbf{0.933} \\
+        Classical & 8 features    & $0.862\pm0.004$ & $0.836\pm0.006$ & 0.77          & 0.922          \\
         \bottomrule
     \end{tabular}
     \par\vspace{6pt}
@@ -362,12 +362,12 @@
             \setlength{\tabcolsep}{3pt}
             \begin{tabular}{llcc}
                 \toprule
-                Regime & Head  & AUC Q             & AUC C             \\
+                Regime & Head  & AUC Q   & AUC C            \\
                 \midrule
-                OOD    & Heavy & $0.563$           & $0.563$           \\
-                OOD    & Light & $0.549$           & $0.564$           \\
-                ADV    & Heavy & $0.655$           & $0.675$           \\
-                ADV    & Light & $0.545$           & $\mathbf{0.592}$  \\
+                OOD    & Heavy & $0.563$ & $0.563$          \\
+                OOD    & Light & $0.549$ & $0.564$          \\
+                ADV    & Heavy & $0.655$ & $0.675$          \\
+                ADV    & Light & $0.545$ & $\mathbf{0.592}$ \\
                 \bottomrule
             \end{tabular}
             \par{\scriptsize\color{zhawgrey}Only Adv-Light significant ($p=0.014$,
@@ -379,12 +379,12 @@
             \setlength{\tabcolsep}{3pt}
             \begin{tabular}{lcccc}
                 \toprule
-                Model     & Q1            & Q2            & Q3            & Q4            \\
+                Model    & Q1             & Q2             & Q3             & Q4             \\
                 \midrule
-                CNN Huge  & 0.346         & \textbf{0.673} & 0.305        & \textbf{0.479} \\
-                CNN Tiny  & \textbf{0.462} & 0.544        & 0.283         & 0.286         \\
-                QCNN      & 0.408         & 0.576         & 0.312         & 0.364         \\
-                QCNN Hyb  & 0.448         & 0.632         & \textbf{0.362} & 0.443        \\
+                CNN Huge & 0.346          & \textbf{0.673} & 0.305          & \textbf{0.479} \\
+                CNN Tiny & \textbf{0.462} & 0.544          & 0.283          & 0.286          \\
+                QCNN     & 0.408          & 0.576          & 0.312          & 0.364          \\
+                QCNN Hyb & 0.448          & 0.632          & \textbf{0.362} & 0.443          \\
                 \bottomrule
             \end{tabular}
             \par{\scriptsize\color{zhawgrey}Q1 clean / Q2 adv (high-data); Q3/Q4
