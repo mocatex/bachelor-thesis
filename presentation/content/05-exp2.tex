@@ -15,7 +15,7 @@
                 \item \textbf{D} --- classical mirror, \textbf{$\tanh$}, 556.
             \end{itemize}
             \vspace{2pt}
-            B, C, D share the \emph{exact} shape \& parameter count --- isolating the
+            B, C, D share the \emph{exact} shape \& parameter count, isolating the
             circuit, not the structure.
         \end{column}
         \begin{column}{0.52\textwidth}
@@ -60,13 +60,13 @@
     \begin{columns}[T]
         \begin{column}{0.5\textwidth}
             \centering
-            \includegraphics[height=3.5cm]{500param_classical_deadrelu_training_history}\par
+            \includegraphics[width=\linewidth,height=3.5cm,keepaspectratio]{500param_classical_deadrelu_training_history}\par
             {\scriptsize\color{zhawgrey}\textbf{ReLU (C):} stuck near 50\% for many
                 epochs $\to$ 79\%.}
         \end{column}
         \begin{column}{0.5\textwidth}
             \centering
-            \includegraphics[height=3.5cm]{500param_classical_tanh_training_history}\par
+            \includegraphics[width=\linewidth,height=3.5cm,keepaspectratio]{500param_classical_tanh_training_history}\par
             {\scriptsize\color{zhawgrey}\textbf{$\tanh$ (D):} clean convergence $\to$ 96\%.}
         \end{column}
     \end{columns}
@@ -74,7 +74,7 @@
     \begin{callout}
         With only 4 neurons, a ReLU pushed negative \textbf{dies} (zero output, zero
         gradient). The single largest accuracy swing of the experiment came from the
-        \textbf{activation function} --- not from quantum vs.\ classical.
+        \textbf{activation function}, not from quantum vs.\ classical.
     \end{callout}
 \end{frame}
 
@@ -94,7 +94,7 @@
                     \bottomrule
                 \end{tabular}
             \end{block}
-            \footnotesize Which four numbers enter the circuit matters --- not the
+            \footnotesize Which four numbers enter the circuit matters, not the
             four-qubit count.
         \end{column}
         \begin{column}{0.5\textwidth}

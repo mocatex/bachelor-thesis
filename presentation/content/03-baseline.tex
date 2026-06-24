@@ -12,7 +12,7 @@
                       groups (e.g.\ \texttt{B3II}, \texttt{B3V} $\to$ \texttt{B3}).
                 \item Enforce $\geq 250$ samples/class; cap at 25\,000 to fight
                       imbalance.
-                \item \textbf{Withhold} redshift scalars --- they let networks cheat;
+                \item \textbf{Withhold} redshift scalars, they let networks cheat;
                       force raw-flux learning.
             \end{itemize}
         \end{column}
@@ -24,7 +24,7 @@
         \end{column}
     \end{columns}
     \begin{callout}[Final dataset]
-        \textbf{642\,588 spectra}, \textbf{62 classes} --- a rigorous classical testbed.
+        \textbf{642\,588 spectra}, \textbf{62 classes}, a rigorous classical testbed.
     \end{callout}
 \end{frame}
 
@@ -39,7 +39,7 @@
     \begin{columns}[T]
         \begin{column}{0.5\textwidth}
             \begin{block}{Why this design}
-                Spectra mix \textbf{local} lines and a \textbf{global} continuum --- so
+                Spectra mix \textbf{local} lines and a \textbf{global} continuum, so
                 we need both fine extraction and a global receptive field.
             \end{block}
         \end{column}
@@ -99,4 +99,10 @@
             \end{callout}
         \end{column}
     \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}[plain]
+    \centering
+    \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{brown_dwarf_L_vs_M8_mean}
 \end{frame}

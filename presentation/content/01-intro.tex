@@ -15,7 +15,7 @@
             \end{itemize}
             \vspace{4pt}
             SDSS has measured \textbf{$>$2 million} such spectra~\cite{york2000sdss}
-            --- far too many to classify by hand.
+            , which would take a human astronomer \textbf{decades} to classify by eye.
         \end{column}
         \begin{column}{0.46\textwidth}
             \centering
@@ -36,7 +36,7 @@
             \end{block}
             \begin{alertblock}{Fine-grained subclasses (62 classes)}
                 Accuracy collapses at the boundaries between \emph{physically
-                    similar} types --- e.g.\ a late-type \texttt{M8} dwarf vs.\ an
+                    similar} types, e.g.\ a late-type \texttt{M8} dwarf vs.\ an
                 \texttt{L} brown dwarf.
             \end{alertblock}
         \end{column}
@@ -52,7 +52,7 @@
 
 \begin{frame}{A deliberately cautious investigation}{What a quantum model is here}
     A \textbf{Variational Quantum Circuit (VQC)} is a circuit whose gate-rotation
-    angles are trained by gradient descent~\cite{perezsalinas2020reuploading} ---
+    angles are trained by gradient descent~\cite{perezsalinas2020reuploading},
     exploiting an exponentially large state space and entanglement.
 
     \begin{itemize}
@@ -61,7 +61,7 @@
         \item So every quantum model we study is \textbf{hybrid}: a classical
               feature stage feeding a small quantum component.
         \item All circuits run on a \textbf{noiseless statevector
-                  simulator}~\cite{bergholm2018pennylane}, $\leq 8$ qubits --- no
+                  simulator}~\cite{bergholm2018pennylane}, $\leq 8$ qubits, no
               claims about real hardware.
     \end{itemize}
 
@@ -75,7 +75,7 @@
     \begin{columns}[T]
         \begin{column}{0.5\textwidth}
             Most applied QML places a powerful classical network in front of a tiny
-            circuit --- then credits the result to the \textbf{quantum} part.
+            circuit, then credits the result to the \textbf{quantum} part.
 
             \vspace{6pt}
             We refuse that shortcut. \textbf{Every} quantum model is matched to a
@@ -92,7 +92,7 @@
                 \begin{enumerate}
                     \item A competitive 14M-param \textbf{classical baseline} (``the Beast'').
                     \item \textbf{Five fair comparisons} across four quantum paradigms.
-                    \item The \textbf{comparison itself} --- a reusable honesty methodology.
+                    \item The \textbf{comparison itself}, a reusable honesty methodology.
                 \end{enumerate}
             \end{block}
         \end{column}
