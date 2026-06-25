@@ -16,9 +16,9 @@
         \begin{column}{0.52\textwidth}
             \begin{block}{Two quantum kernels}
                 \footnotesize
-                \textbf{Fidelity:} $|\langle 0|U^\dagger(x')U(x)|0\rangle|^2$ ---
+                \textbf{Fidelity:} $|\langle 0|U^\dagger(x')U(x)|0\rangle|^2$ $\to$
                 $\mathcal{O}(N^2)$ circuits.\\
-                \textbf{Projected (PQK):} local Paulis $\to$ RBF --- $\mathcal{O}(N)$.
+                \textbf{Projected (PQK):} local Paulis $\to$ RBF $\to$ $\mathcal{O}(N)$.
             \end{block}
             \begin{alertblock}{A pre-registered, honest protocol}
                 \footnotesize Balanced subsets · 95\% CIs over seeds · an RBF baseline
@@ -29,7 +29,7 @@
     \end{columns}
 \end{frame}
 
-\begin{frame}{Result: no advantage --- and we knew in advance}{Classical RBF matches or wins}
+\begin{frame}{Result: no advantage (and we knew in advance)}{Classical RBF matches or wins}
     \begin{columns}[c]
         \begin{column}{0.55\textwidth}
             \centering
@@ -43,8 +43,7 @@
                 \item Classical RBF \textbf{wins} for $n\geq 50$ ($p<0.05$).
             \end{itemize}
             \begin{callout}[Predicted before training]
-                Geometric difference~\cite{huang2021power} $g(C\|Q)=1.89$ (fidelity)
-                --- near the regime where the classical kernel already reproduces the
+                Geometric difference~\cite{huang2021power} $g(C\|Q)=1.89$ (fidelity); near the regime where the classical kernel already reproduces the
                 quantum geometry.
             \end{callout}
         \end{column}
