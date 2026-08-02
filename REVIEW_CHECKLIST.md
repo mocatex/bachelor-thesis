@@ -23,15 +23,23 @@ These shape the whole document and are the main reason for the 5.5.
 
 ## 1. Abstract & Introduction
 
+### Abstract — ✅ DONE (rewritten in `Front/abstract.tex`)
+- [x] 🔴 **Experiment count fixed: "four" → "five"**, QCNN (Experiment 5) now included.
+- [x] 🟠 **Blanket "None shows a quantum advantage" nuanced** to "parity at best and no scalable quantum advantage" + QCNN few-shot inductive-bias caveat (no longer contradicts the discussion).
+- [x] 🟠 **"most favourable setting for quantum hardware" → "for the variational methods studied here"** (neutralises Baglio's QRC/noise point). [B p30]
+- [x] 🟠 **First sentence tightened** to the coarse star–galaxy–quasar task with near-perfect accuracy.
+- [x] 🟢 **Two-episode framing** of the dissolved advantages made explicit.
+- [x] 🟢 **Keyword "Benchmarking" added.** [B p2]
+
+### Introduction — still TODO
 - [ ] 🟠 **Cite the M-dwarf / L-brown-dwarf spectral similarity** ("physically similar types such as late-type M dwarfs and L brown dwarfs"). Needs an astrophysics reference for the M/L transition. [S highlight p2] [analysis]
 - [ ] 🟠 **Back or soften "essentially solved / ~99% / even modest classical networks."** Add citation or reframe as "in our own baselines." [S highlight p2–3] [B p2 "add more literature ref for the 3-class"]
 - [ ] 🔴 **"the Beast" naming.** Make explicit this is your own invented name for your 14M-param model; introduce formally once. Baglio: "OK — make it clear this is your invention and you created the name." [S highlight p3, p6] [B p3, p6]
 - [ ] 🟠 **"exponentially large state space / Hilbert space."** Baglio strikes "exponentially large" and asks "compared to what?" — use "Hilbert space" precisely and qualify the claim. [B p2, p3]
 - [ ] 🟠 **Fourier-series framing is not unique to quantum.** Baglio notes a classical NN can also be analysed "with the lens of FT." Qualify the data-reuploading/Fourier point. [B p3]
-- [ ] 🟢 **Keywords:** Baglio suggests "Benchmarking" (possibly replacing/adding to "Fair comparison"). [B p2]
 - [ ] 🟢 **13-class subset:** "How are the 13 classes chosen? Robustness analysis for changing the subset?" [B p2]
 - [ ] 🟠 **"other work" / citations feel thin.** Baglio: with so few citations, "other work looks strange"; fair-comparison is not unique — "you're not the only one (see my paper)." Add benchmarking literature (incl. ZHAW/Baglio work). [B p2, p4]
-- [ ] 🟠 **Ensure every number matches final results tables** (84.5%, 92.5%, 96%, param counts). Reviewer highlights all of them. [S highlights p2–3]
+- [ ] 🟠 **Ensure every number matches final results tables** (84.5%, 92.5%, 96%, param counts). Reviewer highlights all of them. Abstract numbers verified ✅; still check intro/body. [S highlights p2–3]
 
 ---
 

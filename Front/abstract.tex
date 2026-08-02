@@ -1,27 +1,35 @@
 \begin{abstract}
     Modern astronomical surveys such as the Sloan Digital Sky Survey (SDSS) produce
-    millions of optical spectra, and classical deep learning already classifies them
-    with high accuracy. This thesis asks whether quantum machine learning offers any
-    benefit on this task under a fair comparison, with matched parameters and identical
-    pipelines, against classical models built with equal care. We first train a
-    14-million-parameter convolutional baseline that reaches 84.5\% accuracy on a
-    62-class SDSS problem and matches the GaSNet-II deep-learning benchmark at 92.5\% on a
-    13-class subset. We then evaluate quantum methods in four experiments, namely a
-    variational quantum circuit on the hardest binary pair, parameter-matched quantum
-    and classical heads on a frozen feature extractor, quantum support vector machines
-    in a few-shot regime and a quanvolutional filter under increasing noise. None of
-    them shows a quantum advantage. The quantum and classical models reach statistically
-    equivalent accuracy, and the advantages that first appeared were traced to an
-    under-built classical baseline or a dead-ReLU optimisation artefact rather than to
-    the quantum component. Since all circuits run on a noiseless simulator, the most
-    favourable setting for quantum hardware, the absence of an advantage is a robust
+    millions of optical spectra. Classical deep learning already solves the coarse
+    star-galaxy-quasar classification with high accuracy. This thesis asks
+    whether quantum machine learning adds anything once the task is pushed to the hard,
+    fine-grained subclasses where classical models begin to struggle. It insists on a
+    fair comparison where every quantum model is matched in trainable parameters and run
+    through an identical pipeline against a classical counterpart built with equal care.
+    We first train a 14-million-parameter convolutional baseline that reaches 84.5\%
+    accuracy on a 62-class SDSS problem and reproduces the GaSNet-II benchmark at 92.5\%
+    on the same 13-class subset used in that study. This baseline also identifies the
+    hardest class pairs and serves as a frozen feature extractor. We then run five experiments: a variational quantum circuit
+    on the hardest binary pair, parameter-matched quantum and classical heads on the
+    frozen extractor, a quantum support vector machine in a few-shot regime, a
+    quanvolutional filter under increasing noise and a fully coherent quantum
+    convolutional network (QCNN) as a negative control. Across all five the result is
+    parity at best and no scalable quantum advantage. Two apparent advantages disappeared
+    on closer inspection, one caused by an under-built classical baseline and one by a
+    dead-ReLU artefact that a single change of activation removed. The only case where a
+    quantum model did better was the QCNN, which held its accuracy when training data was
+    scarce while the equally small classical model failed. This came from its small and
+    rigid design helping it learn from few examples, not from any ability to represent
+    richer functions or scale to larger problems. Because all
+    circuits run on a noiseless statevector simulator, the most favourable setting for
+    the variational methods studied here, the absence of an advantage is a conservative
     result. The thesis contributes a disciplined fair-comparison methodology and shows
-    that apparent quantum advantages must be checked against carefully built classical
-    controls.
+    that apparent quantum advantages must be treated as hypotheses to be ruled out
+    against carefully built classical controls.
 \end{abstract}
 
 \begin{keywords}
-    Fair comparison, quantum machine learning, quanvolutional neural networks, quantum
-    support vector machines, Sloan Digital Sky Survey, spectral classification,
-    variational quantum circuits
+    Benchmarking, fair comparison, quantum machine learning, quanvolutional neural
+    networks, quantum support vector machines, Sloan Digital Sky Survey, spectral
+    classification, variational quantum circuits
 \end{keywords}
