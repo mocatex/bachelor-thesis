@@ -2,3 +2,7 @@ build/
 .DS_Store
 *.log
 *.aux
+
+# Reviewer PDFs (large, kept local only)
+BA_FS_26_stog_103_Quantum Machine Learning for Analyzing Astronomical Objects_commented.pdf
+ba-corrections-julien-baglio.pdf
