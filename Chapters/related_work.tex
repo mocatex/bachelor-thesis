@@ -26,7 +26,7 @@ than shallow models. More recently the Galaxy Spectra Neural Network of Zhong et
 al.~\cite{zhong2024gasnet}, GaSNet-II, performs joint classification and redshift
 prediction across stars, galaxies and quasars and reaches roughly 99\% accuracy on
 the coarse three-way problem while scaling to a customisable number of subclasses.
-GaSNet-II is the natural reference point for the classical side of this work, and we
+GaSNet-II is the natural reference point for the classical side of this work. We
 benchmark our own classical baselines against the level of performance it reports.
 What this body of work establishes is that the coarse classification problem is
 essentially solved by classical deep learning, which is precisely why we move to the
@@ -40,9 +40,9 @@ are optimised by classical gradient descent, a paradigm introduced for near-term
 hardware as quantum circuit learning by Mitarai et al.~\cite{mitarai2018qcl} and
 surveyed more broadly in the reviews of quantum machine learning by Biamonte et
 al.~\cite{biamonte2017qml} and of variational quantum algorithms by Cerezo et
-al.~\cite{cerezo2021vqa}. The appeal is that a small circuit can represent functions
-that live in an exponentially large Hilbert space, which raises the question of how
-expressive such models really are and how their inputs should be encoded.
+al.~\cite{cerezo2021vqa}. The appeal is that even a small circuit acts on a Hilbert space whose dimension grows
+as $2^n$ with the number of qubits, which raises the question of how expressive such
+models really are and how their inputs should be encoded.
 
 Two results inform the design choices made in this thesis. P{\'e}rez-Salinas et
 al.~\cite{perezsalinas2020reuploading} introduced data re-uploading, in which the
@@ -50,8 +50,10 @@ classical input is re-injected at every layer of the circuit and showed that eve
 single qubit can act as a universal classifier when its data is uploaded repeatedly.
 Schuld et al.~\cite{schuld2021encoding} made the underlying mechanism precise by
 showing that a variational quantum model is effectively a Fourier series in its
-input, with the accessible frequencies fixed by the data-encoding gates, so the
-encoding strategy directly bounds the functions the model can represent. Against
+input, with the accessible frequencies fixed by the data-encoding gates. A Fourier
+view is not unique to quantum circuits, since classical models can also be analysed in
+frequency space. What is specific here is that the encoding gates bound the accessible
+frequencies directly, which in turn bounds the functions the model can represent. Against
 these expressivity results stands a trainability obstacle. McClean et
 al.~\cite{mcclean2018barren} showed that deep, wide, randomly initialised circuits
 suffer barren plateaus, where gradients vanish exponentially in the number of qubits
@@ -70,13 +72,12 @@ classification. This reframes the search for a quantum advantage as a question a
 the kernel rather than about a trained network. Liu et al.~\cite{liu2021speedup} gave
 a rigorous example of such an advantage by constructing a classification task, based
 on the discrete logarithm problem, on which a quantum kernel provably outperforms any
-classical learner. These guarantees are important but dependent on carefully
-constructed problem structure and no comparable advantage is known for generic
-real-world data such as the spectra studied here. We therefore do not pursue the
-kernel route, but we return to it in the discussion as the most principled
-alternative to the hybrid models we study.
-
-% TODO: Moritz maybe add something about the QSVM since you have actually implemented it ?
+classical learner. These guarantees are important, but they depend on carefully
+constructed problem structure. No comparable advantage is known for generic
+real-world data such as the spectra studied here. We therefore treat the kernel route
+as an open empirical question. In Experiment 3 we evaluate a quantum support vector
+machine on our own data in a few-shot regime, the setting where quantum kernels are
+most often expected to help.
 
 \subsection{Quantum Convolution}
 \label{sec:rel_quanv}
@@ -98,13 +99,18 @@ and our noise-robustness experiment builds directly on it.
 \subsection{Positioning of this Thesis}
 \label{sec:rel_position}
 
-The work above leaves a specific gap. Deep learning is the established tool for
-spectral classification and variational quantum circuits are an actively studied
-alternative, but the two have rarely been compared on a realistic scientific signal
-under a fair protocol. Most applied quantum machine learning places a powerful
+The work above leaves room for a focused study. Deep learning is the established tool
+for spectral classification and variational quantum circuits are an actively studied
+alternative, but fair, equal-capacity comparisons of the two on a realistic scientific
+signal remain uncommon.
+% To acknowledge prior QML benchmarking work, add a citation here, e.g. \cite{}.
+A common pattern in applied quantum machine learning places a powerful
 classical network in front of a small circuit and credits the result to the quantum
-component without an equal-capacity classical control. This thesis closes that gap by
-benchmarking hybrid variational circuits against parameter-matched classical models
-on hard SDSS subclass tasks, with the same data, the same surrounding pipeline and a
-deliberate honesty discipline and by studying both the binary and the quanvolutional
-settings discussed above.
+component without an equal-capacity classical control. This thesis contributes one such
+comparison by benchmarking hybrid variational circuits against parameter-matched
+classical models on hard SDSS subclass tasks. Both sides use the same data and the same surrounding
+pipeline. The classical control is built with the same care as the quantum model. We
+study five settings, a variational circuit on the hardest binary pair, a hybrid
+quantum head on a four-class task, a quantum support vector machine in a few-shot
+regime, a quanvolutional filter under noise and a fully coherent QCNN as a negative
+control.
