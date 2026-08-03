@@ -31,14 +31,19 @@ These shape the whole document and are the main reason for the 5.5.
 - [x] 🟢 **Two-episode framing** of the dissolved advantages made explicit.
 - [x] 🟢 **Keyword "Benchmarking" added.** [B p2]
 
+### Introduction — in progress
+- [x] 🔴 **Fifth experiment (QCNN) added** to the second-contribution paragraph (was only four; now all five, with QCNN framed as negative control + few-shot nuance matching the abstract).
+- [x] 🟢 **"the contribution is the comparison itself"** (highlighted by [S p3]) reworded to "our contribution is the fair-comparison methodology itself" — concrete + parallel to the other two contributions; long `, and` sentence split.
+
 ### Introduction — still TODO
-- [ ] 🟠 **Cite the M-dwarf / L-brown-dwarf spectral similarity** ("physically similar types such as late-type M dwarfs and L brown dwarfs"). Needs an astrophysics reference for the M/L transition. [S highlight p2] [analysis]
-- [ ] 🟠 **Back or soften "essentially solved / ~99% / even modest classical networks."** Add citation or reframe as "in our own baselines." [S highlight p2–3] [B p2 "add more literature ref for the 3-class"]
-- [ ] 🔴 **"the Beast" naming.** Make explicit this is your own invented name for your 14M-param model; introduce formally once. Baglio: "OK — make it clear this is your invention and you created the name." [S highlight p3, p6] [B p3, p6]
-- [ ] 🟠 **"exponentially large state space / Hilbert space."** Baglio strikes "exponentially large" and asks "compared to what?" — use "Hilbert space" precisely and qualify the claim. [B p2, p3]
+- [x] 🟠 **Cite the M-dwarf / L-brown-dwarf spectral similarity.** ✅ Added Kirkpatrick (1999) `kirkpatrick1999ldwarfs` on the continuous-sequence / M→L transition clause, plus own-data Figure `fig:ml_similarity` (`Figures/brown_dwarf_L_vs_M8_mean.png`) for the near-identity. Citation deliberately not attached to the "near-identical" claim (that paper is about distinguishing them). [S highlight p2]
+- [x] 🟠 **Back / soften "essentially solved / ~99% / even modest classical networks."** ✅ Attributed 99% to GaSNet-II `zhong2024gasnet`, replaced the unbacked "modest networks" flourish with a cited statement (`sharma2020cnn`). [S highlight p2–3] [B p2]
+- [x] 🔴 **"the Beast" naming.** ✅ Intro now reads "which we nickname the \emph{Beast}" (own coinage, italicised). Note: soften the methodology "internally referred to as the Beast" so it doesn't re-introduce. [S highlight p3, p6] [B p3, p6]
+- [x] 🟠 **"exponentially large state space / Hilbert space."** ✅ Replaced with "Hilbert space of dimension $2^n$" and dropped the "exploiting" overclaim. [B p2, p3]
 - [ ] 🟠 **Fourier-series framing is not unique to quantum.** Baglio notes a classical NN can also be analysed "with the lens of FT." Qualify the data-reuploading/Fourier point. [B p3]
-- [ ] 🟢 **13-class subset:** "How are the 13 classes chosen? Robustness analysis for changing the subset?" [B p2]
-- [ ] 🟠 **"other work" / citations feel thin.** Baglio: with so few citations, "other work looks strange"; fair-comparison is not unique — "you're not the only one (see my paper)." Add benchmarking literature (incl. ZHAW/Baglio work). [B p2, p4]
+- [x] 🟢 **13-class subset phrasing mirrored into intro.** ✅ First contribution now reads "the same 13-class subset used in that study~\cite{zhong2024gasnet}". (Deeper "robustness to changing the subset" question is a results/methodology item, not intro.) [B p2]
+- [x] 🟢 **"citation needed" near contributions.** ✅ Added `\cite{zhong2024gasnet}` on the "competitive with published state of the art" claim (the first-contribution sentence previously had no citation). [B scan p3]
+- [~] 🟠 **"other work" / citations feel thin — mostly addressed for the intro.** ✅ Intro now cites 8 distinct refs (york, zhong ×2, sharma, kirkpatrick, perezsalinas, mcclean, henderson, bergholm). REMAINING (needs user input, better in `related_work.tex`): acknowledge fair-comparison is not unique and cite benchmarking literature incl. Baglio's own paper — need the reference. Also consider softening "our contribution is the fair-comparison methodology itself" so it doesn't overclaim novelty. [B p2, p4]
 - [ ] 🟠 **Ensure every number matches final results tables** (84.5%, 92.5%, 96%, param counts). Reviewer highlights all of them. Abstract numbers verified ✅; still check intro/body. [S highlights p2–3]
 
 ---

@@ -6,18 +6,43 @@ containing thousands of flux measurements across a range of wavelengths, effecti
 one-dimensional signal encoding the composition, temperature, redshift and class
 of its source. Our starting point was to establish strong classical baselines for
 classifying these spectra. The familiar three-way task of separating stars,
-galaxies and quasars turned out to be essentially solved, with even modest
-classical networks and modern deep models~\cite{zhong2024gasnet} reaching roughly
-99\% accuracy. Other works have pushed the problem harder by including up to 13 classes~\cite{zhong2024gasnet}.
-We therefore pushed the problem even harder, towards fine-grained
-subclasses, where accuracy falls away at the boundaries between physically similar
-types such as late-type M dwarfs and L brown dwarfs. These hard cases raise the
-question that drives this thesis, namely whether quantum machine learning can add
-anything useful where strong classical models begin to struggle.
+galaxies and quasars is already essentially solved by deep learning. Modern models
+such as GaSNet-II reach roughly 99\% accuracy on this coarse
+problem~\cite{zhong2024gasnet}. Even earlier convolutional networks classify stellar
+spectra directly from the flux~\cite{sharma2020cnn}. The same line of work has pushed
+the problem harder by scaling up to 13 classes~\cite{zhong2024gasnet}.
+We therefore took the problem one step further, to fine-grained
+subclasses, where accuracy drops at the boundaries between physically similar types
+such as late-type M dwarfs and L brown dwarfs. These two classes sit right next to each
+other on a continuous cooling sequence. The change from M to L is gradual. The TiO and
+VO absorption bands that dominate late-M spectra slowly fade and are replaced by metal
+hydrides and neutral alkali lines~\cite{kirkpatrick1999ldwarfs}. Because this transition
+is so smooth, the two classes end up looking almost the same.
+Figure~\ref{fig:ml_similarity} shows this on our own data, where the mean SDSS spectra
+of the L brown dwarfs and the M8 dwarfs overlap across almost the whole optical range.
+In machine-learning terms the two classes occupy almost the same region of feature
+space, which is why a classifier has a hard time separating them. These hard cases raise
+the question that drives this thesis, whether quantum machine learning can add anything
+useful where strong classical models begin to struggle.
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=\textwidth]{Figures/brown_dwarf_L_vs_M8_mean.png}
+    \caption{Mean SDSS spectra of the two hardest classes, STAR\_BROWN\_DWARF\_L (mean of
+        1561 objects) and STAR\_M8 (mean of 3604 objects), each normalised by its median
+        flux. Averaging over more than a thousand objects per class cancels noise, yet the
+        two class means still overlap across almost the entire optical range, diverging
+        only slightly beyond $8000\,\text{\AA}$ where the cooler L dwarfs show stronger
+        pressure-broadened alkali absorption. Because the two class means almost overlap,
+        this is the hardest pair for the classifier to separate. The narrow vertical spikes
+        are residual sky lines and detector artefacts rather than intrinsic features.}
+    \label{fig:ml_similarity}
+\end{figure*}
 
 A Variational Quantum Circuit (VQC) is a circuit whose gate rotation angles are
-trained by gradient descent~\cite{perezsalinas2020reuploading}, exploiting an
-exponentially large state space and multi-qubit entanglement. We approach it as an
+trained by gradient descent~\cite{perezsalinas2020reuploading}. Its $n$ qubits act on a
+Hilbert space of dimension $2^n$. Entangling gates let the circuit represent
+correlations across those qubits. We approach it as an
 empirical and deliberately cautious investigation rather than an assumption of
 quantum superiority. In our experiments a purely quantum model never trained well
 on raw spectra, a difficulty consistent with known trainability obstacles in
@@ -25,40 +50,46 @@ variational circuits~\cite{mcclean2018barren}. Every quantum model we study is
 therefore hybrid, combining a classical feature stage with a small quantum component.
 All circuits run on
 a noiseless statevector simulator~\cite{bergholm2018pennylane} with eight qubits or
-fewer, and we make no claim about real quantum hardware. The guiding question is
+fewer. We make no claim about real quantum hardware. The guiding question is
 whether such hybrids offer any measurable benefit over comparably built classical
 models on the hardest SDSS tasks and because these comparisons are sensitive to
 small implementation choices we treat every result carefully.
 
 The thesis makes three contributions. First, we train a large classical
-CNN-Transformer baseline of about 14 million parameters, the Beast, which reaches
-around 84\% accuracy on a curated 62-class problem and reproduces the GaSNet-II
-benchmark at about 92\% on a 13-class subset, confirming that our classical side is
-competitive with the published state of the art. Its confusion structure identifies
-the hardest class pairs, and the same network is reused as a frozen feature extractor
-in the later experiments.
+CNN-Transformer baseline of about 14 million parameters, which we nickname the
+\emph{Beast}. It reaches around 84\% accuracy on a curated 62-class problem and
+reproduces the GaSNet-II benchmark at about 92\% on the same 13-class subset used in
+that study~\cite{zhong2024gasnet}, confirming that our classical side is competitive
+with the published state of the art. Its confusion structure identifies the hardest
+class pairs. The same network is reused as a frozen feature extractor in the later
+experiments.
 
 Second, we run a series of fair comparisons in which every quantum model is matched in
 parameters and surrounding pipeline to a classical counterpart built with equal care.
-On the hardest binary confusion pair a VQC and a similarly structured convolutional
-network reach the same accuracy. On a four-class task a 556-parameter hybrid quantum
+On the hardest binary confusion pair a VQC and a classical convolutional network of
+matched size and depth reach the same accuracy. On a four-class task a 556-parameter hybrid quantum
 head matches both a parameter-matched classical head and a nine-times-larger classical
-head at about 96\% accuracy, and an apparent quantum edge over the small classical
+head at about 96\% accuracy. An apparent quantum edge over the small classical
 baseline turned out to be a dead-ReLU artefact that a change of activation fully
 removed. We extend the same comparison to two further quantum paradigms, a quantum
 support vector machine in a few-shot regime and a quanvolutional
 filter~\cite{henderson2020quanvolutional} under increasing input noise. Neither shows a
 quantum advantage. The quantum kernels are matched or overtaken by a classical kernel
-as the training set grows, and the quanvolutional filter is statistically
+as the training set grows. The quanvolutional filter is statistically
 indistinguishable from a parameter-matched classical filter, with the only significant
-difference favouring the classical model.
+difference favouring the classical model. Finally, a fully coherent quantum
+convolutional network (QCNN) serves as a negative control. With the spectrum embedded
+classically it shows no advantage over an unconstrained classical network. The one place
+it beats a parameter-matched classical model is the few-shot regime, where its small and
+rigid design helps it learn from very little data rather than giving it any ability to
+scale.
 
-Third, the contribution is the comparison itself. The recurring lesson is that an
-apparent quantum advantage must be treated as a hypothesis to be ruled out rather than
-a result, since in two separate experiments it dissolved once the classical baseline
-was given the same care, and that parameter count alone is the wrong lens, since the
-saving we might have credited to the quantum head in fact belongs to the frozen feature
-extractor.
+Third, and most important, our contribution is the fair-comparison methodology itself.
+The recurring lesson is that an apparent quantum advantage must be treated as a
+hypothesis to be ruled out rather than a result, since in two separate experiments it
+dissolved once the classical baseline was given the same care. Parameter count alone is
+also the wrong lens, since the saving we might have credited to the quantum head in fact
+belongs to the frozen feature extractor.
 
 This work is an empirical study rather than a development of new quantum
 algorithms. It evaluates only on SDSS spectra and noiseless simulation and makes no
