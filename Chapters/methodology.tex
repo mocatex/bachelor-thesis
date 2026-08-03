@@ -109,18 +109,26 @@ Beyond serving as the frozen backbone for \hyperref[sec:exp2_methods]{Experiment
 \subsubsection{Design Principles}
 \label{sec:exp1_philosophy}
 
-The first experiment follows the principle of simplicity. Once the baseline had
-shown that the spectra are learnable and that the coarse star-galaxy-quasar task is
-essentially trivial, we moved to a deliberately light quantum head on the single
-hardest pair of classes from the full confusion matrix,
-\texttt{STAR\_BROWN\_DWARF\_L} against \texttt{STAR\_M8}. Two constraints shaped the
-design. A flux spectrum has roughly four thousand bins, far more than a small
-quantum circuit can ingest, so a substantial classical feature extractor is
-unavoidable. And to keep the comparison fair we reuse the same feature extractor at
-the front and the same classifier head at the back for both contenders and let them
-differ only in the middle stage, a small VQC for the quantum model and a
-parameter-matched classical block for its mirror. Any difference is then localised
-to that middle stage.
+The first experiment keeps the setup as simple as possible. The baseline
+(Section~\ref{sec:baseline_cnn}) confirmed that the spectra are learnable. Its 62-class
+confusion matrix (Figure~\ref{fig:cnn_baseline_confusion_matrix} in
+Appendix~\ref{app:baseline_confusion}) identified the single hardest pair of classes,
+\texttt{STAR\_BROWN\_DWARF\_L} against \texttt{STAR\_M8}, whose mean spectra are nearly
+identical (Figure~\ref{fig:ml_similarity}). The coarse star-galaxy-quasar task, by
+contrast, is essentially solved (Section~\ref{sec:related}), so the interesting question
+lies at these fine-grained boundaries. We therefore test a deliberately light quantum
+head on exactly this hardest pair.
+
+Two constraints shaped the design. A flux spectrum has roughly four thousand bins, far
+more than a small quantum circuit of at most eight qubits can ingest, so a classical
+feature extractor in front is unavoidable. To keep the comparison fair, we build two
+models that are identical everywhere except for one block in the middle. Both reuse the
+same feature extractor at the front and the same classifier head at the back. The first
+model, which we call the \emph{quantum model}, uses a small variational quantum circuit
+(VQC) as this middle block. The second, which we call the \emph{classical mirror},
+replaces that circuit with a parameter-matched classical block of ordinary neural-network
+layers. Because the two models are otherwise identical, any difference in accuracy
+between them can only come from the middle block.
 
 \subsubsection{Shared Architecture}
 \label{sec:exp1_arch}
@@ -131,7 +139,12 @@ spectrum to a small feature vector whose width equals the number of qubits. The
 features are bounded to $[-\pi,\pi]$ by a $\tanh(\cdot)\,\pi$ transform, the middle
 stage processes them, and a small MLP head of \texttt{Linear} to width 32, batch
 normalisation, a ReLU, dropout and a final \texttt{Linear} to two logits produces
-the prediction. Unlike the frozen backbone of \hyperref[sec:exp2_methods]{Experiment 2}, this extractor is trained jointly with the rest of the model. Its internal structure is given in
+the prediction. This extractor is our own design, following standard one-dimensional CNN practice for
+spectra rather than adapted from a specific reference. It is a compact network specific
+to this experiment, distinct from the 14-million-parameter baseline of
+Section~\ref{sec:baseline_cnn} (Figure~\ref{fig:baseline_cnn}). Unlike the frozen
+backbone of \hyperref[sec:exp2_methods]{Experiment 2}, it is trained jointly with the
+rest of the model. Its internal structure is given in
 Figure~\ref{fig:cnn_extractor}, with three convolutional blocks growing the channels
 from 1 to 64, an adaptive average pool and a three-stage projection head down to the
 feature width. The extractor holds about 24000 of the roughly 24500 trainable
@@ -140,13 +153,13 @@ parameters, so the contested middle stage is a tiny fraction of the whole model.
 \begin{figure*}[t]
     \centering
     \includegraphics[width=\textwidth]{Figures/exp2_quantum_model_hybrid_big_picture.pdf}
-    \caption{Complete hybrid pipeline shared by the two binary models. A trainable CNN
-        extractor maps the flux spectrum to a small feature vector bounded to $[-\pi,\pi]$,
-        a middle stage processes it, and an MLP head produces the logits. For the binary
-        task the head outputs $C=2$ classes. The quantum model uses the variational quantum
-        circuit of Figure~\ref{fig:binary_vqc} as the middle stage, the classical mirror
-        uses the block of Figure~\ref{fig:classical_layer}, and everything else is held
-        identical.}
+    \caption{Complete hybrid pipeline shared by the quantum model and the classical
+        mirror. A trainable CNN extractor maps the flux spectrum to a small feature vector
+        bounded to $[-\pi,\pi]$, a middle stage processes it and an MLP head produces the
+        logits. For the binary task the head outputs $C=2$ classes. The quantum model uses
+        the variational quantum circuit of Figure~\ref{fig:binary_vqc} as the middle block.
+        The classical mirror uses the block of Figure~\ref{fig:classical_layer} instead.
+        Everything else is held identical.}
     \label{fig:exp1_pipeline}
 \end{figure*}
 
@@ -165,9 +178,21 @@ parameters, so the contested middle stage is a tiny fraction of the whole model.
 \label{sec:exp1_middle}
 
 The quantum middle is the data-reuploading VQC of Figure~\ref{fig:binary_vqc}. Each
-layer re-uploads the bounded features with $R_Y$ rotations, applies a trainable
-three-angle $\mathrm{Rot}$ rotation on every qubit and entangles the register with a
-ring of CNOT gates, after which the qubits are read out as Pauli-$Z$ expectations.
+layer re-uploads the bounded features with $R_Y$ rotations, applies a trainable general
+single-qubit rotation $\mathrm{Rot}(\alpha,\beta,\gamma) = R_Z(\gamma)\,R_Y(\beta)\,R_Z(\alpha)$
+on every qubit and entangles the register with a ring of CNOT gates, after which the
+qubits are read out as Pauli-$Z$ expectations. Because the trainable rotation is a
+general single-qubit rotation rather than a second $R_Y$, it does not commute with the
+$R_Y$ data upload. Successive layers therefore do not merge into a single rotation. The
+re-uploading realises a genuine multi-frequency function of the input rather than
+collapsing to one rotation. The CNOT ring provides entanglement across qubits for the
+same reason. We use angle encoding with re-uploading rather than amplitude encoding. The
+re-uploading structure is what lets us sweep the qubit count against depth at a fixed
+parameter budget and control the accessible frequencies, whereas amplitude encoding would
+fix the register at only a couple of qubits and remove that freedom. We tried amplitude
+encoding in early experiments and saw no benefit. The amplitude-versus-angle question is
+examined more systematically in \hyperref[sec:exp5_methods]{Experiment 5}, where a
+directly amplitude-encoded circuit proves markedly more fragile.
 The classical mirror replaces this circuit with the block of
 Figure~\ref{fig:classical_layer}, a \texttt{Linear} expansion to width eight, a
 $\tanh$ and a \texttt{Linear} back to the feature width. The $\tanh$ is deliberate,
@@ -193,7 +218,7 @@ of parameters.
 \begin{figure}[t]
     \centering
     \includegraphics[width=0.78\columnwidth]{Figures/classical_layer.pdf}
-    \caption{Classical middle stage of the mirror model, shown for the four-feature
+    \caption{Classical middle stage of the classical mirror, shown for the four-feature
         case. It replaces the variational quantum circuit with a \texttt{Linear} expansion
         to width eight, a $\tanh$ and a \texttt{Linear} back to the feature width, for $76$
         trainable parameters against the $72$ of the circuit.}
@@ -207,7 +232,7 @@ Rather than commit to one circuit we swept the geometry. Five quantum shapes wer
 run from narrow and deep to wide and shallow, namely 2 qubits with 12 layers, 3 with
 8, 4 with 6, 6 with 4 and 8 with 3. Every shape has the same
 $n_\text{qubits}\cdot n_\text{layers}\cdot 3 = 72$ trainable angles, so the sweep
-moves along the qubit-against-depth trade-off at a constant quantum budget. The
+trades qubit count against circuit depth at a constant number of trainable angles. The
 classical mirror was swept over two bottleneck widths of four and eight features.
 Each configuration was trained with the Adam optimiser at a fixed learning rate for
 a fixed 30 epochs and repeated over three seeds, and we report the mean and standard
