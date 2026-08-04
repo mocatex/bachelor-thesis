@@ -204,14 +204,18 @@ of parameters.
 \begin{figure}[t]
     \centering
     \includegraphics[width=\columnwidth]{Figures/binary_vqc_circuit.pdf}
-    \caption{Variational quantum circuit of the binary hybrid model, shown for the
-        four-qubit case. Within every layer the features $x_q$ are re-uploaded through
-        $R_Y(x_q)$ rotations, followed by a trainable single-qubit rotation
-        $\mathrm{Rot}(\theta^{(\ell)}_q)$ with three angles per qubit per layer, and a ring
-        of CNOT gates. The dashed block is repeated $L$ times, and each qubit is measured in
-        the Pauli-$Z$ basis. The sweep varies $(n_\text{qubits}, n_\text{layers})$ over
-        $(2,12),(3,8),(4,6),(6,4),(8,3)$, all at a constant
-        $n_\text{qubits}\cdot n_\text{layers}\cdot 3 = 72$ trainable angles.}
+    \caption{Variational quantum circuit of the binary quantum model, shown for the
+        four-qubit case. Each qubit carries one feature $x_q$. Within every layer the same
+        features are re-injected through $R_Y(x_q)$ rotations, which is the data
+        re-uploading that lets a shallow circuit reach higher-order functions of the input.
+        Each upload is followed by a trainable general single-qubit rotation
+        $\mathrm{Rot}(\theta^{(\ell)}_q)$, which needs three angles, then a ring of CNOT
+        gates. The dashed block is repeated $L = n_\text{layers}$ times. Each qubit is
+        finally measured in the Pauli-$Z$ basis. The sweep varies the pair
+        $(n_\text{qubits}, n_\text{layers})$,
+        the number of qubits and the number of layers, over
+        $(2,12),(3,8),(4,6),(6,4),(8,3)$, each holding the trainable-angle count fixed at
+        $n_\text{qubits}\cdot n_\text{layers}\cdot 3 = 72$.}
     \label{fig:binary_vqc}
 \end{figure}
 
@@ -249,45 +253,46 @@ a controlled comparison rather than a tuned performance record.
 \subsubsection{Design Principles}
 \label{sec:exp2_philosophy}
 
-The design of Experiment 2 follows two principles, control and fairness. Control,
-because we want every measured difference to come from a single place. By reusing a
-strong pretrained network as a frozen feature extractor and varying only the small
-head on top of it, we remove feature learning from the comparison and reduce it to a
-question about the head alone. Fairness, because a quantum head and a classical head
-cannot be compared simply by counting parameters, since a quantum rotation angle and
-a classical weight are not equivalent units of capacity. Rather than equate units we
-hold the architecture fixed and swap only the internals of the head, building a
-classical control with exactly the same parameter count and pipeline shape as the
-quantum model. A third principle, prompted by supervisor feedback, is that the
-parameter count alone is too narrow a lens, so we also examine convergence speed,
-training stability and computational cost rather than final accuracy alone. The four
-heads introduced below are the instruments through which these principles are
-applied.
+Experiment 2 isolates the head. The task is a four-class problem built from the four
+hardest classes in the baseline confusion matrix
+(Appendix~\ref{app:baseline_confusion}), so the head is tested where the classical Beast
+already struggles. We reuse the pretrained Beast as a frozen feature extractor and vary
+only the small head on top of it, so feature learning is removed from the comparison and
+every measured difference comes from the head alone. To compare a
+quantum head against a classical one fairly, we do not try to argue that a rotation angle
+and a network weight carry the same capacity. Instead we hold the whole pipeline fixed
+and swap only the internals of the head, building a classical control with the same
+parameter count and the same pipeline shape as the quantum model. Any difference in
+accuracy is then attributable to the head, not to the units we happen to count. We also
+report more than final accuracy. Following standard practice, we track convergence speed,
+training stability and computational cost, since parameter count alone is a narrow lens.
+The four heads introduced below each isolate a specific question.
 
 \subsubsection{Frozen Feature Extractor (the Beast)}
 \label{sec:beast}
 
-The shared backbone is a pretrained one-dimensional classifier that we refer to as
-the Beast. It combines a multi-scale convolutional stem, squeeze-and-excitation
-residual blocks and a two-layer Transformer encoder, totalling about 14 million
-parameters, and was trained from scratch on the full 62-class problem where it
-reaches roughly 84\% accuracy. For Experiment 2 its final
+The shared backbone is the same Beast used as the baseline, the 14-million-parameter
+CNN-Transformer of Section~\ref{sec:baseline_cnn} (Figure~\ref{fig:baseline_cnn}),
+trained from scratch on the full 62-class problem where it reaches roughly 84\% accuracy.
+We do not repeat its architecture here. For Experiment 2 its final
 \texttt{Linear(128, num\_classes)} layer is replaced by an identity map and every
 parameter is frozen, so the backbone becomes a fixed function that turns each
 spectrum into the same 128-dimensional feature vector. We freeze it rather than
 fine-tune it for two reasons. First, a 14-million-parameter backbone trained jointly
 with a tiny head could absorb or mask the behaviour of that head and confound the
 comparison, whereas a fixed backbone presents every head with identical inputs.
-Second, simulating the quantum circuit is expensive, and reusing a pretrained
-extractor avoids repeatedly backpropagating through both the backbone and the
-circuit. The backbone is also kept permanently in evaluation mode so that its
+Second, simulating the quantum circuit is expensive. Reusing a pretrained extractor
+avoids repeatedly backpropagating through both the backbone and the circuit. The backbone is also kept permanently in evaluation mode so that its
 batch-normalisation running statistics do not drift while the head is trained.
 
 \subsubsection{Classification Heads}
 \label{sec:heads}
 
-Every head maps the 128-dimensional features to four class logits. Four heads are
-compared, and they are chosen so that each isolates a specific question.
+The basic idea is simple. We keep the whole pipeline fixed and compare four small heads
+on top of the frozen extractor, each isolating one question. Every head maps the
+128-dimensional features to four class logits. Model~A is a comfortably sized classical
+head and Model~B is the hybrid quantum head. Models~C and~D are the parameter-matched
+classical controls for Model~B.
 
 The \emph{dense classical head} (Model~A) is a two-layer perceptron,
 \texttt{Linear(128,38)} $\to$ ReLU $\to$ Dropout$(0.2)$ $\to$ \texttt{Linear(38,4)},
@@ -311,12 +316,15 @@ Figure~\ref{fig:densehead}.
 The \emph{hybrid quantum head} (Model~B) first compresses the features with a
 trainable \texttt{Linear(128,4)} bottleneck of $516$ parameters, squashes the four
 outputs into $[-\pi,\pi]$ with a $\tanh(\cdot)\,\pi$ transform and feeds them to the
-variational quantum circuit of Section~\ref{sec:vqc} and Figure~\ref{fig:vqc}. The
-four Pauli-$Z$ expectations returned by the circuit pass through a trainable
+variational quantum circuit of Section~\ref{sec:vqc} and Figure~\ref{fig:vqc}. The full
+chain therefore reduces the four-thousand-bin spectrum to $128$ features, then to four
+numbers, then to a four-qubit circuit, so the number of qubits is $n=4$. We use four
+qubits because the task has four classes and the circuit reads out one qubit per class.
+The four Pauli-$Z$ expectations returned by the circuit pass through a trainable
 \texttt{Linear(4,4)} readout of $20$ parameters, which with the $20$ circuit angles
 gives $556$ trainable parameters. Two choices in this head are deliberate. The
 bottleneck is trainable rather than fixed because the circuit accepts only four
-numbers, and gradient descent can then discover the four discriminative directions
+numbers, so gradient descent can then discover the four discriminative directions
 the circuit needs instead of being handed an arbitrary projection. The readout is a
 trainable linear layer because the raw expectation values are confined to $[-1,1]$
 and tie qubit $i$ to class $i$, so passing them through a learned map lets the logits
@@ -324,15 +332,15 @@ leave that range and removes the artificial cap on softmax confidence. The compl
 pipeline of this head, from the input spectrum through to the class logits, is shown
 in Figure~\ref{fig:modelb}.
 
-The \emph{parameter-matched classical controls} (Models~C and~D) are the embodiment
-of the fairness principle. They are structural mirrors of the hybrid head in which
-the quantum circuit is replaced by a classical block of exactly the same parameter
-count. Both use a \texttt{Linear(128,4)} bottleneck followed by a $\tanh$, which
+The \emph{parameter-matched classical controls} (Models~C and~D) put this fairness
+idea into practice. They are structural mirrors of the hybrid head in which the quantum
+circuit is replaced by a classical block of exactly the same parameter count. Both use a \texttt{Linear(128,4)} bottleneck followed by a $\tanh$, which
 reproduces the bounded input that the circuit receives, then a middle
 \texttt{Linear(4,4)} that stands in for the circuit and a \texttt{Linear(4,4)}
 readout, again $516 + 20 + 20 = 556$ trainable parameters. Matching the count by
-construction sidesteps the objection that an angle and a weight are not comparable
-units. Model~C places a ReLU between the two width-4 layers and Model~D places a
+construction keeps the comparison fair without appealing to any claim about angles and
+weights being equivalent units. Model~C places a ReLU between the two width-4 layers and
+Model~D places a
 $\tanh$ there instead. This single controlled change exists to test whether any
 behaviour attributed to the quantum circuit might instead be an optimisation artefact
 of the surrounding classical structure, a question taken up in the results. The three
@@ -374,15 +382,21 @@ the circuit shown in Figure~\ref{fig:vqc}. The four numbers, already squashed in
 $[-\pi,\pi]$, are used as rotation angles. Each layer re-uploads these inputs with
 $R_Y$ rotations, applies a trainable $R_Y(\theta^{(\ell)}_q)$ rotation on every qubit
 and entangles the register with a ring of CNOT gates. After $L=5$ layers each qubit
-is measured in the Pauli-$Z$ basis, and the four expectation values feed the
-trainable readout. Three of these choices reflect a preference for the smallest
-circuit that can still express the task. Data re-uploading, the re-injection of the
-input in every layer, lets a shallow circuit represent higher-order functions of its
-input that a single encoding layer cannot reach. Single-axis $R_Y$ rotations keep the
-budget at one trainable angle per qubit per layer, and an exploratory variant with
-full three-axis rotations added parameters without improving accuracy. The ring of
-CNOT gates is a simple, hardware-friendly entangler that spreads correlations across
-all four qubits at a depth that grows only linearly with their number.
+is measured in the Pauli-$Z$ basis. The four expectation values feed the trainable
+readout. Unlike the three-angle rotations of the binary circuit in Experiment 1
+(Figure~\ref{fig:binary_vqc}), this head uses a single trainable $R_Y$ angle per qubit
+per layer. The reason is the parameter budget. Experiment 1 swept the circuit geometry at
+a fixed budget of $72$ angles, whereas here the circuit must fit inside the
+$556$-parameter head that the classical controls match, so we use the smallest circuit
+that can still express the task. Data re-uploading, the re-injection of the input in every
+layer, lets a shallow circuit represent higher-order functions of its input that a single
+encoding layer cannot reach. The trainable $R_Y(\theta)$ shares the axis of the $R_Y(x)$
+upload, so on a single qubit the two would merge into one rotation. The ring of CNOT gates
+between layers prevents this. It entangles the qubits so the circuit is not a product of
+independent single-qubit rotations and does not collapse. It also spreads correlations
+across all four qubits at a depth that grows only linearly with their number. An
+exploratory variant with full three-axis rotations added parameters without improving
+accuracy.
 
 \begin{figure}[t]
     \centering
@@ -400,9 +414,11 @@ all four qubits at a depth that grows only linearly with their number.
 \subsubsection{Encoding Variants for the Ablation}
 \label{sec:encoding}
 
-The trainable bottleneck of Model~B couples two things that we would like to separate,
-the number of qubits and the way features are loaded into them. To tell them apart we
-replace the learned bottleneck with frozen alternatives that change only the encoding.
+Model~B learns its encoding end-to-end through the trainable bottleneck, so its accuracy
+could come from the quantum circuit or from that learned compression. This ablation
+separates the two. We hold the four-qubit circuit and readout fixed and change only how
+the four input numbers are produced, replacing the learned bottleneck with frozen
+alternatives.
 A \texttt{FrozenPCABottleneck} fits a principal-component projection once on the
 training-set features and then keeps it fixed, so it is informative but not learnable.
 The \emph{pure-PCA} variant feeds a frozen \texttt{PCA(128,4)} directly into the same
@@ -439,7 +455,7 @@ behaviour and the training cost.
 \subsubsection{Design Principles}
 \label{sec:exp3_philosophy}
 
-The second experiment pivots from highly parameterized neural networks to the few-shot learning regime, investigating whether quantum support vector machines (QSVMs) exhibit a trainable advantage when data is exceedingly scarce. Deep classical networks are notoriously prone to overfitting on small datasets. Quantum kernels, mapping data into an exponentially large Hilbert space, theoretically offer enhanced linear separability. However, evaluating a quantum advantage requires a stringent protocol.
+This experiment pivots from the highly parameterized neural networks of the earlier experiments to the few-shot learning regime, investigating whether quantum support vector machines (QSVMs) exhibit a trainable advantage when data is exceedingly scarce. Deep classical networks are notoriously prone to overfitting on small datasets. Quantum kernels, mapping data into an exponentially large Hilbert space, theoretically offer enhanced linear separability. However, evaluating a quantum advantage requires a stringent protocol.
 
 To ensure a defensible comparison, this experiment operates under three constraints. First, we enforce strict balanced subsetting to prevent silent majority-class collapse at small sample sizes. Second, we evaluate over multiple resampled seeds per subset size, reporting the mean accuracy with 95\% confidence intervals rather than relying on a single favourable data draw. Third, the classical baseline, an RBF kernel SVM, is hyperparameter-tuned with the same rigour as the quantum models; a quantum model outperforming an untuned classical model does not constitute a true quantum advantage. Finally, we establish a pre-registered criterion for advantage: a quantum model is deemed superior at a specific sample size $n$ only if the lower bound of its 95\% confidence interval strictly exceeds the upper bound of the best classical model's confidence interval.
 

@@ -75,30 +75,51 @@ These shape the whole document and are the main reason for the 5.5.
 
 ## 4. Methodology — Quantum Models & Fair Comparison
 
-- [ ] 🔴 **Show baseline results BEFORE the hard classes.** "Don't jump the gun and focus on hard classes — you haven't identified them experimentally yet." [S p7]
-- [ ] 🔴 **Justify the hard pair choice IN THE THESIS.** STAR_BROWN_DWARF_L vs STAR_M8. Why this pair? Identify it on the confusion matrix (highlight it); refer to Appendix A. Baglio: the hardness justification "was not stated in the thesis — only in the talk." [S p7] [B p7, p30]
-- [ ] 🔴 **R_y(x)·R_y(θ) = R_y(θ + x) — technical flaw.** Single-axis encoding + single-axis trainable rotation collapse to one rotation (data-reuploading becomes trivial/linear). Baglio flags this explicitly. Must address: mix axes (R_x/R_y) and/or add entangling gates. [B p9, p10]
-- [ ] 🟠 **Encoding choices — angle vs amplitude, qubit count.**
-  - "So angle encoding. Why not amplitude? More qubit-efficient." [B p7]
-  - "Why 4 qubits? Why not test other data encodings / amplitude / uniform qubits?" [B p9]
-  - "Why not data reuploading where n_features ≠ n_qubits?" [B p8]
-  - Stockinger: "Maybe using more qubits would have been better — 4K flux better represented, less dimensionality reduction." [S p30]
-- [ ] 🟠 **"Why 4 classes only?"** Justify the four-class task. [B p9]
-- [ ] 🔴 **Parameter-count comparability — reconcile the two reviewers.**
-  - Stockinger: define terms; unclear reasoning. [S p8]
-  - Baglio disputes "a quantum angle and a classical weight are not equivalent units of capacity" → "Why? It IS (matrices in both cases)!" [B p8]
-  - → Need a defensible justification of the parameter-matching argument.
+### Experiment 1 (Binary) — ✅ text done
+- [x] Hard-pair choice justified: cross-refs baseline confusion matrix (Appendix A, `fig:cnn_baseline_confusion_matrix`), intro similarity figure (`fig:ml_similarity`), related work.
+- [x] R_Y collapse (Baglio) defused: trainable gate is a general `Rot = R_Z·R_Y·R_Z`, does not commute with the R_Y upload, so no collapse; CNOT ring entangles.
+- [x] "classical mirror" defined; "quantum model" + "classical mirror" named explicitly (fixes "both models" / "two binary models").
+- [x] "three-angle Rot" written out; "qubit-against-depth" reworded plainly; "small quantum circuit" → "≤ 8 qubits".
+- [x] "essentially trivial" / "principle of simplicity" wording removed.
+- [x] Provenance: `SpectralFeatureExtractor` stated as own design, distinct from the 14M baseline (Fig 2).
+- [x] Angle-vs-amplitude encoding justified (principled + points to Exp 5 ablation for evidence).
+- STILL OPEN (Exp1): "why feature-width = qubits" micro-justification; redundancy pinpoint; figure sizing/legibility (figure pass).
+
+### Experiment 2 (Frozen Extractor / four heads) — ✅ text done
+- [x] **Parameter-equivalence reconciled** (A): dropped "angle and weight are not equivalent units"; now leads with structural matching ("not to the units we happen to count"). Fixes Baglio "matrices in both cases" + Stockinger "unclear". [S p8][B p8]
+- [x] **AI-ish "Design Principles" reframed** (B): dropped "two principles / a third principle prompted by supervisor feedback"; practices kept as "standard practice". [S p8]
+- [x] **Exp1↔Exp2 circuit difference explained** (C): single R_Y (Exp2) vs 3-angle Rot (Exp1) = 556-param budget; single-axis collapse defused via CNOT ring. Answers "difference Fig 5 vs 10?", "why three angles?", "where is the sweep?". [S p9][B p9,p10]
+- [x] **Dimensionality "what is n?"** (D): 4096→128→4→4 qubits, n=4 stated. [S p11]
+- [x] **Four classes / four qubits** (H): four hardest from confusion matrix; 4 qubits = one per class. [B p9]
+- [x] **Beast redundancy / "same as Fig 2?"** (E): trimmed re-description, cross-refs baseline + Fig 2, "we do not repeat its architecture here". [S p8]
+- [x] **Clarity** (G): "basic idea" opener + four-head roadmap; "why 'second experiment'?" bug fixed; Fig 5 caption (re-uploading/three-angles/pairs/L=n_layers); encoding-ablation purpose stated upfront. [S p9,p10]
+- STILL OPEN (Exp2): **F provenance sentence** → deferred to §3 baseline; "where is the readout/channels shown?" → figure-labeling pass; **x̃ vs x_q** → Exp3.
+
+### Cross-cutting (write ONCE as shared methodology note)
+- [x] 🔴 **Parameter-count comparability.** ✅ Handled in Exp2 (A) — structural matching, no reliance on angle=weight. [S p8] [B p8]
+- [ ] 🟠 **Cost/compute unfair.** Simulating quantum is exponentially hard. Address or drop. [B p8, p30]
+
+- [x] 🔴 **Show baseline results BEFORE the hard classes / "haven't identified them experimentally."** ✅ Exp1 Design Principles now states the baseline's 62-class confusion matrix (Appendix A) identified the hard pair, with the similarity figure. Addressed via cross-reference (thesis stays method-then-results; no full reorder needed). [S p7]
+- [x] 🔴 **Justify the hard pair choice IN THE THESIS.** ✅ Exp1 now cross-refs Appendix A confusion matrix + intro figure + related work. [S p7] [B p7, p30]
+- [x] 🔴 **R_y(x)·R_y(θ) = R_y(θ + x).** ✅ Defused in Exp1 — trainable gate is a general 3-angle Rot (non-commuting with R_Y upload) + CNOT ring; no collapse. [B p9, p10]
+- [~] 🟠 **Encoding choices — angle vs amplitude, qubit count.**
+  - [x] "Why not amplitude?" ✅ Justified in Exp1 (principled reason + points to Exp5 ablation). [B p7]
+  - [x] "Why 4 qubits?" → Exp2 (open). [B p9]
+  - [x] "Why not data reuploading where n_features ≠ n_qubits?" → feature-width justification (open). [B p8]
+  - [ ] Stockinger: "Maybe more qubits would have been better." → discussion/outlook. [S p30]
+- [x] 🟠 **"Why 4 classes only?"** ✅ Exp2 — four hardest classes from the baseline confusion matrix; 4 qubits = one per class. [B p9]
+- [x] 🔴 **Parameter-count comparability — reconcile the two reviewers.** ✅ Done in Exp2 (A). (See cross-cutting note above.) [S p8] [B p8]
 - [ ] 🟠 **Cost/compute argument is unfair.** Simulating quantum is exponentially hard, so the compute-cost comparison is unfair. Address or drop. [B p8, p30]
-- [ ] 🟢 **Try R_x / more entangling gates.** [B p9]
+- [x] 🟢 **Try R_x / more entangling gates.** ✅ Answered in Exp1 D-fix — the trainable `Rot` already contains `R_Z` (non-commuting with the R_Y upload) and the CNOT ring entangles; 3-axis variant also tried in Exp2 without benefit. [B p9]
 
 ### Undefined terms / inconsistent notation (all [S])
-- [ ] 🟠 Define **"classical mirror"** (used repeatedly, never defined). [S p7, p8]
+- [x] 🟠 Define **"classical mirror"** ✅ (defined at first use in Exp1). [S p7, p8]
 - [ ] 🟠 Define **B, L, ch, n** (blocks, layers, channels, qubits). [S p7, p11]
 - [ ] 🟠 Reconcile **x̃ vs x_q** notation (Fig 11 vs Fig 10). [S p12]
-- [ ] 🟠 Explain **"three-angle rotation"**, **"qubit-against-depth-tradeoff"** (add reference), **"hardware-efficient"** (why now?). [S p7, p12]
-- [ ] 🟠 Clarify **"two binary models"** / **"both models"** references. [S p7, p8]
+- [~] 🟠 **"three-angle rotation"** ✅ + **"qubit-against-depth"** ✅ done in Exp1. STILL: **"hardware-efficient"** (Exp2/other). [S p7, p12]
+- [x] 🟠 Clarify **"two binary models"** / **"both models"** ✅ (named quantum model + classical mirror). [S p7, p8]
 - [ ] 🟠 **"Black Holes"** naming — clarify it's unrelated to real black holes; discuss. [S p7]
-- [ ] 🟠 Rephrase **"trivial"** (not a scientific statement). [S p7]
+- [x] 🟠 Rephrase **"trivial"** ✅ (removed in Exp1). [S p7]
 - [ ] 🟠 Explain **data re-uploading / "sweep" / feature-per-qubit / pairs** — where shown? [S p9]
 - [ ] 🟠 **Which figure shows which architecture?** Several "Is this the architecture in Figure 2/5/10/11?" [S p8, p9, p15, p16]
 - [ ] 🟠 **Redundant section** — one methodology section repeats earlier content. [S p8]
