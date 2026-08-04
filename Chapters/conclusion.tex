@@ -44,11 +44,11 @@ model.
 \label{sec:conclusion_outlook}
 
 Within this thesis the most obvious quantum-specific levers were already pulled. We
-varied the circuit geometry across the full sweep and we compared angle encoding
-against amplitude encoding, and neither the shape of the circuit nor the way the data
-entered it produced an advantage over a matched classical model. The more promising
-open questions therefore lie less in tuning these hybrid models and more in changing the
-problem they are asked to solve.
+varied the circuit geometry across the full sweep and compared angle encoding against
+amplitude encoding. Neither the shape of the circuit nor the way the data entered it
+produced an advantage over a matched classical model. The more promising open questions
+therefore lie less in tuning these hybrid models and more in changing the problem itself,
+meaning the kind of data and task on which quantum and classical models are compared.
 
 The clearest of these is whether quantum methods help at all on data that is already
 well suited to classical learning. Optical spectra are smooth, structured signals that
@@ -56,8 +56,14 @@ convolutional networks handle naturally, which leaves little room for a quantum 
 add anything. A fairer test of a genuine quantum advantage may require problems whose
 structure is provably hard for classical learners, or data that is quantum in origin
 rather than a classical measurement, where a quantum model is not forced to first
-compress the input through a classical front end. Identifying such a problem in an
-astronomical context, if one exists, is itself an open question.
+compress the input through a classical front end. Within our own setting the most useful
+change would be to remove that classical bottleneck. One concrete option is to keep the
+task in astronomy but feed the circuit a small set of physically motivated features
+directly, rather than a four-thousand-bin spectrum, so that the quantum model acts on the
+raw signal instead of a classically learned summary. Another is to lean into the
+data-scarce regime, where the QCNN showed its only hint of an edge, to ask whether that
+few-shot advantage grows when labelled examples are genuinely rare. Identifying a problem
+where such a change actually favours the quantum model, if one exists, remains open.
 
 A second direction is to confront real hardware. All results here come from a noiseless
 simulator, which is the best case for quantum methods, so a natural extension is to
@@ -67,11 +73,19 @@ simulation, such as the smoother feature maps of the quanvolutional filter, surv
 practice.
 
 Finally, the comparisons here were bounded by eight qubits, a single scientific domain
-and a handful of hard class pairs. Larger qubit counts as simulators and hardware
-improve, and the same fair-comparison framework applied to other signals, would show
-whether the parity found here is specific to SDSS spectra or a more general feature of
-near-term quantum machine learning. The geometric-difference pre-screening used in the
-kernel experiment is a cheap and principled way to decide in advance which of these
-problems are even worth the effort. None of these directions is likely to overturn the
-present finding on today's hardware, but each would sharpen the question of where, if
-anywhere, a near-term quantum advantage on real scientific data can be found.
+and a handful of hard class pairs. A larger qubit budget would matter most for the
+encoding. With more qubits the four-thousand-bin spectrum could be represented more
+directly, with far less of the classical compression that every hybrid here relies on,
+which removes one of the strongest confounds in the comparison. As simulators and
+hardware allow more qubits, the same fair-comparison framework applied to other signals
+could show whether the parity found here is specific to SDSS spectra or a more general
+feature of near-term quantum machine learning. Before running such experiments, the
+geometric-difference pre-screening used in the kernel experiment offers a cheap way to
+decide in advance which candidate problems are even worth the effort. It measures how far
+a quantum kernel's similarity structure departs from the closest classical
+kernel~\cite{huang2021power}. When that difference is small, a classical kernel can
+already reproduce the quantum one, so no quantum advantage is possible and the problem can
+be set aside without training anything.
+None of these directions is likely to overturn the present finding on today's hardware,
+but each would sharpen the question of where, if anywhere, a near-term quantum advantage
+on real scientific data can be found.
