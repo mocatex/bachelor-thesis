@@ -364,8 +364,8 @@
   \def\ps@titlepage{%
      \def\@oddhead{\parbox[t]{\textwidth}{\mbox{}\\[-6.3mm]{\raisebox{5pt}%
        {{\titlepageheaderfont\color{accessblue}\headName}}}%
-       \hfill\headerlogo\mbox{}\vspace*{-3.5mm}\par\rule{30.54pc}{.3pt}}}
-     \def\@evenhead{\parbox[t]{\textwidth}{\mbox{}\\[-6.3mm]\mbox{}\headerlogo%
+       \hfill\mbox{}\vspace*{-3.5mm}\par\rule{30.54pc}{.3pt}}}
+     \def\@evenhead{\parbox[t]{\textwidth}{\mbox{}\\[-6.3mm]\mbox{}%
        \hfill{\raisebox{5pt}{{\titlepageheaderfont\color{accessblue}\headName}}}%
        \vspace*{-3.5mm}\par\mbox{}\hfill\rule{30.54pc}{.3pt}}}
      \def\@oddfoot{\raisebox{3pt}{%%
@@ -382,10 +382,10 @@
 % normal page
   \def\ps@headings{%
      \def\@oddhead{\parbox[t]{\textwidth}{\mbox{}\\[-6.3mm]{\raisebox{5pt}%
-       {\headerfont\rightmark}}\hfill\headerlogo\mbox{}\vspace*{-3.55mm}\par%
+       {\headerfont\rightmark}}\hfill\mbox{}\vspace*{-3.55mm}\par%
        \rule{30.54pc}{.3pt}}}
      \def\@evenhead{\parbox[t]{\textwidth}{\mbox{}\\[-6.3mm]\mbox{}%
-       \headerlogo\hfill{\raisebox{5pt}{\headerfont\leftmark}}\vspace*{-3.55mm}\par%
+       \hfill{\raisebox{5pt}{\headerfont\leftmark}}\vspace*{-3.55mm}\par%
        \mbox{}\hfill\rule{30.54pc}{.3pt}}}
      \def\@oddfoot{\raisebox{8pt}{%
        \hbox to 0pc{\hbox to \textwidth{{\footervolfont VOLUME\ \thevol, \theyear}\hfill\mbox{}}}%
@@ -400,8 +400,8 @@
   \def\headerlogo{\raisebox{-2pt}{\includegraphics[width=7.61pc]{Logo.png}}}
   \def\headerlogoall{\raisebox{-2pt}{\includegraphics[width=7.61pc]{notaglineLogo.png}}}
   \def\ps@titlepage{%
-    \def\@oddhead{\parbox[t]{\textwidth}{\mbox{}\\[-6.3mm]\mbox{}\nheaderfont\color{accessblue}\headName\hfill\headerlogo{\raisebox{-2pt}{\,}}\color{black}\vspace*{-1.5mm}\par\hrulefill}}
-    \def\@evenhead{\parbox[t]{\textwidth}{\mbox{}\\[-6.3mm]\mbox{}\headerlogo\hfill\nheaderfont\color{accessblue}\headName{\raisebox{-2pt}{\,}}\color{black}\vspace*{-1.5mm}\par\hrulefill}}
+    \def\@oddhead{\parbox[t]{\textwidth}{\mbox{}\\[-6.3mm]\mbox{}\nheaderfont\color{accessblue}\headName\hfill{\raisebox{-2pt}{\,}}\color{black}\vspace*{-1.5mm}\par\hrulefill}}
+    \def\@evenhead{\parbox[t]{\textwidth}{\mbox{}\\[-6.3mm]\mbox{}\hfill\nheaderfont\color{accessblue}\headName{\raisebox{-2pt}{\,}}\color{black}\vspace*{-1.5mm}\par\hrulefill}}
      \def\@oddfoot{\raisebox{3pt}{%%
        \hbox to 0pc{\hbox to \textwidth{{\footervolfont Zurich University of Applied Sciences}\hfill\mbox{}}}%
        \hbox to 0pc{\hbox to \textwidth{\mbox{}\hfill{\footervolfont\@pubid}\hfill\mbox{}}}%
@@ -415,8 +415,8 @@
   }
 % normal page
   \def\ps@headings{%
-     \def\@oddhead{\parbox[t]{\textwidth}{\mbox{}\\[-6.3mm]{\raisebox{-2pt}{\headerfont\rightmark}}\hfill\headerlogoall\mbox{}\vspace*{-1.5mm}\par\hrulefill}}
-     \def\@evenhead{\parbox[t]{\textwidth}{\mbox{}\\[-6.3mm]\mbox{}\headerlogoall\hfill{\raisebox{-2pt}{\headerfont\leftmark}}\vspace*{-1.5mm}\par\hrulefill}}
+     \def\@oddhead{\parbox[t]{\textwidth}{\mbox{}\\[-6.3mm]{\raisebox{-2pt}{\headerfont\rightmark}}\hfill\mbox{}\vspace*{-1.5mm}\par\hrulefill}}
+     \def\@evenhead{\parbox[t]{\textwidth}{\mbox{}\\[-6.3mm]\mbox{}\hfill{\raisebox{-2pt}{\headerfont\leftmark}}\vspace*{-1.5mm}\par\hrulefill}}
      \def\@oddfoot{\raisebox{8pt}{%
        \hbox to 0pc{\hbox to \textwidth{{\footervolfont Zurich University of Applied Sciences}\hfill\mbox{}}}%
        \hbox to 0pc{\hbox to \textwidth{\mbox{}\hfill{\footerpagefont\thepage}}}%\hspace*{1.8pc}
