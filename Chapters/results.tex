@@ -11,7 +11,9 @@ read the figures and tables.
 % ###############################################################################
 
 \subsection{Classical CNN Baseline Performance (62 Classes)}
-The Baseline CNN was trained for 300 epochs on the 62-class SDSS DR19 dataset. The network achieved a final test accuracy of $84.50\%$, with a final test loss of 0.2479. The training history indicates continuous convergence, with the training accuracy peaking at $91.69\%$ and validation accuracy stabilizing around $84.40\%$ by the final epoch (Figure~\ref{fig:cnn_baseline_history}).
+The Baseline CNN referred to throughout this section is the CNN-Transformer of
+Section~\ref{sec:baseline_cnn}, the network we nickname the Beast, whose architecture is
+shown in Figure~\ref{fig:baseline_cnn}. It was trained for 300 epochs on the 62-class SDSS DR19 dataset. The network achieved a final test accuracy of $84.50\%$, with a final test loss of 0.2479. The training history indicates continuous convergence, with the training accuracy peaking at $91.69\%$ and validation accuracy stabilizing around $84.40\%$ by the final epoch (Figure~\ref{fig:cnn_baseline_history}).
 
 \begin{figure}[h]
     \centering
@@ -25,7 +27,21 @@ Due to its high dimensionality, the complete $62 \times 62$ normalized confusion
 The classification matrix reveals strictly symmetric topological overlaps (``mirrors'') between specific pairs in the feature space. The most severe symmetrical confusions occurred between \texttt{STAR\_A5} and \texttt{STAR\_F0} ($33.7\%$ total overlap), \texttt{QSO\_STARBURST} and \texttt{QSO\_STARBURST\_BROADLINE} ($28.7\%$ total overlap), and \texttt{QSO\_STARBURST\_BROADLINE} and \texttt{QSO\_STARFORMING} ($25.2\%$ total overlap).
 
 \subsection{Validation against Literature Benchmark: GaSNet-II Replica (13 Classes)}
-To validate the structural integrity and feature extraction capability of our 14-million parameter architecture against an established literature baseline, we conducted a replication experiment based on the 13-class classification framework proposed by Zhong et al. (2024) in the GaSNet-II study \cite{Zhong2024GaSNetII}. This benchmark leverages a distinct subset of SDSS spectra restricted to 13 high-population, coarse-grained subclasses.
+\label{sec:gasnet_replica}
+To validate the feature extraction capability of our 14-million parameter architecture
+against an established literature baseline, we reproduced the 13-class classification
+\emph{task} proposed by Zhong et al. (2024) in the GaSNet-II study
+\cite{Zhong2024GaSNetII}. This benchmark leverages a distinct subset of SDSS spectra
+restricted to 13 high-population, coarse-grained subclasses. It is important to be precise
+about what is being reproduced here: we did not reimplement the GaSNet-II network. The
+model trained in this section is our own Baseline CNN, the same architecture we nickname
+the Beast in Section~\ref{sec:baseline_cnn} and depict in Figure~\ref{fig:baseline_cnn},
+instantiated with a 13-way output head and trained from scratch on their data. The only
+other change is the input width, since the GaSNet-II spectra are supplied on a 3600-bin
+grid rather than the 4096 bins used for our own subset. We adopt their dataset and class
+definitions and ask whether our architecture reaches a comparable accuracy on them, which
+makes this a reproduction of the benchmark setting rather than a replication of their
+model.
 
 Operating on the GaSNet-II dataset, our network was trained for 75 epochs. The model achieved a final test accuracy of $92.51\%$ and a test loss of 0.2311, effectively matching the benchmark performance criteria. The training metrics demonstrated rapid early convergence, reaching a validation accuracy of $90.41\%$ by epoch 20 (Figure~\ref{fig:gasnet_history}).
 
@@ -36,7 +52,7 @@ Operating on the GaSNet-II dataset, our network was trained for 75 epochs. The m
     \label{fig:gasnet_history}
 \end{figure}
 
-The normalized confusion matrix for the 13-class validation task is presented in Figure~\ref{fig:gasnet_cm}. Diagonal values demonstrate robust class separation, with true positive rates strictly exceeding $85\%$ across all categories. Peak classification performances were recorded for \texttt{STAR\_G2} ($97.4\%$), \texttt{STAR\_K5} ($97.2\%$), and \texttt{STAR\_A0} ($96.8\%$). The highest inter-class misclassification rate occurred between adjacent stellar temperatures, with $9.4\%$ of \texttt{STAR\_F9} spectra erroneously classified as \texttt{STAR\_G2}.
+The normalized confusion matrix for the 13-class validation task is presented in Figure~\ref{fig:gasnet_cm}. Diagonal values demonstrate robust class separation, with true positive rates strictly exceeding $85\%$ across all categories. Peak classification performances were recorded for \texttt{STAR\_G2} ($97.5\%$), \texttt{STAR\_K5} ($97.2\%$), and \texttt{STAR\_A0} ($96.8\%$). The highest inter-class misclassification rate occurred between adjacent stellar temperatures, with $9.5\%$ of \texttt{STAR\_F9} spectra erroneously classified as \texttt{STAR\_G2}.
 
 \begin{figure}[h]
     \centering
@@ -392,44 +408,143 @@ baseline can fail for reasons unrelated to capacity and create a false advantage
 \label{sec:exp3_results}
 
 \subsubsection{Feature Selection and Dimensionality Reduction}
-Prior to evaluating the support vector machines, a dimensionality reduction sweep was conducted to determine the optimal number of features to extract from the frozen classical Baseline CNN. The sweep evaluated latent feature sizes up to 16. The results indicated that $f=12$ features provided the optimal trade-off; classification metrics plateaued beyond this point, and selecting $f=12$ minimized the substantial computational overhead associated with simulating larger qubit registers (Figure~\ref{fig:qsvm_feature_sweep}). Consequently, all subsequent QSVM and classical SVM baselines were standardized to 12 input features, mapped to a 12-qubit quantum register.
+Prior to evaluating the support vector machines, a dimensionality reduction sweep was
+conducted to determine how many pooled features to encode. As described in
+Section~\ref{sec:exp3_encoding}, these features are not learned: the raw 4096-bin flux is
+reduced by parameter-free adaptive average pooling to $N_{\text{features}}$ bins, one per
+qubit, so this sweep also fixes the size of the quantum register. Five widths were run,
+$f \in \{4, 6, 8, 12, 16\}$, each over the same four classes, the same seven training-set
+sizes and the same eight seeds, so the runs are directly comparable
+(Figure~\ref{fig:qsvm_feature_sweep}).
+
+All three models improve steeply up to $f=12$ and then stop improving. Averaged over all
+training-set sizes, going from $f=8$ to $f=12$ gains $+0.014$ accuracy for the classical
+RBF kernel and $+0.031$ for the fidelity kernel, whereas going from $f=12$ to $f=16$ gains
+only $+0.001$ and $+0.003$ respectively, neither significant under a paired Wilcoxon
+signed-rank test ($p=0.47$ and $p=0.13$, 56 paired measurements). The projected kernel
+peaks at $f=12$ and is slightly \emph{worse} at $f=16$ ($-0.006$, $p=0.11$), consistent
+with the kernel concentration expected as the register grows. Since the cost of simulating
+the register grows exponentially in the qubit count while accuracy does not, $f=12$ is the
+natural operating point. All subsequent QSVM and classical SVM baselines were therefore
+standardized to 12 input features mapped to a 12-qubit quantum register.
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.95\columnwidth]{Figures/qsvm_feature_sweep_f12.png}
-    \caption{Classification performance as a function of the number of extracted features ($f$). The performance plateaus at $f=12$, which was selected for the 12-qubit QSVM runs.}
+    \includegraphics[width=0.95\columnwidth]{Figures/qsvm_feature_sweep.png}
+    \caption{Classification accuracy as a function of the number of pooled features
+        $N_{\text{features}}$, which equals the number of qubits. Left: averaged over all
+        seven training-set sizes. Right: at the largest budget of $n=200$ samples per
+        class. Error bars are $95\%$ confidence intervals over the eight seeds. The dashed
+        vertical line marks $f=12$, the width selected for all reported runs: accuracy
+        rises steeply up to this point and is flat beyond it, while the simulation cost
+        keeps growing with the register size.}
     \label{fig:qsvm_feature_sweep}
 \end{figure}
 
 \subsubsection{Geometric Difference Pre-Screening (Phase 1)}
-To assess the potential for quantum advantage before extensive model training, we computed the geometric difference metric $g(C||Q)$ between the classical RBF kernel and each quantum kernel under the tuned bandwidth. For the fidelity kernel, $g(C||Q) = 1.89$ with an off-diagonal standard deviation of $0.2426$, constant across all regularization scales ($10^{-6}$ to $10^{-10}$). For the projected kernel, $g(C||Q) = 12.01$ with an off-diagonal standard deviation of $0.3294$. Values of $g(C||Q)$ approaching $1$ indicate that the quantum kernel is effectively equivalent to the classical kernel up to a trivial reparameterization, rendering a practical quantum advantage impossible \cite{huang2021power}. The fidelity kernel's value ($g = 1.89$) lies close to this regime: the bandwidth tuning brings it nearly into agreement with the classical RBF kernel, which is consistent with the near-identical few-shot accuracies reported in Phase 2. The projected kernel remains more distinct from the classical kernel ($g = 12.01$), yet this distinctness does not translate into any empirical advantage, underscoring that a large geometric difference is necessary but not sufficient for separation. Combined with the empirical results presented in Phase 2, the pre-screening is fully consistent with the absence of a practical advantage in this setting.
+To assess the potential for quantum advantage before extensive model training, we computed
+the geometric difference metric $g(K_C \| K_Q)$ between the classical RBF kernel and each
+quantum kernel at the reported encoding bandwidth ($c = 0.5$, selected in Phase 2). For the
+fidelity kernel, $g(K_C \| K_Q) = 3.95$ with an off-diagonal standard deviation of
+$0.2149$, constant across all regularization scales $\lambda$ ($10^{-6}$ to $10^{-10}$).
+For the projected kernel, $g(K_C \| K_Q) = 17.68$ with an off-diagonal standard deviation
+of $0.2651$. Values approaching $1$ indicate that the quantum kernel is effectively
+equivalent to the classical kernel up to a trivial reparameterization, rendering a
+practical quantum advantage impossible \cite{huang2021power}.
+
+Neither kernel sits in that degenerate regime at this bandwidth, so the pre-screen does
+\emph{not} rule out an advantage in advance; on this diagnostic alone both quantum kernels
+remain candidates. The screen is nonetheless informative in the opposite direction. Its
+value depends strongly on the encoding bandwidth, falling to $g = 1.89$ for the fidelity
+kernel at $c = 0.25$, so a small geometric difference here reflects a choice of encoding
+rather than an intrinsic property of the data. More importantly, the empirical results of
+Phase 2 show that this remaining geometric distinctness buys nothing: the projected kernel
+is the more distinct of the two ($g = 17.68$) and the weaker of the two in accuracy. A
+large geometric difference is therefore necessary but clearly not sufficient for a
+practical separation, which is the main lesson we draw from the pre-screening.
 
 \subsubsection{Scaling Sweep and Hyperparameter Tuning (Phase 2)}
-A multi-seed scaling sweep was conducted across varying training sample sizes ($n \in \{2, 5, 10, 20, 50, 100, 200\}$ samples per class) to evaluate few-shot learning capabilities. We compared a classical SVM with a Radial Basis Function (RBF) kernel against two QSVM variants: a fidelity kernel and a projected kernel. The sweep was evaluated at several regularization parameters $C$; the results for the optimal value ($C = 0.25$) are summarised in Table~\ref{tab:qsvm_scaling_results}.
+A multi-seed scaling sweep was conducted across varying training sample sizes ($n \in \{2, 5, 10, 20, 50, 100, 200\}$ samples per class) to evaluate few-shot learning capabilities. We compared a classical SVM with a Radial Basis Function (RBF) kernel against two QSVM variants: a fidelity kernel and a projected kernel. With $N_{\text{features}}$ fixed at 12, the remaining free quantity is the encoding bandwidth $c$ of the squashing function of Section~\ref{sec:exp3_encoding}, which controls how much of the available angular range the data occupies. The sweep was repeated over $c \in \{0.1, 0.25, 0.5, 0.75, 1.0, 1.5\}$. Note that $c$ is the encoding bandwidth and must not be confused with the SVM regularisation parameter $C$ of Section~\ref{sec:exp3_protocol}, which is a separate quantity.
 
-For small training sets ($n \le 20$), no statistically significant differences were observed between the classical RBF kernel and either quantum kernel (paired t-test and Wilcoxon signed-rank test, $p > 0.05$ in all cases). At $n = 10$, the fidelity kernel produced a slightly higher point estimate ($0.5191$ vs. $0.5124$ for classical RBF), but this difference was not significant ($p = 0.797$). For $n \ge 50$, the classical RBF kernel consistently achieved a statistically significant advantage over both quantum kernels ($p < 0.05$). Similar trends were observed for $C = 0.1$. In all cases, the pre-registered null hypothesis of a quantum advantage was rejected, confirming the absence of a practical advantage for the tested quantum kernels on this dataset.
+Because the headline result of this experiment is a negative one, we report the
+comparison at the bandwidth most favourable to the quantum kernels rather than at an
+arbitrary or a convenient one, so that the conclusion is stated at the challenger's best
+setting. Table~\ref{tab:qsvm_bandwidth} summarises the sweep. The fidelity kernel, the
+stronger of the two quantum models throughout, peaks in the few-shot regime at $c = 0.5$,
+and that bandwidth is also where the projected kernel attains its best large-sample
+accuracy; both degrade in either direction, towards kernel concentration as $c$ grows and
+towards an over-compressed encoding as $c$ shrinks. All results below are therefore
+reported at $c = 0.5$. We stress that the choice does not drive the conclusion: across
+every bandwidth and every feature width we ran, all $154$ pre-registered comparisons
+returned no advantage.
 
 \begin{table}[h]
     \centering
-    \caption{Few-shot scaling sweep results for Classical SVM (RBF) vs. QSVM (Fidelity and Projected Kernels) at $C=0.25$. ($n$ = training samples per class). Accuracies are reported with 95\% confidence intervals. No quantum advantage was observed at any scale.}
+    \caption{Encoding-bandwidth sweep at $N_{\text{features}} = 12$, mean test accuracy over eight seeds. ``Few-shot'' averages $n \in \{2,5,10,20\}$ samples per class. The tuned classical RBF baseline does not use the quantum encoding and is therefore identical at every bandwidth. The reported setting, $c = 0.5$, maximises the fidelity kernel in the few-shot regime.}
+    \label{tab:qsvm_bandwidth}
+    \begin{tabular}{@{}lcccc@{}}
+        \toprule
+                        & \multicolumn{2}{c}{\textbf{Fidelity}} & \multicolumn{2}{c}{\textbf{Projected}}                                       \\
+        \cmidrule(lr){2-3}\cmidrule(lr){4-5}
+        \textbf{$c$}    & Few-shot                              & $n{=}200$                              & Few-shot        & $n{=}200$          \\ \midrule
+        0.1             & 0.4255                                & 0.5865                                 & 0.4100          & 0.5923             \\
+        0.25            & 0.4655                                & 0.6543                                 & \textbf{0.4336} & 0.6818             \\
+        \textbf{0.5}    & \textbf{0.4918}                       & 0.7032                                 & 0.4316          & \textbf{0.6898}    \\
+        0.75            & 0.4878                                & \textbf{0.7089}                        & 0.4117          & 0.6579             \\
+        1.0             & 0.4648                                & 0.7026                                 & 0.3996          & 0.6120             \\
+        1.5             & 0.4112                                & 0.6611                                 & 0.3737          & 0.5313             \\ \midrule
+        Classical (RBF) & 0.4687                                & 0.7270                                 & 0.4687          & 0.7270             \\ \bottomrule
+    \end{tabular}
+\end{table}
+
+The tuning is not perfectly symmetric across the three models, and we state the asymmetry explicitly rather than leave it implicit. The classical RBF baseline and the projected kernel both receive the full $(C, \gamma)$ grid search at every evaluation point, because the projected kernel is by construction an RBF kernel on quantum-projected features and therefore runs through the same tuned classical solver. The fidelity kernel, which is fitted from a precomputed quantum Gram matrix, is trained at a fixed $C = 1$, and the quantity tuned on its behalf is the encoding bandwidth $c$ instead.
+
+The picture that emerges is one of parity in the few-shot regime followed by a classical
+win at scale. At its best bandwidth the fidelity kernel is in fact slightly \emph{ahead} of
+the tuned classical baseline for every training-set size up to $n = 50$, for example
+$0.5507$ against $0.5124$ at $n = 10$ and $0.6518$ against $0.6302$ at $n = 50$. Two of
+these gaps reach nominal significance under a paired $t$-test ($p = 0.030$ at $n=5$;
+$p = 0.021$ at $n=50$, Wilcoxon $p = 0.008$). None of them, however, satisfies the
+pre-registered criterion of Section~\ref{sec:exp3_philosophy}, which requires the lower
+bound of the quantum confidence interval to exceed the upper bound of the best classical
+one; the intervals overlap substantially at every point. We therefore record these as
+parity rather than as an advantage, exactly as the pre-registration was designed to
+enforce.
+
+The ordering reverses as data becomes plentiful. At $n = 200$ the classical RBF kernel is
+significantly ahead of both quantum kernels ($0.7270$ against $0.7032$ for fidelity,
+$p = 0.005$, and $0.6898$ for projected, $p = 0.001$), and it is the only model still
+improving appreciably at that point. The projected kernel trails the other two across
+almost the whole range despite having the largest geometric difference from the classical
+kernel. In all $154$ pre-registered comparisons, spanning every bandwidth and every feature
+width, the null hypothesis of a quantum advantage was never rejected, confirming the
+absence of a practical advantage for the tested quantum kernels on this dataset.
+
+\begin{table}[h]
+    \centering
+    \caption{Few-shot scaling sweep results for Classical SVM (RBF) vs. QSVM (Fidelity and Projected Kernels) at the reported encoding bandwidth $c=0.5$, the setting most favourable to the quantum kernels. ($n$ = training samples per class). Accuracies are reported with 95\% confidence intervals over eight seeds; the best mean per row is in bold. The fidelity kernel leads on the point estimate up to $n=50$, but no row satisfies the pre-registered advantage criterion, and the classical kernel is significantly ahead at $n=200$.}
     \label{tab:qsvm_scaling_results}
     \begin{tabular}{@{}lccc@{}}
         \toprule
         \textbf{$n$} & \textbf{Classical RBF}       & \textbf{QSVM Fidelity}       & \textbf{QSVM Projected} \\ \midrule
-        2            & \textbf{0.3628} [0.28, 0.43] & 0.3573 [0.28, 0.42]          & 0.3127 [0.25, 0.37]     \\
-        5            & \textbf{0.4268} [0.37, 0.48] & 0.4232 [0.35, 0.49]          & 0.4115 [0.36, 0.45]     \\
-        10           & 0.5124 [0.46, 0.55]          & \textbf{0.5191} [0.49, 0.54] & 0.4582 [0.42, 0.49]     \\
-        20           & \textbf{0.5727} [0.53, 0.60] & 0.5624 [0.53, 0.59]          & 0.5519 [0.51, 0.58]     \\
-        50           & \textbf{0.6302} [0.61, 0.64] & 0.6097 [0.59, 0.62]          & 0.5742 [0.54, 0.60]     \\
-        100          & \textbf{0.6765} [0.66, 0.69] & 0.6367 [0.62, 0.64]          & 0.6269 [0.59, 0.65]     \\
-        200          & \textbf{0.7270} [0.71, 0.74] & 0.6543 [0.64, 0.66]          & 0.6818 [0.66, 0.69]     \\ \bottomrule
+        2            & 0.3628 [0.29, 0.44]          & \textbf{0.3755} [0.30, 0.45] & 0.3349 [0.27, 0.40]     \\
+        5            & 0.4268 [0.37, 0.48]          & \textbf{0.4507} [0.40, 0.51] & 0.3935 [0.33, 0.45]     \\
+        10           & 0.5124 [0.47, 0.56]          & \textbf{0.5507} [0.52, 0.58] & 0.4806 [0.44, 0.52]     \\
+        20           & 0.5727 [0.54, 0.61]          & \textbf{0.5904} [0.56, 0.62] & 0.5175 [0.48, 0.56]     \\
+        50           & 0.6302 [0.61, 0.65]          & \textbf{0.6518} [0.63, 0.67] & 0.6047 [0.58, 0.63]     \\
+        100          & \textbf{0.6765} [0.66, 0.69] & 0.6718 [0.66, 0.68]          & 0.6427 [0.63, 0.66]     \\
+        200          & \textbf{0.7270} [0.71, 0.74] & 0.7032 [0.70, 0.71]          & 0.6898 [0.67, 0.71]     \\ \bottomrule
     \end{tabular}
 \end{table}
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.95\columnwidth]{Figures/qsvm_scaling_sweep.png}
-    \caption{Classification accuracy as a function of training samples per class ($n$) for $C=0.25$.}
+    \caption{Classification accuracy as a function of training samples per class ($n$) at
+        the reported encoding bandwidth $c = 0.5$, with shaded $95\%$ confidence intervals
+        over eight seeds. The fidelity kernel tracks or slightly exceeds the tuned
+        classical baseline up to $n=50$ with heavily overlapping intervals, and is
+        overtaken as the training set grows.}
     \label{fig:qsvm_scaling}
 \end{figure}
 

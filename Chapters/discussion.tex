@@ -200,13 +200,35 @@ end, which is consistent with the parity between quantum and classical heads fou
 both experiments.
 
 \subsection{Absence of Quantum Advantage in Few-Shot SVM Classification}
-The results of \hyperref[sec:exp3_results]{Experiment 3} conclusively demonstrate a lack of empirical quantum advantage when deploying a QSVM on the CNN-extracted latent features. Across all few-shot regimes, the classical RBF kernel systematically matched or outperformed the quantum fidelity and projected kernels.
+The results of \hyperref[sec:exp3_results]{Experiment 3} demonstrate the absence of a
+practical quantum advantage for a QSVM operating directly on pooled raw flux. The finding
+is more nuanced than a simple classical win. Reported at the encoding bandwidth most
+favourable to it, the fidelity kernel is marginally ahead of the tuned classical RBF
+baseline on the point estimate for every training-set size up to $n = 50$, but the
+confidence intervals overlap throughout and the pre-registered criterion is never met, so
+the honest reading of the few-shot regime is parity. The ordering then reverses: as the
+training set grows the classical kernel pulls significantly ahead, and the projected
+kernel trails both. What the experiment rules out is therefore not a small quantum edge in
+the data-starved corner, but a quantum advantage that survives scrutiny and scales.
 
-This outcome can be analyzed through the theoretical constraints of the respective kernel spaces. The classical RBF kernel implicitly maps input vectors into an infinite-dimensional functional space. This continuous, unconstrained mapping is highly effective at establishing linear decision boundaries within complex, highly correlated data manifolds, such as the spectrographic features extracted by our Baseline CNN.
+This outcome can be analyzed through the theoretical constraints of the respective kernel spaces. The classical RBF kernel implicitly maps input vectors into an infinite-dimensional functional space. This continuous, unconstrained mapping is highly effective at establishing linear decision boundaries within complex, highly correlated data manifolds, such as the pooled spectral bins used here.
 
-In contrast, the QSVM feature map is strictly bounded by the dimensionality of its corresponding Hilbert space. For the optimal feature set of $f=12$, the quantum circuit explores a $2^{12}$-dimensional space. While theoretically vast, the expressivity of this space is governed by discrete parameterized rotations and Pauli expansions. For this specific astronomical dataset, the rigid, periodic nature of the quantum feature map lacked the geometric flexibility inherent to the infinite-dimensional RBF kernel. The quantum mapping forced the data into a high-dimensional topology that did not naturally shatter the symmetric confusion pairs (e.g., starburst and star-forming subclasses) any better than classical density estimation.
+In contrast, the QSVM feature map is strictly bounded by the dimensionality of its corresponding Hilbert space. For the optimal feature set of $f=12$, the quantum circuit explores a $2^{12}$-dimensional space. While theoretically vast, the expressivity of this space is governed by discrete parameterized rotations and Pauli expansions, and it is fixed once the feature map is chosen. This is a plausible explanation for the specific shape of the result, namely that the quantum kernels keep pace while data is scarce and fall behind once it is not: the rigid, periodic quantum feature map cannot refine itself as more samples arrive, whereas the tuned RBF kernel continues to exploit the geometric flexibility of its infinite-dimensional space. The quantum mapping forced the data into a high-dimensional topology that did not naturally shatter the symmetric confusion pairs (e.g., starburst and star-forming subclasses) any better than classical density estimation.
 
-Furthermore, this empirical failure was accurately predicted by the geometric difference metric, $g(C||Q) \approx 1.89$, calculated during Phase 1. As established by Huang et al. (2021) \cite{huang2021power}, a low $g(C||Q)$ signifies that the classical and quantum kernels are geometrically aligned, meaning the latent features extracted by the 14-million parameter classical network were already sufficiently structured. Mapping these already highly processed features into a quantum state space introduced redundant parameterization rather than uncovering novel, exploitable linear separability.
+The geometric-difference pre-screen is instructive here, though not in the way we initially
+expected. At the reported bandwidth neither kernel is geometrically degenerate
+($g(K_C \| K_Q) = 3.95$ for the fidelity kernel and $17.68$ for the projected kernel), so
+the diagnostic of Huang et al. \cite{huang2021power} does not predict the null result in
+advance: on this measure both quantum kernels induce a similarity structure that a
+classical RBF kernel does not trivially reproduce. That distinctness simply fails to pay
+off. The clearest illustration is that the projected kernel, by far the more geometrically
+distinct of the two, is also the weaker classifier at nearly every sample size. A large
+geometric difference is thus a necessary but far from sufficient condition for a practical
+separation, and we regard this as the more useful methodological lesson than the screen's
+intended role as an early stopping criterion. The metric is also strongly
+encoding-dependent, dropping to $g = 1.89$ for the same kernel at a different bandwidth,
+which means it characterises the chosen feature map at least as much as it characterises
+the data.
 
 \subsection{Interpreting the Absence of a Quantum Advantage}
 \label{sec:discussion_exp4}
