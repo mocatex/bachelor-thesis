@@ -51,9 +51,28 @@ since the projection that chooses which few numbers reach the circuit matters fa
 than the number of qubits, with a learned projection reaching 96\% while an unsupervised
 one capped near 76\% on the very same circuit.
 \subsection{Classical Limitations and Quantum Machine Learning Motivation}
-The empirical results from the 62-class Baseline CNN expose the inherent topological limitations of classical feature extractors when navigating highly correlated, continuous physical manifolds. While the network successfully separated broad macro-categories (as evidenced by the robust $92.51\%$ accuracy in the coarse 13-class GaSNet-II task), its discriminatory power degraded rapidly when tasked with fine-grained subclass separation.
+The 62-class Baseline CNN shows a clear split between coarse and fine-grained
+performance. The network separates the broad macro-categories well, as its
+$92.51\%$ accuracy on the coarse 13-class GaSNet-II task indicates, but its
+per-class recall drops substantially on fine-grained subclasses, falling as low as
+$35.2\%$ for \texttt{STAR\_A5}. We report this as an observation about this
+network on this dataset. It would take an architecture study we did not run to
+establish that the limit is intrinsic to classical feature extractors rather than
+specific to the model, the training budget or the label taxonomy we used.
 
-The persistent presence of symmetric confusion pairs (e.g., \texttt{STAR\_A5} $\leftrightarrow$ \texttt{STAR\_F0} and \texttt{QSO\_STARBURST} $\leftrightarrow$ \texttt{QSO\_STARBURST\_BROADLINE}) indicates localized regions in the latent space where classical decision boundaries fail to linearly separate the data. Furthermore, the low precision of classes like \texttt{GALAXY\_BROADLINE} implies that the model utilizes specific labels as a ``sink'' for uncertain spectral signatures, lacking the geometric capacity to resolve the ambiguity. These specific classical failure modes provide the fundamental motivation for our subsequent Quantum Machine Learning (QML) experiments.
+Two patterns in the confusion matrix (Appendix~\ref{app:baseline_confusion}) are
+consistent across runs. Symmetric confusion pairs such as \texttt{STAR\_A5}
+$\leftrightarrow$ \texttt{STAR\_F0} and \texttt{QSO\_STARBURST} $\leftrightarrow$
+\texttt{QSO\_STARBURST\_BROADLINE} suggest regions of the learned representation
+where the two classes are not well separated in either direction, which is what
+one would expect for classes that lie adjacent on a continuous physical sequence.
+Separately, classes such as \texttt{STAR\_F0} and \texttt{GALAXY\_NORMAL} absorb
+a large amount of foreign probability mass, behaving as sinks for spectra the
+model cannot confidently assign. Whether a richer representation could resolve
+these cases is precisely the open question, and it is what motivated us to target
+these specific hard pairs in the Quantum Machine Learning experiments that
+follow. We stress that this is a motivation for the experiments rather than a
+prediction of their outcome.
 
 
 \subsection{Spectral Attention of the Hybrid Model}
@@ -95,51 +114,18 @@ artefact of the convolution rather than a real feature.
     \label{fig:gradcam}
 \end{figure*}
 
-What makes this result reassuring is that the regions the model relies on are the same
-ones an astronomer would use. These two classes are separated physically by their
-broad emission lines and by the slope of their continuum. Broadline objects are
+What makes this result reassuring is that the regions the model relies on are the
+ones that established spectral classification also keys on. These two classes are
+separated physically by their broad emission lines and by the slope of their continuum. Broadline objects are
 defined by exactly these wide emission features, and a blue quasar continuum looks
 clearly different from the redder galaxy continuum. The long-standing template-fitting
 pipelines that classify SDSS spectra key on the same structure, matching an observed
 spectrum against templates whose emission lines and continuum shape encode the
-class~\cite{bolton2012boss}. The fact that the model concentrates on these features,
-and not on flat or noise-dominated regions, is therefore good evidence that it has
-learned the genuinely discriminative parts of the spectrum rather than a spurious
-shortcut.
-
-This also reinforces the structural reading of our hybrid models, but it needs to be
-stated carefully. The hard part of the task is feature extraction, deciding which
-parts of the spectrum matter, and only the classical front end can do this, since the
-quantum circuit never receives the wavelength axis and sees just a handful of
-already-compressed numbers. The head that follows, quantum or classical, still has a
-job to do, namely mapping those features to a decision, and it has to be built
-competently. The collapse of the dead-ReLU control in the four-class
-experiment makes this clear, since a poorly built head fails even on good features. What that same experiment also
-shows is that the head can be small and that its quantum-versus-classical nature makes
-no difference once the features are good, since a 556-parameter head matched a
-nine-times-larger one as soon as it used a robust activation. The picture is therefore
-not that the head is irrelevant, but that the discriminative work of finding the right
-spectral features happens in the classical extractor, while the head only has to use
-them, which is consistent with the parity between the quantum and classical heads found
-in both experiments.
-
-\subsection{Limitations}
-\label{sec:limitations}
-
-Several limitations bound these conclusions. All quantum models were run on a noiseless
-classical statevector simulator rather than on real hardware. This is the most
-favourable possible setting for the quantum side, since real devices add noise, shot
-statistics and decoherence that can only reduce performance, so the absence of an
-advantage here is if anything a stronger result than it would be on hardware. The
-circuits were also restricted to eight qubits or fewer, which is realistic for
-near-term devices but limits how much of each spectrum the quantum stage can ever see.
-The study covers a single scientific domain, the SDSS spectra, and a small number of
-hard class pairs rather than the full survey. Finally, the quantum circuit is a tiny
-fraction of each model, a few dozen parameters against tens of thousands in the
-classical stages, so the experiments test one specific hybrid regime rather than
-quantum machine learning in general and the seed counts in the sweep are modest, so
-the small differences between configurations should be read as indicative rather than
-conclusive.
+class~\cite{bolton2012boss}. That the model concentrates on these features, and not
+on flat or noise-dominated regions, is therefore reasonable evidence that it has
+picked up genuinely discriminative structure rather than a spurious shortcut,
+although attribution methods show where a model looks and not why, so we do not
+treat this as proof that no shortcut is present.
 
 That the model concentrates on emission lines and the continuum slope is not only
 physically intuitive but is what an optimal classifier should do. To make this precise
@@ -191,13 +177,47 @@ the optimal discriminant $w^{\ast}$ is the sense in which looking at these spect
 regions is not an arbitrary choice but the mathematically correct way to separate the
 two classes.
 
-This argument also reinforces the structural reading of our hybrid models. The optimal
-discriminant of \eqref{eq:fisher} is a function of the raw spectrum, and the classical
-extractor is the only component that can represent it, since the quantum circuit never
-sees the wavelength axis. Whatever discriminative power a model of this family obtains
-comes from learning $w^{\ast}$, or its nonlinear generalisation, in the classical front
-end, which is consistent with the parity between quantum and classical heads found in
-both experiments.
+This also reinforces the structural reading of our hybrid models, but it needs to be
+stated carefully. The hard part of the task is feature extraction, deciding which
+parts of the spectrum matter, and only the classical front end can do this, since the
+quantum circuit never receives the wavelength axis and sees just a handful of
+already-compressed numbers. The discriminant $w^{\ast}$ of \eqref{eq:fisher} makes
+the same point formally: it is a function of the raw spectrum, so the classical
+extractor is the only component of our pipeline that could represent it. The head that follows, quantum or classical, still has a
+job to do, namely mapping those features to a decision, and it has to be built
+competently. The collapse of the dead-ReLU control in the four-class
+experiment makes this clear, since a poorly built head fails even on good features. What that same experiment also
+shows is that the head can be small and that its quantum-versus-classical nature makes
+no difference once the features are good, since a 556-parameter head matched a
+nine-times-larger one as soon as it used a robust activation. The picture is therefore
+not that the head is irrelevant, but that the discriminative work of finding the right
+spectral features happens in the classical extractor, while the head only has to use
+them, which is consistent with the parity between the quantum and classical heads found
+in both experiments.
+
+\subsection{Limitations}
+\label{sec:limitations}
+
+Several limitations bound these conclusions. All quantum models were run on a noiseless
+classical statevector simulator rather than on real hardware. For the variational and
+kernel methods studied here this is the most favourable setting, since real devices add
+noise, shot statistics and decoherence that can only degrade a circuit trained to
+implement a specific unitary, so the absence of an advantage here is if anything a
+stronger result than it would be on hardware. We note that this reasoning is specific to
+the model families we test and does not generalise to all of quantum machine learning;
+in quantum reservoir computing, for instance, device noise and dissipation form part of
+the computational resource rather than a nuisance, so a noiseless simulator would not be
+the most favourable setting there. The
+circuits were also restricted to eight qubits or fewer, which is realistic for
+near-term devices but limits how much of each spectrum the quantum stage can ever see.
+The study covers a single scientific domain, the SDSS spectra, and a small number of
+hard class pairs rather than the full survey. Finally, the quantum circuit is a tiny
+fraction of each model, a few dozen parameters against tens of thousands in the
+classical stages, so the experiments test one specific hybrid regime rather than
+quantum machine learning in general and the seed counts in the sweep are modest, so
+the small differences between configurations should be read as indicative rather than
+conclusive.
+
 
 \subsection{Absence of Quantum Advantage in Few-Shot SVM Classification}
 The results of \hyperref[sec:exp3_results]{Experiment 3} demonstrate the absence of a
@@ -213,7 +233,7 @@ the data-starved corner, but a quantum advantage that survives scrutiny and scal
 
 This outcome can be analyzed through the theoretical constraints of the respective kernel spaces. The classical RBF kernel implicitly maps input vectors into an infinite-dimensional functional space. This continuous, unconstrained mapping is highly effective at establishing linear decision boundaries within complex, highly correlated data manifolds, such as the pooled spectral bins used here.
 
-In contrast, the QSVM feature map is strictly bounded by the dimensionality of its corresponding Hilbert space. For the optimal feature set of $f=12$, the quantum circuit explores a $2^{12}$-dimensional space. While theoretically vast, the expressivity of this space is governed by discrete parameterized rotations and Pauli expansions, and it is fixed once the feature map is chosen. This is a plausible explanation for the specific shape of the result, namely that the quantum kernels keep pace while data is scarce and fall behind once it is not: the rigid, periodic quantum feature map cannot refine itself as more samples arrive, whereas the tuned RBF kernel continues to exploit the geometric flexibility of its infinite-dimensional space. The quantum mapping forced the data into a high-dimensional topology that did not naturally shatter the symmetric confusion pairs (e.g., starburst and star-forming subclasses) any better than classical density estimation.
+In contrast, the QSVM feature map is strictly bounded by the dimensionality of its corresponding Hilbert space. For the optimal feature set of $f=12$, the quantum circuit explores a $2^{12}$-dimensional space. While theoretically vast, the expressivity of this space is governed by discrete parameterized rotations and Pauli expansions, and it is fixed once the feature map is chosen. This is a plausible explanation for the specific shape of the result, namely that the quantum kernels keep pace while data is scarce and fall behind once it is not: the rigid, periodic quantum feature map cannot refine itself as more samples arrive, whereas the tuned RBF kernel continues to exploit the geometric flexibility of its infinite-dimensional space. We offer this as an interpretation consistent with our measurements rather than as a demonstrated mechanism, since we did not vary the feature map systematically enough to isolate it. What the data does show plainly is that the quantum feature map separated the symmetric confusion pairs (for example the starburst and star-forming subclasses) no better than the classical kernel.
 
 The geometric-difference pre-screen is instructive here, though not in the way we initially
 expected. At the reported bandwidth neither kernel is geometrically degenerate
@@ -239,7 +259,7 @@ First, training the variational circuit provided no benefit. Under the heavy hea
 
 Second, the light-head ablation reveals where the filters differ. Removing the deep head degraded both models, but the quantum filter degraded more, showed higher variance across seeds, and was significantly worse under adversarial training ($p=0.014$). The quantum feature map is thus less linearly separable and less stable in a shallow regime than the classical filter.
 
-Third, the Jacobian analysis does not support an intrinsic-smoothness interpretation. The ordering of smoothness reversed between heavy and light heads, and the probe acts on trained weights, it characterises the learned solution, not a fixed property of the circuit.
+Third, the Jacobian analysis does not support an intrinsic-smoothness interpretation. As reported in Section~\ref{sec:exp4_results} and Figure~\ref{fig:exp4_jacobian_dists}, the ordering of smoothness reverses between the two configurations: under the heavy head the quantum filter is significantly smoother ($0.747$ versus $1.052$ for OOD, $p=0.006$), while under the light head the classical filter has the lower median norm ($0.282$ versus $0.559$). Because the probe acts on trained weights, it characterises the learned solution in each regime rather than a fixed property of the circuit.
 
 In summary, for 1D spectral classification under a fair parameter budget, this hybrid design yields no robustness advantage over a matched classical filter. The high accuracy of the heavy-head network is attributable to its classical components.
 
@@ -251,12 +271,71 @@ In summary, for 1D spectral classification under a fair parameter budget, this h
 
 Experiment~5 serves as a negative control. The QCNN architecture \cite{cong2019qcnn} was designed to exploit structures native to quantum states, guaranteeing the absence of barren plateaus \cite{pesah2021absence}. Embedding classical astronomical flux removes this foundational premise. Consequently, we observe no absolute quantum advantage over an unconstrained classical network.
 
-However, the experiment reinforces the necessity of parameter-matched baselines. While the unconstrained Huge CNN outperforms the QCNN across most quadrants, the QCNN strictly dominates the parameter-matched Tiny CNN, particularly in the few-shot regime where the classical filter degenerates to chance. This localizes the practical utility of quantum inductive bias strictly to the data-starved, heavily constrained parameter regime.
+However, the experiment reinforces the necessity of parameter-matched baselines.
+The comparison involves two classical controls, introduced in
+Section~\ref{sec:exp5_results}: the \emph{Tiny CNN} is a severely constrained 1D
+convolutional network of roughly $100$ trainable weights, chosen to match the
+QCNN's budget exactly and therefore serving as the strict-parity control, while
+the \emph{Huge CNN} is an unconstrained $8228$-parameter network that marks the
+upper bound of classical performance on the same data.
 
-This few-shot resilience aligns with the theoretical bounds of Caro et al. \cite{caro2022generalization}, who proved that generalization error in variational models scales with gate count. The 101-gate quantum core maintains functional accuracy at 20 samples per class, whereas the equivalent classical filter overfits and collapses. The QCNN possesses a strong inductive bias, but it manifests as sample efficiency under a strict capacity budget, not as scalable representational power.
+Against these two the picture depends on which metric is read, and it is worth
+separating them. On clean accuracy the QCNN is ahead of the Tiny CNN in all four
+quadrants, and the margin is large where data is scarce ($0.52$ versus $0.31$ in
+Q3 and $0.48$ versus $0.29$ in Q4, against a chance level of $0.25$). On
+robustness AUC the ordering is less uniform: the QCNN leads in Q2, Q3 and Q4 but
+\emph{trails} the Tiny CNN in Q1 ($0.408$ versus $0.462$), and of the four
+comparisons only Q4 reaches significance ($p = 0.027$; see
+Table~\ref{tab:exp5_wilcoxon}). The Hybrid QCNN is the more consistent of the two
+quantum models against strict parity. We would therefore not claim that the QCNN
+dominates its matched control outright; the defensible statement is that under a
+tight parameter budget the quantum models remain usable in regimes where the
+matched classical network collapses, while the unconstrained Huge CNN remains
+ahead on clean accuracy throughout. This points to the data-starved, heavily
+constrained regime as the place where a quantum inductive bias might matter,
+though four quadrants on one dataset can only be suggestive.
 
-The ablation study isolates the pure QCNN's fragility directly to its state preparation. Because both variants share the same convolution and pooling blocks, the hybrid model's uniform superiority proves that direct amplitude encoding is inherently vulnerable. Distributing the raw 4096-bin spectrum across a global $L_2$-normalized state allows high-frequency noise to corrupt the entire vector multiplicatively \cite{schuld2021encoding}. Classically-assisted angle encoding circumvents this by compressing the signal into bounded, localized rotations.
+This few-shot behaviour is at least consistent with the direction of the bound of
+Caro et al.~\cite{caro2022generalization}, who show that the generalization error
+of a variational model scales with the number of trainable gates. The quantum
+core in question is the weight-shared hierarchy described in
+Section~\ref{sec:exp5_arch}, alternating $SU(4)$ convolution blocks with coherent
+pooling as the register is reduced from twelve qubits to six and then to three,
+followed by a linear readout, for roughly $101$ trainable parameters in total.
+That core retains usable accuracy at twenty samples per class, whereas the
+similarly sized classical filter overfits and collapses towards chance. We note
+that the bound is stated in trainable gates rather than parameters and was
+derived for a different setting, so we read the agreement as qualitative support
+rather than as a quantitative confirmation. On our evidence the QCNN's inductive
+bias shows up as sample efficiency under a strict capacity budget rather than as
+scalable representational power.
 
-Finally, the Jacobian analysis confirms textbook capacity dynamics \cite{szegedy2013intriguing, sokolic2017robust}. Under clean, high-data training, the over-parameterized Huge CNN forms a rough, sensitive map, while the constrained quantum map is demonstrably smoother and more robust. However, this smoothness is regime-dependent. Adversarial training flattens all Jacobians, and in few-shot regimes, the Tiny CNN's near-zero norm indicates mathematical collapse (underfitting) rather than genuine robustness.
+The encoding ablation points to state preparation as the source of the pure
+QCNN's fragility. Because both variants share the same convolution and pooling
+blocks and differ only in how the spectrum is loaded, the hybrid model's higher
+robustness AUC in all four quadrants is most readily explained by the encoding
+rather than by the quantum architecture. A mechanism is available: distributing
+the raw 4096-bin spectrum across a globally $L_2$-normalised state lets
+high-frequency noise reshape the entire amplitude vector at once
+\cite{schuld2021encoding}, whereas classically-assisted angle encoding confines
+the perturbation to bounded, localised rotations. With a single ablation on one
+dataset we regard this as strong evidence for the encoding being the weak point
+in our setup, though not as a general statement about amplitude encoding.
+
+Finally, the Jacobian analysis is consistent with textbook capacity dynamics
+\cite{szegedy2013intriguing, sokolic2017robust}. The measurements are collected
+in Table~\ref{tab:exp5_jacobian} and Figure~\ref{fig:exp5_jacobian}. Under clean
+high-data training (Q1) the over-parameterised Huge CNN has by far the roughest
+map, with a median spectral norm of $5.73$ against $3.52$ for the QCNN, and it is
+also the least robust model in that quadrant, so smoothness and robustness move
+together there. The effect is regime-dependent rather than a fixed property of
+the architecture. Adversarial training flattens every model's Jacobian, with all
+four dropping to between $1.90$ and $2.36$ in Q2, which compresses the
+differences between them. In the few-shot quadrants the Tiny CNN reaches the
+smallest norm of any model ($0.19$ in Q3 and $0.18$ in Q4), but this cannot be
+read as robustness, since the same model sits near chance accuracy there; the
+near-zero norm reflects collapse to an almost constant function. Smoothness is
+therefore only interpretable alongside accuracy, and we would not treat a low
+Jacobian norm on its own as evidence of a well-behaved model.
 
 Ultimately, this experiment concludes the QML sequence with a consistent structural finding: across feature extraction, kernel methods, and fully coherent convolutions, variational quantum models achieve classical parity under matched conditions. Their distinct characteristics emerge in sample efficiency, regularization, and encoding sensitivity, rather than raw top-line dominance over unconstrained classical architectures.

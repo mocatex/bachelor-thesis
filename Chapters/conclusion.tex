@@ -15,7 +15,7 @@ classical baseline is competitive with the published state of the art and that t
 coarse classification problem is essentially solved. This baseline also served as the
 frozen feature extractor for the later experiments.
 
-On top of this foundation we tested four different quantum approaches. A variational
+On top of this foundation we tested five different quantum approaches. A variational
 quantum circuit on the hardest binary pair reached the same accuracy as its
 parameter-matched classical mirror. Quantum and classical heads on frozen features both
 reached about 96\% on a four-class task, with no parameter-efficiency benefit for the
@@ -23,8 +23,14 @@ quantum head. Quantum support vector machines showed no advantage in the few-sho
 regime and were overtaken by a classical kernel as the training set grew. A
 quanvolutional filter was statistically indistinguishable from a parameter-matched
 classical filter under increasing noise, and the only significant difference favoured
-the classical model. Across every paradigm the result was the same, namely parity at
-best and no quantum advantage.
+the classical model. Finally, a fully coherent quantum convolutional network, used as a
+negative control on classically embedded data, gained nothing over an unconstrained
+classical network. Across every paradigm the result was parity at best and no quantum
+advantage that scales. The one exception is narrow and worth stating precisely: with
+training data deliberately scarce, the QCNN held its accuracy where an equally small
+classical model collapsed towards chance. We read that as its small and rigid design
+helping it learn from few examples rather than as evidence of richer representational
+power, since the same model gains nothing once data is plentiful.
 
 Just as important as the null result is how it was reached. In two separate experiments
 an apparent quantum advantage appeared and then dissolved under scrutiny, once traced
@@ -34,8 +40,9 @@ contribution. The work delivers a disciplined fair-comparison methodology, with
 parameter matching, shared pipelines, robust classical controls, multiple seeds and
 statistical testing, and it demonstrates concretely that apparent quantum advantages
 must be treated as hypotheses to be ruled out rather than as results. Because all
-circuits were simulated without noise, the most favourable possible setting for quantum
-hardware, the absence of an advantage is a conservative and robust conclusion. For the
+circuits were simulated without noise, which is the most favourable setting for the
+variational methods studied here, the absence of an advantage is a conservative and
+robust conclusion. For the
 spectral classification tasks studied here, and at the scales reachable on near-term
 devices, quantum machine learning matched but did not beat a carefully built classical
 model.

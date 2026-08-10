@@ -91,23 +91,41 @@ proposed the quanvolutional layer, in which a small fixed or trainable quantum
 circuit is slid across a classical input like a convolutional kernel, transforming
 local patches into feature maps that a classical network then processes. The
 quanvolutional approach is the one most relevant to this thesis, since it applies a
-small circuit repeatedly to a large classical signal rather than once at a bottleneck 
+small circuit repeatedly to a large classical signal rather than once at a bottleneck
 and our noise-robustness experiment builds directly on it.
 
-% TODO: Moritz here also maybe add something since you did something with this.
+Both lines are taken up directly in this work, and in both cases we adapt them from the
+two-dimensional image setting in which they were introduced to the one-dimensional
+spectra studied here. Experiment~4 follows Henderson et
+al.~\cite{henderson2020quanvolutional} with a quanvolutional filter slid along the
+wavelength axis, and asks a question their original work does not, namely whether the
+bounded, unitary nature of the quantum feature map yields any robustness to input noise
+once the classical filter it replaces is held to the same parameter count. Experiment~5
+implements the QCNN of Cong et al.~\cite{cong2019qcnn} in full, with weight-shared
+$SU(4)$ convolutions and coherent pooling, and uses it as a negative control. The
+architecture was designed for quantum data such as phases of matter, so applying it to a
+classically measured spectrum removes the premise it was built on; what remains testable
+is whether its inductive bias and its guaranteed absence of barren
+plateaus~\cite{pesah2021absence} still buy anything once the input has to be embedded
+classically. To our knowledge neither question has been examined on astronomical spectra.
 
 \subsection{Positioning of this Thesis}
 \label{sec:rel_position}
 
 The work above leaves room for a focused study. Deep learning is the established tool
 for spectral classification and variational quantum circuits are an actively studied
-alternative, but fair, equal-capacity comparisons of the two on a realistic scientific
-signal remain uncommon.
-% To acknowledge prior QML benchmarking work, add a citation here, e.g. \cite{}.
-A common pattern in applied quantum machine learning places a powerful
-classical network in front of a small circuit and credits the result to the quantum
-component without an equal-capacity classical control. This thesis contributes one such
-comparison by benchmarking hybrid variational circuits against parameter-matched
+alternative, but comparing the two fairly is harder than it looks. We are not the first
+to make this point. Schuld and Killoran~\cite{schuld2022advantage} argue that chasing a
+demonstration of quantum advantage is often the wrong framing for quantum machine
+learning research, and Bowles et al.~\cite{bowles2024benchmarking} show empirically that
+many reported advantages do not survive comparison against properly tuned classical
+models of matched capacity, and that benchmarking practice in the field is frequently
+too weak to support the claims built on it. Our methodological stance is theirs, applied
+to a specific scientific domain. In particular, a common pattern in applied quantum
+machine learning places a powerful classical network in front of a small circuit and
+credits the result to the quantum component without an equal-capacity classical control.
+What this thesis adds is a systematic instance of such a comparison on a realistic
+scientific signal, benchmarking hybrid variational circuits against parameter-matched
 classical models on hard SDSS subclass tasks. Both sides use the same data and the same surrounding
 pipeline. The classical control is built with the same care as the quantum model. We
 study five settings, a variational circuit on the hardest binary pair, a hybrid

@@ -189,6 +189,17 @@ are noise in the model-selection metric rather than a failure to learn.
     \label{fig:exp1_training}
 \end{figure*}
 
+The 30-epoch budget deserves a comment, since it is short by the standards of the
+62-class baseline. It is nevertheless sufficient here, because both curves in
+Figure~\ref{fig:exp1_training} flatten well before the end: the training loss is
+essentially level over the final third of training and the validation loss stops
+improving, so the models are converged rather than cut off mid-descent. The budget is
+also applied identically to the quantum model and the classical mirror, so it cannot
+bias the comparison in either direction, and it was chosen to keep the full sweep of
+seven configurations across three seeds tractable under statevector simulation. What a
+longer schedule could plausibly change is the absolute accuracy of both models by a
+small margin, not the parity between them.
+
 \subsubsection{Summary of Findings}
 
 Experiment 1 finds no quantum accuracy advantage on the hardest binary pair. Across
@@ -378,10 +389,17 @@ training, which is a stochastic-gradient effect on small batches, but their
 validation loss is smooth and monotonic, so the noise is in the optimiser rather
 than in generalisation. The generalisation gap is essentially zero for the
 556-parameter heads, as expected given the frozen backbone. The quantum head is far
-more expensive to train, since each forward and backward pass is a statevector
-simulation of the circuit that costs seconds per epoch on CPU, against milliseconds
-for the classical heads, and on real quantum hardware it would additionally face
-shot noise and decoherence.
+more expensive to train in our setup, since each forward and backward pass is a
+statevector simulation of the circuit that costs seconds per epoch on CPU, against
+milliseconds for the classical heads. This gap should not be read as a statement about
+the cost of quantum computation. Simulating a quantum circuit on a classical processor
+is exponentially expensive in the number of qubits by construction, so what the
+measurement captures is the price of emulation, not a property the models would carry
+over to hardware. We report it because it is the cost we actually incurred and because
+it bounds what is feasible to sweep in a study of this kind, not as a fair axis of
+comparison between the two model families. On real quantum hardware the relevant costs
+would be different in kind, dominated by shot noise, decoherence and queueing rather
+than by simulation time.
 
 \subsubsection{Summary of Findings}
 

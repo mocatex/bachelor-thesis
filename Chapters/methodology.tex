@@ -188,6 +188,18 @@ To achieve this, the architecture combines three distinct paradigms. First, a mu
 
 To prevent the dead-neuron collapse observed in early trials with ReLU activations, the entire network relies on the Gaussian Error Linear Unit (GELU) \cite{hendrycks2016gaussian}, ensuring smoother gradient flow throughout the deep pipeline.
 
+\textbf{Hyperparameters.} We should be explicit that the remaining architectural
+constants were not tuned. The two Transformer layers, the eight attention heads, the
+feed-forward width of 2048, the OneCycle peak learning rate of $10^{-3}$ and the weight
+decay of $10^{-4}$ are conventional defaults for networks of this shape, chosen by hand
+and adjusted only where a training run visibly failed. No systematic hyperparameter
+search was run over them, for the practical reason that a single 300-epoch run on the
+full 62-class dataset is expensive and the baseline's role here is to be a strong and
+honestly trained reference rather than an optimum. The consequence is that the reported
+$84.5\%$ should be read as a solid achievable accuracy for this architecture rather than
+as its ceiling, which if anything makes the classical side of every later comparison
+conservative.
+
 \textbf{Provenance.} The Beast is our own design and we make no claim that it is a novel
 astrophysical architecture. It is assembled entirely from established components, the
 multi-scale stem of Inception-style networks~\cite{szegedy2015going}, Squeeze-and-Excitation
@@ -291,7 +303,7 @@ those of the majority classes, and concentrating the gradient on the harder,
 underrepresented ones. This approach led to more stable training and improved performance
 on the minority classes.
 
-Beyond serving as the frozen backbone for \hyperref[sec:exp2_methods]{Experiment 2}, the baseline plays a crucial diagnostic role. During evaluation, a custom metric tracker generates a row-normalized confusion matrix to compute per-class recall. More importantly, it performs an automated algorithmic analysis to extract "Mirrors" (symmetric confusion pairs where the CNN frequently mistakes class A for class B and vice versa) and "Black Holes" (sink classes with high false-positive absorption). This systemic failure analysis provides the empirical justification for the classes selected in the following experiments; by isolating the exact pairs that the highly parameterized classical Beast struggles to separate, we define the hardest possible target for the subsequent quantum head.
+Beyond serving as the frozen backbone for \hyperref[sec:exp2_methods]{Experiment 2}, the baseline plays a crucial diagnostic role. During evaluation, a custom metric tracker generates a row-normalized confusion matrix to compute per-class recall. More importantly, it performs an automated algorithmic analysis to extract two patterns for which we adopted our own informal shorthand: \emph{Mirrors}, meaning symmetric confusion pairs where the CNN frequently mistakes class A for class B and vice versa, and \emph{Black Holes}, meaning sink classes that absorb a large number of false positives from their neighbours. The second label is a metaphor for the shape of the confusion matrix column and has no connection to astrophysical black holes, which are not among the classes considered in this thesis. This systemic failure analysis provides the empirical justification for the classes selected in the following experiments; by isolating the exact pairs that the highly parameterized classical Beast struggles to separate, we define the hardest possible target for the subsequent quantum head.
 
 
 
@@ -525,7 +537,8 @@ chain therefore reduces the four-thousand-bin spectrum to $128$ features, then t
 numbers, then to a four-qubit circuit, so the number of qubits is $n=4$. We use four
 qubits because the task has four classes and the circuit reads out one qubit per class.
 The four Pauli-$Z$ expectations returned by the circuit pass through a trainable
-\texttt{Linear(4,4)} readout of $20$ parameters, which with the $20$ circuit angles
+\texttt{Linear(4,4)} readout of $20$ parameters, drawn as the final stage of
+Figure~\ref{fig:modelb}, which with the $20$ circuit angles
 gives $556$ trainable parameters. Two choices in this head are deliberate. The
 bottleneck is trainable rather than fixed because the circuit accepts only four
 numbers, so gradient descent can then discover the four discriminative directions
@@ -552,30 +565,38 @@ interchangeable middle stages that distinguish Models~B, C and~D are compared in
 Figure~\ref{fig:middles}, with every other stage of the pipeline in
 Figure~\ref{fig:modelb} held identical.
 
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=\columnwidth]{Figures/3models.pdf}
-    \caption{The three interchangeable middle stages that distinguish Models~B, C and~D.
-        Each is a 20-parameter block occupying the same slot in the otherwise identical
-        pipeline of Figure~\ref{fig:modelb}. Model~B uses the variational quantum circuit,
-        whereas Models~C and~D replace it with a classical \texttt{Linear(4,4)} layer under a
-        ReLU or a $\tanh$ activation. Holding every other stage fixed isolates the effect of
-        this single block.}
-    \label{fig:middles}
-\end{figure}
-
 \begin{figure*}[t]
     \centering
-    \includegraphics[width=\textwidth]{Figures/model_b_complete.pdf}
-    \caption{Complete data flow of the hybrid quantum head (Model~B). The input flux
-        spectrum is mapped by the frozen Beast to a 128-dimensional feature vector,
-        compressed by the trainable \texttt{Linear(128,4)} bottleneck and squashed into
-        $[-\pi,\pi]$ by a $\tanh(\cdot)\,\pi$ transform, processed by the four-qubit
-        variational quantum circuit (detailed in Figure~\ref{fig:vqc}) whose four
-        Pauli-$Z$ expectations are turned into class logits by the trainable
-        \texttt{Linear(4,$C$)} readout. Tensor shapes are given along the arrows for a
-        batch of size $B$ and $C=4$ classes.}
-    \label{fig:modelb}
+    \begin{subfigure}[b]{\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/model_b_complete.pdf}
+        \caption{Complete data flow of the hybrid quantum head (Model~B).}
+        \label{fig:modelb}
+    \end{subfigure}
+
+    \vspace{1em}
+
+    \begin{subfigure}[b]{0.62\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/3models.pdf}
+        \caption{The three interchangeable middle stages of Models~B, C and~D.}
+        \label{fig:middles}
+    \end{subfigure}
+
+    \caption{The Experiment 2 head, shown as a pipeline and as the one block that varies
+        within it. (a) The input flux spectrum is mapped by the frozen Beast to a
+        128-dimensional feature vector, compressed by the trainable
+        \texttt{Linear(128,4)} bottleneck and squashed into $[-\pi,\pi]$ by a
+        $\tanh(\cdot)\,\pi$ transform, processed by the four-qubit variational quantum
+        circuit (detailed in Figure~\ref{fig:vqc}) whose four Pauli-$Z$ expectations are
+        turned into class logits by the trainable \texttt{Linear(4,$C$)} readout. Tensor
+        shapes are given along the arrows for a batch of size $B$ and $C=4$ classes.
+        (b) The contested middle slot of that pipeline, drawn for each of the three
+        models. Each is a 20-parameter block: Model~B uses the variational quantum
+        circuit, whereas Models~C and~D replace it with a classical \texttt{Linear(4,4)}
+        layer under a ReLU or a $\tanh$ activation. Every other stage in (a) is held
+        identical, which is what isolates the effect of this single block.}
+    \label{fig:exp2_head}
 \end{figure*}
 
 \subsubsection{Variational Quantum Circuit}
