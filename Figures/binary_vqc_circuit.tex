@@ -8,9 +8,9 @@
 \usetikzlibrary{quantikz2}
 \begin{document}
 \begin{quantikz}[column sep=0.3cm, row sep=0.45cm]
-\lstick{$\ket{0}$} & \gate{R_Y(x_1)}\gategroup[4,steps=6,style={dashed,rounded corners,inner xsep=4pt},background]{one layer, repeated $L$ times} & \gate{\mathrm{Rot}(\theta^{(\ell)}_1)} & \ctrl{1} &          &          & \targ{}   & \meter{} \\
-\lstick{$\ket{0}$} & \gate{R_Y(x_2)} & \gate{\mathrm{Rot}(\theta^{(\ell)}_2)} & \targ{}   & \ctrl{1} &          &           & \meter{} \\
-\lstick{$\ket{0}$} & \gate{R_Y(x_3)} & \gate{\mathrm{Rot}(\theta^{(\ell)}_3)} &           & \targ{}  & \ctrl{1} &           & \meter{} \\
-\lstick{$\ket{0}$} & \gate{R_Y(x_4)} & \gate{\mathrm{Rot}(\theta^{(\ell)}_4)} &           &          & \targ{}  & \ctrl{-3} & \meter{}
+\lstick{$\ket{0}$} & \gate{R_Y(\tilde{x}_1)}\gategroup[4,steps=6,style={dashed,rounded corners,inner xsep=4pt},background]{one layer, repeated $L$ times} & \gate{\mathrm{Rot}(\theta^{(\ell)}_1)} & \ctrl{1} &          &          & \targ{}   & \meter{} \\
+\lstick{$\ket{0}$} & \gate{R_Y(\tilde{x}_2)} & \gate{\mathrm{Rot}(\theta^{(\ell)}_2)} & \targ{}   & \ctrl{1} &          &           & \meter{} \\
+\lstick{$\ket{0}$} & \gate{R_Y(\tilde{x}_3)} & \gate{\mathrm{Rot}(\theta^{(\ell)}_3)} &           & \targ{}  & \ctrl{1} &           & \meter{} \\
+\lstick{$\ket{0}$} & \gate{R_Y(\tilde{x}_4)} & \gate{\mathrm{Rot}(\theta^{(\ell)}_4)} &           &          & \targ{}  & \ctrl{-3} & \meter{}
 \end{quantikz}
 \end{document}

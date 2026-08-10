@@ -4,7 +4,7 @@
 
 This section describes the model architectures and the training protocol for the
 experiments in this thesis, together with the reasoning behind the design choices.
-The experiments share a common discipline. Early trials showed that training a purely
+The experiments share a common discipline. Early trials on our side showed that training a purely
 quantum model directly on raw spectra is infeasible given the current hardware and
 simulator constraints. Nevertheless, we do evaluate one fully quantum model, a true
 Quantum Convolutional Neural Network (QCNN) that embeds the entire spectrum into a
@@ -29,25 +29,131 @@ To ensure fair and rigorous comparisons across all experiments, every model inte
 The raw dataset spans millions of astronomical observations, posing a substantial memory bottleneck. To circumvent this, the pipeline employs zero-copy datasets and a streamed ingestion process. Using the \texttt{pyarrow} backend, the parquet files are parsed in continuous batches and mapped directly into pre-allocated NumPy arrays. This approach prevents the catastrophic RAM spikes associated with loading the full dataset simultaneously. When an experiment demands a specific subset of the data (such as the binary classification in \hyperref[sec:exp1_methods]{Experiment 1}), the pipeline dynamically filters the dataset to the requested classes and remaps their integer labels, enabling a seamless transition between the full 62-class problem and targeted sub-problems.
 
 \subsubsection{Preprocessing and Artifact Mitigation}
-Raw flux spectra frequently exhibit spectrograph edge artifacts-sharp, high-amplitude spikes occurring at the physical boundary limits of the observing instruments. If left untreated, the networks fixate on these non-physical anomalies. To remove this noise, the first and last 100 wavelength bins of every spectrum are systematically cropped prior to any processing.
+All SDSS spectra are delivered on the same fixed logarithmic wavelength grid with a
+constant step of $\Delta \log_{10} \lambda = 10^{-4}$~\cite{smee2013spectrographs}, so
+every observation in our dataset consists of exactly 4648 flux bins spanning
+$3567$--$10399$\,\AA. The logarithmic spacing means the bin width in wavelength grows
+across the range, from $0.82$\,\AA{} per bin at the blue end to $2.40$\,\AA{} per bin at
+the red end. Flux is reported in units of
+$10^{-17}\,\mathrm{erg}\,\mathrm{s}^{-1}\,\mathrm{cm}^{-2}\,\mathrm{\AA}^{-1}$. Across our
+curated subset the bulk of the flux values is of order tens to hundreds in these units:
+the median bin value is $\approx 57$, the first-to-ninety-ninth percentile range is
+$-1.4$ to $2.5 \times 10^{3}$, and a typical single spectrum spans roughly $-7$ to $160$
+with a standard deviation of $\approx 27$.
 
-Following the crop, each individual spectrum is strictly standard-scaled (zero mean, unit variance) to normalize flux intensities. Finally, because the sequence length must remain uniform for batched tensor operations, the spectra are either truncated or zero-padded to a fixed sequence length.
+The raw distribution has a heavy tail that is not physical. About $0.25\%$ of all bins
+exceed $|f| > 10^{5}$, reaching magnitudes of up to $10^{9}$, and we measured that
+$99.9\%$ of these extreme bins lie within the first or last 100 bins of the grid. These
+are spectrograph edge artifacts at the boundary of the instrument's sensitivity, where
+the calibration divides by a vanishing throughput. If left untreated, the networks fixate
+on these non-physical anomalies, since they dominate any per-spectrum normalisation. We
+therefore crop the first and last 100 wavelength bins of every spectrum prior to any
+further processing, which removes the artifacts while discarding only the extreme blue
+and extreme red ends of the range.
 
-Optionally, the dataset provides a vector of auxiliary scalar features, most notably the measured redshift. However, exploratory trials revealed that these scalars acted as a data-leaking crutch; the networks exploited the redshift values to trivially separate classes, achieving artificially high accuracies without actually learning structural representations from the flux spectra. To enforce genuine spectral learning, these auxiliary vectors are explicitly withheld from the pipeline, forcing all models to derive their predictions exclusively from the raw 1D flux.
+Following the crop, each individual spectrum is strictly standard-scaled (zero mean, unit
+variance) to normalize flux intensities. Because the sequence length must remain uniform
+for batched tensor operations, the resulting 4448 bins are finally truncated to the fixed
+length of 4096 used by all models. In practice the pipeline therefore only ever truncates:
+it discards the 352 reddest bins, $7.9\%$ of the cropped spectrum, corresponding to the
+region beyond $\approx 9370$\,\AA{} where the instrument response is weakest. The
+zero-padding branch of the pipeline exists for generality but is never triggered on this
+dataset, where all spectra share the same grid.
 
-\subsubsection{Scientific Augmentation}
-To prevent overfitting and simulate physical variance, an on-the-fly data augmentation pipeline is applied exclusively during the training phase. The augmentations are applied stochastically and include:
+Optionally, the dataset provides a vector of auxiliary scalar features, most notably the measured redshift. However, our exploratory trials revealed that these scalars acted as a data-leaking crutch; the networks exploited the redshift values to trivially separate classes, achieving artificially high accuracies without actually learning structural representations from the flux spectra. To enforce genuine spectral learning, these auxiliary vectors are explicitly withheld from the pipeline, forcing all models to derive their predictions exclusively from the raw 1D flux.
+
+\subsubsection{Physically Motivated Data Augmentation}
+\label{sec:augmentation}
+An on-the-fly augmentation pipeline is applied exclusively during the training phase. The
+transformations are drawn stochastically each time a spectrum is loaded, so a model never
+sees the same realisation of a training spectrum twice and the effective size of the
+training set grows with the number of epochs. Augmentation of this kind is a standard
+regulariser: it enlarges the region of input space covered by the training distribution
+and thereby reduces the gap between training and validation performance
+\cite{shorten2019augmentation}. That gap is the concrete symptom we target here; the
+baseline of Section~\ref{sec:baseline_cnn} still ends training with a noticeably higher
+training than validation accuracy even with the full pipeline enabled.
+
+Four of the six transformations below are chosen so that the perturbed spectrum remains a
+plausible observation of the same object, and we state the physical quantity each one
+stands in for together with the magnitude actually used. The remaining two are generic
+machine-learning regularisers with no astrophysical interpretation, and we label them as
+such rather than dressing them up as physics.
 \begin{itemize}
-    \item \textit{Class-Aware Redshift Shifting:} To simulate variations in radial velocity and cosmic expansion, the spectra are circularly shifted along the wavelength axis. The maximum allowed shift is class-dependent, reflecting the distinct physical constraints of stellar objects versus distant galaxies.
-    \item \textit{Gaussian Noise:} Random standard normal noise, scaled by a configuration threshold and the standard deviation of the specific spectrum, is injected to simulate instrument read noise.
-    \item \textit{Flux Scaling:} The overall amplitude of the spectrum is multiplied by a randomized continuous scale factor, simulating variations in object distance and apparent magnitude.
-    \item \textit{Contiguous Masking:} Taking inspiration from spectral dropout techniques, one to three random contiguous chunks (ranging from 15 to 50 bins) are entirely zeroed out. This forces the feature extractors to rely on global patterns rather than memorizing isolated, high-intensity emission lines.
-    \item \textit{Gaussian Smoothing:} A 1D convolutional Gaussian blur with a randomized kernel size (derived from a stochastically generated sigma) is applied to simulate atmospheric seeing variations and lower-resolution instrument states.
-    \item \textit{Mixup:} With 50\% probability, an input is linearly interpolated with another random sample (\(\lambda \sim \text{Beta}(0.4,0.4)\)). The loss becomes the same weighted combination of the two original labels' cross-entropy terms, effectively training on soft, mixed targets instead of hard class labels.
+    \item \textit{Class-Aware Redshift Shifting:} Because the wavelength grid is
+          logarithmic, a redshift is exactly a translation along the bin axis:
+          $\log_{10}\lambda_\text{obs} = \log_{10}\lambda_\text{emit} + \log_{10}(1+z)$,
+          so a shift of $k$ bins corresponds to $\log_{10}(1+z) = k \cdot 10^{-4}$. This is
+          the same equivalence the SDSS classification pipeline exploits when it slides
+          templates over a redshift grid in $\log \lambda$~\cite{bolton2012boss}. We
+          therefore roll the spectrum by a small integer number of bins, which mimics a
+          line-of-sight velocity offset of $\approx 69\,\mathrm{km\,s^{-1}}$ per bin. The
+          maximum shift is class-dependent: one bin for stars
+          ($\approx 69\,\mathrm{km\,s^{-1}}$, the scale of Galactic stellar radial
+          velocities) and five bins for galaxies and quasars
+          ($\approx 345\,\mathrm{km\,s^{-1}}$, the scale of peculiar velocities and of the
+          residual uncertainty on a measured redshift). The shift is deliberately kept
+          this small so that the augmented spectrum stays consistent with the class label.
+    \item \textit{Gaussian Noise:} Random standard normal noise scaled to $0.5\%$ of the
+          standard deviation of the specific spectrum is injected. SDSS spectra are taken
+          under widely varying conditions and the per-fibre signal-to-noise ratio varies
+          accordingly~\cite{smee2013spectrographs}, so this represents the same object
+          observed under slightly poorer conditions rather than a specific noise source.
+    \item \textit{Flux Scaling:} The amplitude of the spectrum is multiplied by a random
+          factor drawn uniformly from $[0.9, 1.1]$. We note explicitly that this is
+          \emph{not} a model of distance or apparent magnitude: the per-spectrum standard
+          scaling described above has already removed the absolute flux level, so no
+          information about brightness survives to be perturbed. The transformation is
+          applied after normalisation and acts as a $\pm 10\%$ amplitude jitter that
+          prevents the network from keying on the exact post-normalisation scale.
+    \item \textit{Contiguous Masking:} One or two random contiguous chunks, each 15 to 50
+          bins wide, are zeroed out. Methodologically this is SpecAugment-style time-frequency
+          masking transferred from speech spectrograms~\cite{park2019specaugment}. It also
+          has a direct observational counterpart: real SDSS spectra contain masked pixels,
+          cosmic-ray hits and residuals from strong sky emission lines such as
+          $\lambda 5577$ and $\lambda 6300$, so a usable classifier must tolerate missing
+          windows. At $0.82$--$2.40$\,\AA{} per bin a masked chunk spans roughly
+          $12$--$120$\,\AA, which is wide enough to remove an entire emission line. Since
+          emission and absorption lines are the primary discriminants in spectral
+          classification~\cite{gray2005photospheres, baldwin1981bpt}, deleting them forces
+          the feature extractor to also use the continuum rather than keying on a single
+          strong line.
+    \item \textit{Gaussian Smoothing:} A 1D Gaussian blur with $\sigma$ drawn uniformly
+          from $[0,0.5]$ bins is applied. This degrades the effective line-spread function
+          of the spectrum, that is, it emulates the same object observed at slightly lower
+          spectral resolution~\cite{smee2013spectrographs}. The kernel is deliberately
+          narrow, at most a few bins wide, so that line profiles are broadened but not
+          erased.
+    \item \textit{Mixup:} With $50\%$ probability an input is linearly interpolated with
+          another random sample (\(\lambda \sim \text{Beta}(0.4,0.4)\)) and the loss becomes
+          the same weighted combination of the two labels' cross-entropy terms, so training
+          uses soft mixed targets instead of hard class labels~\cite{zhang2018mixup}. A
+          blend of two spectra is not itself a physically realisable observation. We include
+          it purely as a regulariser on the decision boundary and make no astrophysical
+          claim for it.
 \end{itemize}
 
 \subsubsection{Addressing Class Imbalance}
-As later mentioned the SDSS DR19 dataset is highly imbalanced, we offered two solutions to this problem. First a weighted random sampler
+\label{sec:imbalance}
+The curated SDSS DR19 subset is highly imbalanced. Class sizes range from 276 spectra for
+the rarest class (\texttt{STAR\_M0}) up to the acquisition ceiling of 25{,}000 spectra for
+the most common ones, a ratio of roughly 90 to 1. Left unaddressed, a model minimises its
+average loss by learning the majority classes and ignoring the minority ones, which
+produces a respectable overall accuracy together with near-zero recall on exactly the rare
+classes this thesis is interested in. The pipeline therefore implements two independent
+countermeasures, and the experiments select between them.
+
+The first is a \emph{weighted random sampler}. Each sample is assigned a weight inversely
+proportional to the size of its class, and training batches are then drawn with
+replacement according to those weights, so every class is expected to appear equally often
+per epoch. The second is a \emph{focal loss}~\cite{lin2018focalloss} with focusing
+parameter $\gamma = 2.0$ and additional inverse-frequency class weights, which leaves the
+sampling untouched and instead down-weights the loss contribution of examples the model
+already classifies confidently.
+
+The two are alternatives rather than complements, since combining them would correct the
+same imbalance twice. As reported in Section~\ref{sec:baseline_training}, the sampler
+proved unstable in practice and all reported models use the focal loss.
 
 
 
@@ -60,40 +166,130 @@ As later mentioned the SDSS DR19 dataset is highly imbalanced, we offered two so
 \subsubsection{Design Principles}
 \label{sec:baseline_philosophy}
 
-The baseline architecture, internally referred to as the Beast (and later repurposed as the frozen extractor in \hyperref[sec:exp2_methods]{Experiment 2}), is designed to solve the full 62-class spectral classification problem on the SDSS DR19 dataset. Because astronomical spectra contain both highly localized, high-frequency structures (such as narrow emission and absorption lines) and broad, low-frequency trends (such as the thermal continuum), the network requires both fine-grained local feature extraction and a global receptive field.
+The baseline architecture, which we nickname the \emph{Beast} (our own informal label for
+it, not an established term), is designed to solve the full 62-class spectral
+classification problem on the SDSS DR19 dataset and is later repurposed as the frozen
+extractor in \hyperref[sec:exp2_methods]{Experiment 2}. Its complete structure is shown in
+Figure~\ref{fig:baseline_cnn}.
 
-To achieve this, the architecture combines three distinct paradigms. First, a multi-scale convolutional stem captures features at varying resolutions simultaneously. Second, a deep backbone of one-dimensional Squeeze-and-Excitation (SE) residual blocks \cite{hu2019squeeze} with dilated convolutions extracts hierarchical features while dynamically weighting the most informative spectral channels. Finally, a Transformer encoder \cite{vaswani2017attention} acts on the resulting sequence to capture long-range dependencies between distant spectral lines that would otherwise require an impractically deep purely convolutional network.
+The design follows from the structure of the input. An optical spectrum superposes two
+very different kinds of signal: a broad, slowly varying continuum set by the thermal
+emission and reddening of the source, and narrow emission and absorption features whose
+depths, widths and positions carry most of the classification
+information~\cite{gray2005photospheres}. The SDSS classification pipeline itself reflects
+this split, fitting spectra as combinations of smooth continuum components and line
+templates~\cite{bolton2012boss}. For the 62-class subset used here, separating the classes
+therefore requires both fine-grained local feature extraction, at the scale of a few
+wavelength bins, and a receptive field wide enough to see the continuum shape across the
+full range. We do not claim this as a statement about arbitrary spectroscopic surveys, only
+about the data actually used in this thesis.
+
+To achieve this, the architecture combines three distinct paradigms. First, a multi-scale convolutional stem captures features at varying resolutions simultaneously \cite{szegedy2015going}. Second, a deep backbone of one-dimensional Squeeze-and-Excitation (SE) residual blocks \cite{hu2019squeeze} with dilated convolutions \cite{yu2016dilated} extracts hierarchical features while dynamically weighting the most informative spectral channels. Finally, a Transformer encoder \cite{vaswani2017attention} acts on the resulting sequence to capture long-range dependencies between distant spectral lines that would otherwise require an impractically deep purely convolutional network.
 
 To prevent the dead-neuron collapse observed in early trials with ReLU activations, the entire network relies on the Gaussian Error Linear Unit (GELU) \cite{hendrycks2016gaussian}, ensuring smoother gradient flow throughout the deep pipeline.
+
+\textbf{Provenance.} The Beast is our own design and we make no claim that it is a novel
+astrophysical architecture. It is assembled entirely from established components, the
+multi-scale stem of Inception-style networks~\cite{szegedy2015going}, Squeeze-and-Excitation
+residual blocks~\cite{hu2019squeeze}, dilated convolutions~\cite{yu2016dilated} and a
+Transformer encoder~\cite{vaswani2017attention}, and was arrived at by iterative refinement
+against validation accuracy rather than derived from a published astronomical model. The
+closest published references for this task are GaSNet-II~\cite{zhong2024gasnet}, a deep
+network for joint SDSS spectral classification and redshift estimation, and the
+convolutional stellar classifier of Sharma et al.~\cite{sharma2020cnn}; to our knowledge no
+published architecture targets a 62-class SDSS subclass problem, which is why no direct
+architectural template was available. Rather than argue for the design on paper, we validate
+it empirically: trained on the 13-class subset of GaSNet-II, the same network reaches
+$92.51\%$ accuracy (Section~\ref{sec:gasnet_replica} reports the replication), which places
+our classical side at the level of the published state of the art on a comparable task. The
+purpose of the Beast in this thesis is to be a strong and honestly tuned classical reference
+point for the quantum comparisons, not a contribution to spectral classification in its own
+right.
 
 \subsubsection{Architecture Pipeline}
 \label{sec:baseline_arch}
 
-The model accepts a 1D flux spectrum of 4096 bins as input. This number was chosen, since its power-of-two structure allows for efficient downsampling and also for a straightforward mapping to quantum circuits in later experiments. If the effective flux is longer or shorter, it is either truncated or zero-padded to fit this fixed length.
+The model accepts a 1D flux spectrum of 4096 bins as input. This number was chosen since
+its power-of-two structure allows for efficient downsampling and also for a straightforward
+mapping to quantum circuits in later experiments. As described in
+Section~\ref{sec:data_pipeline}, the 4648-bin SDSS grid is cropped to 4448 bins and then
+truncated to this length, so the model sees the range from $\approx 3650$ to
+$\approx 9370$\,\AA{} at $0.82$--$2.40$\,\AA{} per bin.
 The processing pipeline is illustrated in Figure~\ref{fig:baseline_cnn}.
 
-\textbf{Multi-Scale Stem:} The input is first passed through parallel 1D convolutions with kernel sizes of 5, 15, and 31. This multi-branch approach allows the network to simultaneously "see" narrow spectral anomalies and wider bands. The outputs are concatenated along the channel dimension, normalized, activated, and pooled to form the initial feature map.
+\textbf{Multi-Scale Stem:} The input is first passed through parallel 1D convolutions with
+kernel sizes of 5, 15, and 31. This multi-branch approach allows the network to
+simultaneously "see" narrow spectral anomalies and wider bands. Two considerations fix
+these particular values. First, the sizes are odd rather than the powers of two used
+elsewhere in the architecture, because an odd kernel with symmetric padding keeps the
+receptive field centred on a bin; an even kernel introduces a half-bin offset between input
+and output, which is undesirable when the position of a line centroid is itself part of the
+signal. Second, the three widths were picked to cover the physical scales present in the
+data in roughly geometric steps. At the sampling of the SDSS grid, a kernel of 5 bins spans
+$4$--$12$\,\AA, the width of a narrow, barely resolved emission or absorption line; 15 bins
+spans $12$--$36$\,\AA; and 31 bins spans $25$--$75$\,\AA, which is the scale of a broad
+quasar emission line (a few thousand $\mathrm{km\,s^{-1}}$ corresponds to roughly
+$50$\,\AA{} at $5000$\,\AA) or of a molecular band in a cool star. The values are thus the
+odd numbers nearest to $4$, $16$ and $32$ that also match these physical widths. The
+outputs are concatenated along the channel dimension, normalized, activated, and pooled to
+form the initial feature map.
 
 \textbf{SE-Residual Bottleneck Backbone:} The core of the network consists of five stages of \texttt{SEResidualBottleneck1D} blocks, progressively expanding the channel dimension from 64 up to 1024 while downsampling the spatial (wavelength) dimension. To expand the receptive field without an explosion in parameter count, later blocks within Stages 2, 3, and 4 utilize dilated convolutions (up to a dilation rate of 4). Every block incorporates a Squeeze-and-Excitation module, which applies global average pooling to the block's output and uses a two-layer bottleneck to learn a channel-wise gating multiplier, forcing the network to amplify relevant feature maps and suppress noise.
 
-\textbf{Attention Mechanism:} After the convolutional stages, the sequence is permeated with learnable positional embeddings and fed into a two-layer Transformer encoder with 8 attention heads and a hidden dimension of 2048. This mechanism explicitly correlates features across the entire spectrum, such as linking an H-$\alpha$ emission line directly to an O-III line regardless of their bin distance.
+\textbf{Attention Mechanism:} After the convolutional stages, the sequence is permeated
+with learnable positional embeddings and fed into a two-layer Transformer encoder with 8
+attention heads and a hidden dimension of 2048. The intent of this stage is to let the
+model relate features that are far apart in wavelength at constant depth. Such relations
+are known to be diagnostic in practice: the standard emission-line classification of
+extragalactic objects rests on ratios of lines separated by thousands of \AA{}, for example
+$[\mathrm{O\,\textsc{iii}}]\,\lambda 5007/\mathrm{H}\beta$ against
+$[\mathrm{N\,\textsc{ii}}]\,\lambda 6584/\mathrm{H}\alpha$ in the Baldwin--Phillips--Terlevich
+diagram~\cite{baldwin1981bpt, kewley2001starburst}, which separates star-forming galaxies
+from active galactic nuclei. A purely convolutional stack can only reach such a pairing by
+stacking enough layers for the receptive fields to overlap, whereas attention couples the
+two positions directly. We state this as the motivation for including the encoder rather
+than as a verified property of the trained model: we did not run an ablation isolating the
+Transformer, so we cannot claim that the network has in fact learned these specific line
+pairings. The gradient-based interpretability analysis in
+Section~\ref{sec:interpretability} offers only indirect and partial support, since it
+probes the smaller extractor of Experiment 1 rather than this baseline, but it does show
+that the learned attribution concentrates on broad, class-dependent emission regions rather
+than on individual bins.
 
 \textbf{Classification Head:} The sequence is collapsed into a single 1024-dimensional vector via adaptive average pooling. If auxiliary features are provided, they are concatenated here. A deep Multi-Layer Perceptron (MLP) head maps these representations down through hidden layers projecting them to the 62 class logits.
 
 \begin{figure*}[ht]
     \centering
     \includegraphics[width=\textwidth]{Figures/baseline_cnn_viz.png}
-    \caption{Architecture of the baseline CNN (the Beast). The input spectrum is processed by a multi-scale stem, followed by five stages of dilated SE-Residual bottlenecks. The resulting sequence is enriched with positional embeddings and passed through a two-layer Transformer encoder to capture global spectral relationships. A deep MLP head outputs the logits for the 62 SDSS DR19 classes.}
+    \caption{Architecture of the baseline CNN (the Beast). The input spectrum is processed
+        by a multi-scale stem, followed by five stages of dilated SE-Residual bottlenecks.
+        The resulting sequence is enriched with positional embeddings and passed through a
+        two-layer Transformer encoder to capture global spectral relationships. A deep MLP
+        head outputs the logits for the 62 SDSS DR19 classes. Tensor shapes are annotated
+        along the arrows as (channels, length) preceded by the batch dimension: $B$ is the
+        batch size, and $L'$ and $L''$ are the sequence lengths after successive
+        downsampling. The stem's stride-2 convolutions and stride-2 max-pool reduce the
+        4096 input bins to $L' = 1024$, and the five stride-2 backbone stages reduce this
+        further to $L'' = 32$, at which point adaptive average pooling collapses the
+        sequence to a single 1024-dimensional vector.}
     \label{fig:baseline_cnn}
 \end{figure*}
 
 \subsubsection{Training Protocol and Sub-Problem Identification}
 \label{sec:baseline_training}
 
-The model was trained from scratch on the full SDSS DR19 dataset. We optimized the training further by using a OneCycle learning rate \cite{smith2017onecyclelr} schedule with a maximum learning rate of $10^{-3}$, weight decay of $10^{-4}$. This uses a warm-up phase to ramp up the learning rate, followed by a gradual cooldown, which helps the model converge faster and escape sharp minima. Because of that early stopping would have been contraproducive, so the model was trained for a fixed 300 epochs.
+The model was trained from scratch on the full SDSS DR19 dataset. We optimized the training further by using a OneCycle learning rate \cite{smith2017onecyclelr} schedule with a maximum learning rate of $10^{-3}$ and a weight decay of $10^{-4}$. This uses a warm-up phase to ramp up the learning rate, followed by a gradual cooldown, which helps the model converge faster and escape sharp minima. Because the schedule is defined over a fixed horizon, early stopping would have cut it off mid-cooldown and would have been counterproductive, so the model was trained for a fixed 300 epochs.
 
-Also, the SDSS DR19 dataset is highly imbalanced. The range in our curated subset is between 276 (STAR\_M0) 25'000 for the more common classes. To mitigate this imbalance, where the model would get a good avgerage accuracy by simply learning the majority classes but fail on the minority ones, we initially experimented with weighted random sampling, however this led to unstable training and worse overall performance. Instead, we
-used a Focal Loss \cite{lin2018focalloss}. This loss function down-weights the contribution of classes with a high number of samples and focuses the learning on the harder, underrepresented classes. This approach led to more stable training and improved performance on the minority classes.
+Of the two remedies for class imbalance described in Section~\ref{sec:imbalance}, the
+baseline uses the focal loss. We first experimented with the weighted random sampler, but
+oversampling the rarest class, with 276 spectra against up to 25{,}000 in the most common
+ones, meant the same few hundred spectra recurred many times per epoch; this destabilised
+training and degraded overall performance. The focal loss
+\cite{lin2018focalloss} instead leaves the sampling untouched and reshapes the objective,
+down-weighting examples the model already classifies confidently, which are predominantly
+those of the majority classes, and concentrating the gradient on the harder,
+underrepresented ones. This approach led to more stable training and improved performance
+on the minority classes.
 
 Beyond serving as the frozen backbone for \hyperref[sec:exp2_methods]{Experiment 2}, the baseline plays a crucial diagnostic role. During evaluation, a custom metric tracker generates a row-normalized confusion matrix to compute per-class recall. More importantly, it performs an automated algorithmic analysis to extract "Mirrors" (symmetric confusion pairs where the CNN frequently mistakes class A for class B and vice versa) and "Black Holes" (sink classes with high false-positive absorption). This systemic failure analysis provides the empirical justification for the classes selected in the following experiments; by isolating the exact pairs that the highly parameterized classical Beast struggles to separate, we define the hardest possible target for the subsequent quantum head.
 
@@ -139,7 +335,14 @@ spectrum to a small feature vector whose width equals the number of qubits. The
 features are bounded to $[-\pi,\pi]$ by a $\tanh(\cdot)\,\pi$ transform, the middle
 stage processes them, and a small MLP head of \texttt{Linear} to width 32, batch
 normalisation, a ReLU, dropout and a final \texttt{Linear} to two logits produces
-the prediction. This extractor is our own design, following standard one-dimensional CNN practice for
+the prediction. We fix a notation convention here that is used in every circuit diagram
+of this thesis: an unaccented symbol such as $x_q$ denotes a raw feature, while the
+accented $\tilde{x}_q$ denotes the same feature after it has been squashed into a bounded
+angular domain and loaded onto qubit $q$. Only bounded values are ever fed to a circuit, so
+the inputs of all our feature maps carry the tilde, whether the bound comes from the
+$\tanh(\cdot)\,\pi$ transform used here and in \hyperref[sec:exp2_methods]{Experiment 2} or
+from the $\tfrac{\pi}{2}\tanh(\cdot)$ squashing of
+\hyperref[sec:exp3_methods]{Experiment 3}. This extractor is our own design, following standard one-dimensional CNN practice for
 spectra rather than adapted from a specific reference. It is a compact network specific
 to this experiment, distinct from the 14-million-parameter baseline of
 Section~\ref{sec:baseline_cnn} (Figure~\ref{fig:baseline_cnn}). Unlike the frozen
@@ -205,8 +408,8 @@ of parameters.
     \centering
     \includegraphics[width=\columnwidth]{Figures/binary_vqc_circuit.pdf}
     \caption{Variational quantum circuit of the binary quantum model, shown for the
-        four-qubit case. Each qubit carries one feature $x_q$. Within every layer the same
-        features are re-injected through $R_Y(x_q)$ rotations, which is the data
+        four-qubit case. Each qubit carries one bounded feature $\tilde{x}_q$. Within every
+        layer the same features are re-injected through $R_Y(\tilde{x}_q)$ rotations, which is the data
         re-uploading that lets a shallow circuit reach higher-order functions of the input.
         Each upload is followed by a trainable general single-qubit rotation
         $\mathrm{Rot}(\theta^{(\ell)}_q)$, which needs three angles, then a ring of CNOT
@@ -271,8 +474,9 @@ The four heads introduced below each isolate a specific question.
 \subsubsection{Frozen Feature Extractor (the Beast)}
 \label{sec:beast}
 
-The shared backbone is the same Beast used as the baseline, the 14-million-parameter
-CNN-Transformer of Section~\ref{sec:baseline_cnn} (Figure~\ref{fig:baseline_cnn}),
+The shared backbone is the same network we nickname the Beast in
+Section~\ref{sec:baseline_cnn}, the 14-million-parameter CNN-Transformer used as the
+baseline (Figure~\ref{fig:baseline_cnn}),
 trained from scratch on the full 62-class problem where it reaches roughly 84\% accuracy.
 We do not repeat its architecture here. For Experiment 2 its final
 \texttt{Linear(128, num\_classes)} layer is replaced by an identity map and every
@@ -402,8 +606,9 @@ accuracy.
     \centering
     \includegraphics[width=\columnwidth]{Figures/vqc_circuit.pdf}
     \caption{Variational quantum circuit of the quantum head (Model~B). The four qubits
-        start in $|0\rangle$. Within each layer the bottleneck outputs $x_q$ are re-uploaded
-        through $R_Y(x_q)$ rotations, followed by trainable $R_Y(\theta^{(\ell)}_q)$
+        start in $|0\rangle$. Within each layer the bounded bottleneck outputs $\tilde{x}_q$
+        are re-uploaded
+        through $R_Y(\tilde{x}_q)$ rotations, followed by trainable $R_Y(\theta^{(\ell)}_q)$
         rotations and a ring of CNOT gates. The dashed block is repeated $L=5$ times. A
         final Pauli-$Z$ measurement on each qubit yields four expectation values that are
         passed to a trainable linear readout. The $20$ trainable circuit angles are the
@@ -464,18 +669,55 @@ To ensure a defensible comparison, this experiment operates under three constrai
 
 For this experiment, 4 hard-to-separate classes were identified from the baseline's confusion matrix, via a four-crossing analysis that isolated the most symmetric and entangled pairs. Initial trials used easy-to-separate classes, but the resulting near-perfect accuracies at small $n$ made it impossible to detect any advantage.
 
-Unlike the frozen convolutional extractor in \hyperref[sec:exp2_methods]{Experiment 2}, the QSVM pipeline avoids high-capacity trainable feature extraction to prevent classical parameters from masking the quantum kernel's contribution. Instead, the raw 4096-bin flux spectra are deterministically downsampled using 1D adaptive average pooling to $N_{\text{features}}$ bins, mapping directly to the $N_{\text{features}}$ qubits of the quantum circuit. We systematically swept $N_{\text{features}}$ to determine the optimal dimensionality for both classical and quantum state preparation.
+Unlike the frozen convolutional extractor in \hyperref[sec:exp2_methods]{Experiment 2}, the
+QSVM pipeline avoids high-capacity trainable feature extraction to prevent classical
+parameters from masking the quantum kernel's contribution. Instead, the raw 4096-bin flux
+spectra are deterministically downsampled using 1D adaptive average pooling to
+$N_{\text{features}}$ bins, with one pooled bin loaded onto each of the
+$N_{\text{features}}$ qubits of the quantum circuit. The reduction is therefore a fixed,
+parameter-free average over contiguous wavelength windows, not a learned projection.
+
+We swept $N_{\text{features}}$ up to 16 to determine the optimal dimensionality for both
+classical and quantum state preparation, and settled on $N_{\text{features}} = 12$ for all
+reported runs. The full 4096-bin spectrum is thus compressed to 12 numbers, each the mean
+of roughly 341 consecutive bins ($\approx 480$\,\AA{} of the spectrum), and encoded into a
+register of exactly 12 qubits. Above this width the classification metrics plateaued while
+the cost of simulating the register kept growing, and below it the pooled representation
+became too coarse to separate the classes; the sweep supporting this choice is reported in
+Section~\ref{sec:exp3_results}.
 
 A known failure mode in quantum kernels acting on raw continuous data is $2\pi$ wrap-around \cite{Bosco2025Periodic}, where distinct scalar values collapse onto the same rotation angle, and exponential kernel concentration \cite{thanasilp2024Exponential}, where highly expressive feature maps converge to a near-identity Gram matrix. To mitigate this, the pooled features $x_i$ are explicitly standard-scaled and subsequently mapped into a strictly bounded angular domain using a squashing function:
-$$ \tilde{x}_i = \frac{\pi}{2} \tanh(c \cdot x_i) $$
-where $c$ is a continuous bandwidth scaling parameter. This ensures all encoded rotations remain well within a single period $[-\pi/2, \pi/2]$, minimizing wrap-around and artificially induced concentration.
+$$ \tilde{x}_q = \frac{\pi}{2} \tanh(c \cdot x_q) $$
+where $x_q$ is the pooled feature destined for qubit $q$ and $c$ is a continuous bandwidth
+scaling parameter. Following the notation convention of Section~\ref{sec:exp1_arch}, the
+tilde marks the bounded value that is actually loaded into the circuit. This ensures all
+encoded rotations remain well within a single period $[-\pi/2, \pi/2]$, minimizing
+wrap-around and artificially induced concentration.
 
-The bounded features $\tilde{x}_i$ are injected into the quantum state via the feature map $U(x)$ illustrated in Figure~\ref{fig:qsvm_circuit}. The mapping consists of $R_Y$ and $R_Z$ rotations encoding each feature onto its respective qubit (the double-axis configuration), followed by a ring of CNOT gates that entangles nearest neighbours with periodic boundary conditions. To limit excessive expressivity that drives kernel concentration, the circuit relies on a shallow depth (defaulting to a single repetition).
+The bounded features $\tilde{x}_q$ are injected into the quantum state via the feature map
+$U(x)$ illustrated in Figure~\ref{fig:qsvm_circuit}. The mapping consists of $R_Y$ and
+$R_Z$ rotations encoding each feature onto its respective qubit (the double-axis
+configuration), followed by a ring of CNOT gates that entangles nearest neighbours with
+periodic boundary conditions. We refer to this entangler as \emph{hardware-efficient} in
+the established sense of the term~\cite{kandala2017hardware}: it is built only from
+one- and two-qubit gates that are native to current superconducting devices and it couples
+only neighbouring qubits, so it could be executed on real hardware without the routing
+overhead that an all-to-all entangler would incur. The term describes the gate layout
+alone and carries no claim about the performance of the kernel. To limit excessive
+expressivity that drives kernel concentration, the circuit relies on a shallow depth
+(defaulting to a single repetition).
 
 \begin{figure}[t]
     \centering
     \includegraphics[width=\columnwidth]{Figures/qsvm_circuit.pdf} % Assuming compiled PDF name
-    \caption{Quantum feature map $U(x)$ utilized for the QSVM kernels, shown for four qubits. The scaled and bounded input features $\tilde{x}_i$ are encoded via $R_Y$ and $R_Z$ rotations on each qubit, followed by a hardware-efficient ring of CNOT gates. This unitary can be repeated to increase expressivity, though shallow depths are preferred to mitigate kernel concentration.}
+    \caption{Quantum feature map $U(x)$ utilized for the QSVM kernels, drawn for four
+        qubits for legibility; the reported runs use $N_{\text{features}} = 12$ pooled
+        features on 12 qubits. The scaled and bounded input features $\tilde{x}_q$ are
+        encoded via $R_Y$ and $R_Z$ rotations on each qubit, followed by a
+        nearest-neighbour ring of CNOT gates (a hardware-efficient entangler in the sense
+        of~\cite{kandala2017hardware}). This unitary can be repeated to increase
+        expressivity, though shallow depths are preferred to mitigate kernel
+        concentration.}
     \label{fig:qsvm_circuit}
 \end{figure}
 
@@ -495,7 +737,7 @@ A classical RBF kernel is then computed over these quantum-projected vectors. Th
 \subsubsection{Training Protocol and Pre-screening}
 \label{sec:exp3_protocol}
 
-The datasets are constructed from the targeted four-class subset of the SDSS DR19 dataset. The training set is subsampled to balanced sizes of $n \in \{2, 5, 10, 20, 50, 100, 200\}$ samples per class. The classical control is a Support Vector Classifier (SVC) equipped with an RBF kernel. To guarantee a fair comparison, the classical SVC undergoes a robust grid search over the regularization parameter $C \in \{0.1, 1, 10, 100\}$ and the bandwidth parameter $\gamma \in \{\text{scale}, 0.01, 0.1, 1.0\}$ at every evaluation step using stratified cross-validation. For the quantum evaluations, $C$ was also treated as an empirically optimized hyperparameter, evaluated after identifying the optimal $N_{\text{features}}$.
+The datasets are constructed from the targeted four-class subset of the SDSS DR19 dataset. The training set is subsampled to balanced sizes of $n \in \{2, 5, 10, 20, 50, 100, 200\}$ samples per class. The classical control is a Support Vector Classifier (SVC) equipped with an RBF kernel. To guarantee a fair comparison, the classical SVC undergoes a robust grid search over the regularization parameter $C \in \{0.1, 1, 10, 100\}$ and the bandwidth parameter $\gamma \in \{\text{scale}, 0.01, 0.1, 1.0\}$ at every evaluation step using stratified cross-validation. The projected kernel is an RBF kernel on quantum-projected features and therefore passes through this same tuned solver. The fidelity kernel instead supplies a precomputed Gram matrix and is fitted at a fixed $C = 1$; the quantity swept on its behalf is the encoding bandwidth $c$ of Section~\ref{sec:exp3_encoding}, evaluated after identifying $N_{\text{features}}$ over $c \in \{0.1, 0.25, 0.5, 0.75, 1.0, 1.5\}$.
 
 Before initiating the compute-intensive scaling sweeps, we utilize a pre-training diagnostic metric: the geometric difference $g(K_C || K_Q)$ \cite{huang2021power}. Computed on the Gram matrices of a small data subset, this metric quantifies the divergence between the classical and quantum kernel geometries:
 $$ g = \left\| \sqrt{K_Q} (K_C + \lambda I)^{-1} \sqrt{K_Q} \right\|_2 $$
