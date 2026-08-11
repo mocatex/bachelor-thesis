@@ -131,20 +131,20 @@ picture, with the residual leakage concentrated on the minority class.
 \begin{figure*}[t]
     \centering
     \begin{subfigure}[t]{0.49\textwidth}
-        \includegraphics[width=\linewidth]{Figures/quantum_exp1_cm_test.png}
+        \includegraphics[width=\linewidth]{Figures/quantum_qubits6_layers4_cm.png}
         \caption{Quantum model (representative run).}
         \label{fig:exp1_cm_q}
     \end{subfigure}\hfill
     \begin{subfigure}[t]{0.49\textwidth}
-        \includegraphics[width=\linewidth]{Figures/classical_exp1_cm_test.png}
+        \includegraphics[width=\linewidth]{Figures/classical_features4_cm.png}
         \caption{Classical mirror (representative run).}
         \label{fig:exp1_cm_c}
     \end{subfigure}
-    \caption{Representative single-run test confusion matrices for the binary task. Both
-        models confuse the two spectrally adjacent classes, with the residual leakage
-        concentrated on the minority class \texttt{STAR\_BROWN\_DWARF\_L}. Because these are
-        single runs rather than seed averages, the values differ slightly from
-        Table~\ref{tab:exp1_sweep}.}
+    \caption{Representative test confusion matrices for the binary task, shown as the
+        mean over the three seeds of each configuration. Both models confuse the two
+        spectrally adjacent classes, with the residual leakage concentrated on the
+        minority class \texttt{STAR\_BROWN\_DWARF\_L}. The values match the corresponding
+        rows of Table~\ref{tab:exp1_sweep}.}
     \label{fig:exp1_cm}
 \end{figure*}
 
@@ -246,7 +246,7 @@ Figure~\ref{fig:exp2_cm} shows the corresponding test confusion matrices. The de
 classical head (A), the quantum head (B) and the Tanh control (D) all reach roughly
 96\% overall accuracy with very similar per-class behaviour, while the ReLU control
 (C) collapses to about 79\%. The three successful models classify the hardest
-class, \texttt{STAR\_BROWN\_DWARF\_L}, with recall between 0.93 and 0.95 and confuse
+class, \texttt{STAR\_BROWN\_DWARF\_L}, with recall between 0.92 and 0.96 and confuse
 it almost only with \texttt{STAR\_M8}, the spectrally adjacent class. Notably the
 556-parameter quantum head (B) and the 556-parameter Tanh control (D) match the
 $9\times$ larger 5058-parameter dense head (A) at the same accuracy, which shows
@@ -265,10 +265,10 @@ extractor.
         \toprule
           & Head               & Params & Acc.       & BD recall \\
         \midrule
-        A & Dense classical    & 5058   & $\sim$96\% & 0.95      \\
-        B & Quantum (Lin.+VQC) & 556    & $\sim$96\% & 0.93      \\
-        C & Classical, ReLU    & 556    & $\sim$79\% & 0.18      \\
-        D & Classical, Tanh    & 556    & $\sim$96\% & 0.94      \\
+        A & Dense classical    & 5058   & $\sim$96\% & 0.92      \\
+        B & Quantum (Lin.+VQC) & 556    & $\sim$96\% & 0.94      \\
+        C & Classical, ReLU    & 556    & $\sim$79\% & 0.12      \\
+        D & Classical, Tanh    & 556    & $\sim$96\% & 0.96      \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -276,12 +276,12 @@ extractor.
 \begin{figure*}[t]
     \centering
     \begin{subfigure}{0.45\textwidth}
-        \includegraphics[width=\linewidth]{Figures/5000param_classical_cm_test.png}
+        \includegraphics[width=\linewidth]{Figures/exp3_classical_cm_test.png}
         \caption{Dense classical, 5058 params (A).}
         \label{fig:exp2_cm_dense}
     \end{subfigure}\hfill
     \begin{subfigure}{0.45\textwidth}
-        \includegraphics[width=\linewidth]{Figures/quantum_500param_cm_test.png}
+        \includegraphics[width=\linewidth]{Figures/exp3_quantum_cm_test.png}
         \caption{Quantum, 556 params (B).}
         \label{fig:exp2_cm_quantum}
     \end{subfigure}
@@ -289,18 +289,18 @@ extractor.
     \vspace{0.5em}
 
     \begin{subfigure}{0.45\textwidth}
-        \includegraphics[width=\linewidth]{Figures/500param_classical_deadrelu_cm_test.png}
+        \includegraphics[width=\linewidth]{Figures/exp3_classical_tiny_relu_cm_test.png}
         \caption{Classical ReLU control, 556 params (C).}
         \label{fig:exp2_cm_relu}
     \end{subfigure}\hfill
     \begin{subfigure}{0.45\textwidth}
-        \includegraphics[width=\linewidth]{Figures/500param_classical_tanh_cm_test.png}
+        \includegraphics[width=\linewidth]{Figures/exp3_classical_tiny_tanh_cm_test.png}
         \caption{Classical Tanh control, 556 params (D).}
         \label{fig:exp2_cm_tanh}
     \end{subfigure}
     \caption{Test-set confusion matrices for the four heads. The dense head (A), the
         quantum head (B) and the Tanh control (D) are almost indistinguishable, whereas the
-        ReLU control (C) misroutes 75\% of brown dwarfs into
+        ReLU control (C) misroutes 80\% of brown dwarfs into
         \texttt{GALAXY\_STARFORMING}.}
     \label{fig:exp2_cm}
 \end{figure*}
@@ -308,12 +308,12 @@ extractor.
 \subsubsection{The Parameter-Matched Control and the Dead-ReLU Artefact}
 
 The decisive comparison is between the three 556-parameter models. The quantum head
-(B) reaches 0.93 recall on \texttt{STAR\_BROWN\_DWARF\_L}, but the ReLU control (C)
-reaches only 0.18 and routes about 75\% of brown dwarfs into
+(B) reaches 0.94 recall on \texttt{STAR\_BROWN\_DWARF\_L}, but the ReLU control (C)
+reaches only 0.12 and routes about 80\% of brown dwarfs into
 \texttt{GALAXY\_STARFORMING}, as seen in Figure~\ref{fig:exp2_cm_relu}, which caps
 its overall accuracy near 79\%. Taken on its own this looks like a clear quantum
 advantage on the hardest class. The Tanh control (D), which is identical to C except
-that the inner ReLU is replaced by Tanh, fully recovers to 0.94 recall and about
+that the inner ReLU is replaced by Tanh, fully recovers to 0.96 recall and about
 96\% overall accuracy. This shows that the failure of C was not a capacity limit but
 an optimisation artefact.
 
