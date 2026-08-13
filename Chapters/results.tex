@@ -502,16 +502,16 @@ returned no advantage.
     \label{tab:qsvm_bandwidth}
     \begin{tabular}{@{}lcccc@{}}
         \toprule
-                        & \multicolumn{2}{c}{\textbf{Fidelity}} & \multicolumn{2}{c}{\textbf{Projected}}                                       \\
+                        & \multicolumn{2}{c}{\textbf{Fidelity}} & \multicolumn{2}{c}{\textbf{Projected}}                                     \\
         \cmidrule(lr){2-3}\cmidrule(lr){4-5}
-        \textbf{$c$}    & Few-shot                              & $n{=}200$                              & Few-shot        & $n{=}200$          \\ \midrule
-        0.1             & 0.4255                                & 0.5865                                 & 0.4100          & 0.5923             \\
-        0.25            & 0.4655                                & 0.6543                                 & \textbf{0.4336} & 0.6818             \\
-        \textbf{0.5}    & \textbf{0.4918}                       & 0.7032                                 & 0.4316          & \textbf{0.6898}    \\
-        0.75            & 0.4878                                & \textbf{0.7089}                        & 0.4117          & 0.6579             \\
-        1.0             & 0.4648                                & 0.7026                                 & 0.3996          & 0.6120             \\
-        1.5             & 0.4112                                & 0.6611                                 & 0.3737          & 0.5313             \\ \midrule
-        Classical (RBF) & 0.4687                                & 0.7270                                 & 0.4687          & 0.7270             \\ \bottomrule
+        \textbf{$c$}    & Few-shot                              & $n{=}200$                              & Few-shot        & $n{=}200$       \\ \midrule
+        0.1             & 0.4255                                & 0.5865                                 & 0.4100          & 0.5923          \\
+        0.25            & 0.4655                                & 0.6543                                 & \textbf{0.4336} & 0.6818          \\
+        \textbf{0.5}    & \textbf{0.4918}                       & 0.7032                                 & 0.4316          & \textbf{0.6898} \\
+        0.75            & 0.4878                                & \textbf{0.7089}                        & 0.4117          & 0.6579          \\
+        1.0             & 0.4648                                & 0.7026                                 & 0.3996          & 0.6120          \\
+        1.5             & 0.4112                                & 0.6611                                 & 0.3737          & 0.5313          \\ \midrule
+        Classical (RBF) & 0.4687                                & 0.7270                                 & 0.4687          & 0.7270          \\ \bottomrule
     \end{tabular}
 \end{table}
 
@@ -682,7 +682,7 @@ Because the probe is evaluated on the trained filters, whose weights differ betw
         \label{fig:exp4_jacob_adv_light}
     \end{subfigure}
 
-    \caption{Per-seed Jacobian Frobenius norms $\|J\|_F$ for the trained quantum and classical filters (each line is one seed; white line is the median). The quantum filter is the significantly smoother map under the Heavy Head ($p=0.006$) but the rougher map under the Light Head (not significant), indicating that the measured smoothness is a property of the learned weights in each regime rather than of the circuit topology.}
+    \caption{Per-seed Jacobian Frobenius norms $\|J\|_F$ for the trained quantum and classical filters (each line is one seed; black line is the median). The quantum filter is the significantly smoother map under the Heavy Head ($p=0.006$) but the rougher map under the Light Head (not significant), indicating that the measured smoothness is a property of the learned weights in each regime rather than of the circuit topology.}
     \label{fig:exp4_jacobian_dists}
 \end{figure*}
 
